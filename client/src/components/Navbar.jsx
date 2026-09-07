@@ -3,7 +3,11 @@ import { Search, User, ShoppingBag, Menu, X } from 'lucide-react';
 
 export default function Navbar({
   onOpenShop,
-  onOpenSignup
+  onOpenSignup,
+  onOpenAuthModal,
+  user,
+  onLogout,
+  onNavigateToAdmin
 }) {
   const [scrolled, setScrolled] = useState(false);
   const [activeTab, setActiveTab] = useState('HOME');
@@ -136,13 +140,57 @@ export default function Navbar({
             </button>
 
             {/* User Account Icon */}
-            <button
-              onClick={onOpenSignup}
-              className="p-1.5 hover:text-[#E0B094] transition-colors focus:outline-none"
-              title="Account"
-            >
-              <User className="w-4 h-4" />
-            </button>
+            {user ? (
+              <div className="relative group">
+                <button
+                  className="p-1.5 text-[#E0B094] hover:text-white transition-colors focus:outline-none flex items-center gap-1.5 text-xs"
+                  title={`Logged in as ${user.name || user.email}`}
+                >
+                  <User className="w-4 h-4 text-[#E0B094]" />
+                  <span className="hidden lg:inline text-[11px] text-[#E0B094] font-medium max-w-[90px] truncate">
+                    {user.name?.split(' ')[0] || 'Vault'}
+                  </span>
+                </button>
+
+                {/* Dropdown Menu on Hover/Focus */}
+                <div className="absolute right-0 top-full mt-2 w-48 bg-[#0C0D10]/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl p-3 hidden group-hover:block transition-all z-50">
+                  <div className="px-2 py-1.5 border-b border-white/10 mb-2">
+                    <p className="text-xs font-semibold text-[#F5F5F0] truncate">{user.name || 'Valued Member'}</p>
+                    <p className="text-[10px] text-[#C5C8D0] truncate">{user.email}</p>
+                    {user.role === 'admin' && (
+                      <span className="inline-block mt-1 px-2 py-0.5 bg-[#E0B094]/20 border border-[#E0B094]/30 text-[#E0B094] text-[9px] font-bold rounded uppercase">
+                        ADMIN
+                      </span>
+                    )}
+                  </div>
+
+                  {user.role === 'admin' && onNavigateToAdmin && (
+                    <button
+                      onClick={onNavigateToAdmin}
+                      className="w-full text-left px-2 py-1.5 text-xs text-[#E0B094] hover:bg-white/5 rounded-md transition-colors font-medium mb-1 flex items-center justify-between"
+                    >
+                      <span>Admin Dashboard</span>
+                      <span>→</span>
+                    </button>
+                  )}
+
+                  <button
+                    onClick={onLogout}
+                    className="w-full text-left px-2 py-1.5 text-xs text-red-400 hover:text-red-300 hover:bg-white/5 rounded-md transition-colors"
+                  >
+                    Log Out
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                onClick={onOpenAuthModal || onOpenSignup}
+                className="p-1.5 hover:text-[#E0B094] transition-colors focus:outline-none"
+                title="Account / Log In"
+              >
+                <User className="w-4 h-4" />
+              </button>
+            )}
 
             {/* Shopping Bag Icon with Badge Counter */}
             <button
@@ -210,13 +258,23 @@ export default function Navbar({
               <Search className="w-4 h-4" />
               <span>SEARCH</span>
             </button>
-            <button
-              onClick={onOpenSignup}
-              className="flex items-center gap-2 text-xs text-[#C5C8D0] hover:text-[#E0B094]"
-            >
-              <User className="w-4 h-4" />
-              <span>ACCOUNT</span>
-            </button>
+            {user ? (
+              <button
+                onClick={onLogout}
+                className="flex items-center gap-2 text-xs text-red-400 hover:text-red-300"
+              >
+                <User className="w-4 h-4" />
+                <span>LOGOUT ({user.name?.split(' ')[0] || 'USER'})</span>
+              </button>
+            ) : (
+              <button
+                onClick={onOpenAuthModal || onOpenSignup}
+                className="flex items-center gap-2 text-xs text-[#C5C8D0] hover:text-[#E0B094]"
+              >
+                <User className="w-4 h-4" />
+                <span>ACCOUNT</span>
+              </button>
+            )}
           </div>
 
         </div>

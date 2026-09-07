@@ -1,5 +1,34 @@
-# Logs
-logs
+# Dependencies
+node_modules/
+**/node_modules/
+.pnpm-store/
+
+# Production Build Outputs
+dist/
+dist-ssr/
+build/
+client/dist/
+.vite/
+
+# Environment Variables & Secret Key Credentials
+.env
+.env.local
+.env.*.local
+client/.env
+server/.env
+*.local
+
+# Firebase Credentials & Service Accounts (CRITICAL SECURITY)
+cradencial/
+credential/
+credentials/
+*-firebase-adminsdk-*.json
+service-account*.json
+*.pem
+*.key
+
+# Logs & Temporary Files
+logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
@@ -7,21 +36,20 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
-*.local
-
-# Editor directories and files
+# Editor & OS Files
+.DS_Store
+Thumbs.db
 .vscode/*
 !.vscode/extensions.json
-.idea
-.DS_Store
+.idea/
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
-dump_old
+
+# Temporary Archives & Backups
+dump_old/
 dist.zip
-cradencial/
+*.zip
+*.tar.gz
