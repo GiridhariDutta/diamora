@@ -205,7 +205,7 @@ export default function Footer({ onOpenTickets }) {
 
         {/* BOTTOM BAR (COPYRIGHT & PAYMENT BADGES) */}
         <div className="pt-6 flex flex-col sm:flex-row items-center justify-between text-xs text-[#707480] gap-4">
-          <span>© 2025 Diamora Diamond Jewellery. All Rights Reserved.</span>
+          <span>© 2026 Diamora Diamond Jewellery. All Rights Reserved.</span>
 
           {/* Payment Badges (VISA, Mastercard, AMEX, UPI) */}
           <div className="flex items-center gap-3">

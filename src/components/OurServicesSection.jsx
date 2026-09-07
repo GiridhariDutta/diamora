@@ -24,21 +24,21 @@ export default function OurServicesSection() {
       tabLabel: 'Customisation',
       title: 'BESPOKE ATELIER CUSTOMISATION',
       description: 'Transform your dream vision into a handcrafted masterpiece. Work directly with our master goldsmiths from initial 3D CAD blueprints to final diamond claw setting.',
-      image: '/images/winged_victory.jpg'
+      image: '/images/Diamond_cuff_bracelet_photography_202608271248.jpeg'
     },
     {
       id: 'buyback',
       tabLabel: 'BuyBack',
       title: 'LIFETIME BUYBACK & EXCHANGE GUARANTEE',
       description: 'Enjoy lifelong trust and investment security with our 100% transparent exchange and buyback policy at prevailing market rates across all certified diamond jewelry.',
-      image: '/images/psyche_cupid.jpg'
+      image: '/images/Diamond_bangle_product_shot_202608271248.jpeg'
     },
     {
       id: 'repairs',
       tabLabel: 'Repairs',
       title: 'REPAIRS, POLISH AND RESIZING',
       description: "Got a Ring that doesn't fit you?! At Diamora, We are happy to resize Rings purchased from us at no extra cost. We also offer Lifetime Repair and Polish Free of Cost on all our Diamond Jewellery products*.",
-      image: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=1000&q=80'
+      image: '/images/craftsmanship_macro.png'
     }
   ];
 
@@ -70,36 +70,36 @@ export default function OurServicesSection() {
           </h2>
         </div>
 
-        {/* MAIN SPLIT 2-COLUMN STAGE (LEFT: IMAGE, RIGHT: TEXT CONTENT) */}
-        <div className="bg-[#12131A] border border-white/10 rounded-3xl overflow-hidden shadow-[0_15px_45px_rgba(0,0,0,0.85)] mb-10">
+        {/* MAIN SPLIT 2-COLUMN STAGE (FIXED CARD HEIGHT — IMAGE ADAPTS TO CARD HEIGHT) */}
+        <div className="bg-[#12131A] border border-white/10 rounded-3xl overflow-hidden shadow-[0_15px_45px_rgba(0,0,0,0.85)] mb-10 h-[500px] sm:h-[480px] lg:h-[420px] relative">
           <AnimatePresence mode="wait">
             <motion.div
               key={activeService.id}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.4 }}
-              className="grid grid-cols-1 lg:grid-cols-12 min-h-[380px] sm:min-h-[440px]"
+              transition={{ duration: 0.35 }}
+              className="grid grid-cols-1 lg:grid-cols-12 h-full w-full"
             >
-              {/* Left Image Column */}
-              <div className="lg:col-span-6 relative aspect-video lg:aspect-auto overflow-hidden bg-black">
+              {/* Left Image Column — Fixed to Left 50%, Image depends strictly on Card Height */}
+              <div className="lg:col-span-6 relative h-48 sm:h-60 lg:h-full w-full overflow-hidden bg-black shrink-0">
                 <img
                   src={activeService.image}
                   alt={activeService.title}
-                  className="w-full h-full object-cover filter brightness-105 contrast-110"
+                  className="absolute inset-0 w-full h-full object-cover filter brightness-105 contrast-110"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent lg:hidden" />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#12131A] via-transparent to-transparent lg:hidden" />
               </div>
 
-              {/* Right Content Column */}
-              <div className="lg:col-span-6 p-8 sm:p-12 lg:p-14 flex flex-col justify-center bg-[#12131A]">
+              {/* Right Content Column — Vertically Centered inside Fixed Card Height */}
+              <div className="lg:col-span-6 p-6 sm:p-10 lg:p-12 flex flex-col justify-center bg-[#12131A] h-full overflow-hidden">
                 {/* Eyebrow */}
-                <span className="font-poppins text-xs font-semibold tracking-[0.28em] text-[#E0B094] uppercase block mb-3">
+                <span className="font-poppins text-xs font-semibold tracking-[0.28em] text-[#E0B094] uppercase block mb-2 sm:mb-3">
                   OUR SERVICES
                 </span>
 
                 {/* Service Title */}
-                <h3 className="font-cinzel text-2xl sm:text-3xl lg:text-3xl font-semibold tracking-[0.06em] text-white leading-snug mb-5">
+                <h3 className="font-cinzel text-xl sm:text-2xl lg:text-3xl font-semibold tracking-[0.05em] text-white leading-snug mb-3 sm:mb-4">
                   {activeService.title}
                 </h3>
 

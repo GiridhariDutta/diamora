@@ -28,42 +28,42 @@ export default function RotatingArcShowcase({ onOpenShop }) {
       title: 'Marquise Victoria Band',
       category: '18K GOLD & DIAMOND',
       price: '$3,120',
-      image: '/images/winged_victory.jpg'
+      image: '/images/Diamond_drop_earrings_displayed_202608261740.jpeg'
     },
     {
       id: 'emerald-ring',
-      title: 'Psyche Step-Cut Ring',
+      title: 'Diamond Nath Craft',
       category: 'SOLITAIRE COLLECTION',
       price: '$4,900',
-      image: '/images/psyche_cupid.jpg'
+      image: '/images/Diamond_Nath_product_photography_202608261800.jpeg'
     },
     {
       id: 'venus-ring',
-      title: 'Royal Ceylon Sapphire',
+      title: 'Royal Diamond Bangle',
       category: 'HIGH JEWELRY',
       price: '$6,200',
-      image: '/images/venus_hero.jpg'
+      image: '/images/Diamond_bangle_product_shot_202608271248.jpeg'
     },
     {
       id: 'huggie-earrings',
       title: 'Place Vendôme Huggies',
       category: '18K SOLID GOLD',
       price: '$1,850',
-      image: 'https://images.unsplash.com/photo-1635767798638-3e25273a8236?auto=format&fit=crop&w=600&q=80'
+      image: '/images/Diamond_hoop_earrings_displayed_202608261741.jpeg'
     },
     {
       id: 'pave-band',
       title: 'Pavé Eternity Band',
       category: 'DIAMOND ESSENTIALS',
       price: '$2,980',
-      image: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=600&q=80'
+      image: '/images/Diamond_stud_earrings_in_setting_202608261741.jpeg'
     },
     {
       id: 'gold-bangle',
       title: 'Architectural Gold Cuff',
       category: 'FINE JEWELRY',
       price: '$4,150',
-      image: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=600&q=80'
+      image: '/images/Diamond_cuff_bracelet_photography_202608271248.jpeg'
     },
     {
       id: 'trio-pendant',
@@ -84,14 +84,14 @@ export default function RotatingArcShowcase({ onOpenShop }) {
       title: 'Baguette Diamond Drops',
       category: 'EARRINGS',
       price: '$2,750',
-      image: 'https://images.unsplash.com/photo-1635767798638-3e25273a8236?auto=format&fit=crop&w=600&q=80'
+      image: '/images/Diamond_drop_earrings_displayed_202608261741.jpeg'
     },
     {
       id: 'radiant-halo',
-      title: 'Radiant Halo Solitaire',
+      title: 'Radiant Nose Ring',
       category: 'SOLITAIRE COLLECTION',
       price: '$5,100',
-      image: '/images/winged_victory.jpg'
+      image: '/images/Diamond_nose_ring_close_up_202608261801.jpeg'
     },
     {
       id: 'venetian-chain',
@@ -102,10 +102,10 @@ export default function RotatingArcShowcase({ onOpenShop }) {
     },
     {
       id: 'emerald-halo-pendant',
-      title: 'Emerald Halo Pendant',
+      title: 'Floral Cluster Stud',
       category: 'HIGH JEWELRY',
       price: '$4,650',
-      image: '/images/psyche_cupid.jpg'
+      image: '/images/Diamond_nose_stud_floral_cluster_202608261759.jpeg'
     },
     {
       id: 'comfort-fit-band',
@@ -119,7 +119,7 @@ export default function RotatingArcShowcase({ onOpenShop }) {
       title: 'Astral Diamond Cuff',
       category: 'HAUTE JOAILLERIE',
       price: '$7,400',
-      image: 'https://images.unsplash.com/photo-1599643478518-a784e5dc4c8f?auto=format&fit=crop&w=600&q=80'
+      image: '/images/Diamond_cuff_bracelet_photography_202608271248.jpeg'
     }
   ];
 
@@ -167,8 +167,6 @@ export default function RotatingArcShowcase({ onOpenShop }) {
       {/* ROTATING CLOCKWISE TOP ARCH CAROUSEL STAGE */}
       <div 
         className="relative max-w-7xl w-full mx-auto h-[440px] sm:h-[500px] flex items-center justify-center z-10 pt-16 sm:pt-20"
-        onMouseEnter={() => setIsPaused(true)}
-        onMouseLeave={() => setIsPaused(false)}
       >
 
         {/* TOP ARCH ORBITING PRODUCT CARDS */}
@@ -217,6 +215,8 @@ export default function RotatingArcShowcase({ onOpenShop }) {
                 setActiveItem(item);
                 if (onOpenShop) onOpenShop();
               }}
+              onMouseEnter={() => setIsPaused(true)}
+              onMouseLeave={() => setIsPaused(false)}
               style={{
                 transform: `translate3d(${x}px, ${y}px, 0px) scale(${scale}) rotate(${cardTilt}deg)`,
                 opacity: opacity,
@@ -309,7 +309,7 @@ export default function RotatingArcShowcase({ onOpenShop }) {
             <ChevronRight className="w-4 h-4" />
           </button>
           <span className="text-[10px] tracking-widest text-[#9B9EA7] uppercase hidden sm:inline">
-            {isPaused ? 'PAUSED (HOVERING)' : 'AUTOPLAYING CLOCKWISE'}
+            {isPaused ? 'PAUSED (HOVERING CARD)' : 'AUTOPLAYING CLOCKWISE'}
           </span>
         </div>
 
