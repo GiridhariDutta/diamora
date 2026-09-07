@@ -74,7 +74,7 @@ export default function HeroSectionUI({ onOpenShop, onOpenSignup }) {
           <path d="M420 350L480 120M430 300L460 280M440 240L470 220" />
         </svg>
 
-        {/* Small Scattered Gold Dots */}
+      {/* Small Scattered Gold Dots */}
         <div className="absolute right-12 bottom-16 lg:right-36 lg:bottom-28 flex flex-col gap-6 opacity-75">
           <span className="w-1.5 h-1.5 rounded-full bg-[#D4AF37] shadow-[0_0_8px_#D4AF37]" />
           <span className="w-1 h-1 rounded-full bg-[#C59B27] ml-8" />
@@ -83,18 +83,67 @@ export default function HeroSectionUI({ onOpenShop, onOpenSignup }) {
         </div>
       </div>
 
-      {/* FLOATING 3D SPHERES */}
+      {/* SCREEN-WIDE THEATRICAL STAGE SPOTLIGHT BEAM & FLOOR LIGHT POOL (Refined, Non-Intrusive Luxury Lighting) */}
       <div className="absolute inset-0 pointer-events-none z-10 overflow-hidden">
-        <div className="absolute top-10 right-6 lg:right-16 animate-float-1">
-          <div className="w-16 h-16 lg:w-24 lg:h-24 rounded-full bg-gradient-to-br from-[#404552] via-[#1c1e24] to-[#08090b] shadow-[10px_15px_30px_rgba(0,0,0,0.85),inset_-4px_-4px_10px_rgba(0,0,0,0.9),inset_4px_4px_10px_rgba(255,255,255,0.2)]" />
+        
+        {/* 1. Subtle, Compact Top-Right Stage Light Emitter Glow (Does not wash out Navbar icons) */}
+        <div className="absolute -top-6 -right-6 w-28 h-28 rounded-full bg-gradient-to-br from-white/40 via-[#eaf2ff]/20 to-transparent blur-[16px] opacity-70" />
+
+        {/* 2. Crisp, Refined Volumetric Diagonal Light Beam Cone targeting the 3D Ring */}
+        <svg 
+          className="absolute inset-0 w-full h-full pointer-events-none opacity-50 sm:opacity-60"
+          viewBox="0 0 1200 900" 
+          fill="none" 
+          xmlns="http://www.w3.org/2000/svg"
+          preserveAspectRatio="none"
+        >
+          <defs>
+            {/* Broad Controlled Volumetric Beam Gradient */}
+            <linearGradient id="screenBeamGrad" x1="1180" y1="0" x2="680" y2="820" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.42" />
+              <stop offset="25%" stopColor="#E0ECFC" stopOpacity="0.22" />
+              <stop offset="60%" stopColor="#C2D8FC" stopOpacity="0.08" />
+              <stop offset="90%" stopColor="#A8C8F8" stopOpacity="0.02" />
+              <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
+            </linearGradient>
+
+            {/* Core Direct Spotlight Beam Gradient */}
+            <linearGradient id="screenCoreGrad" x1="1180" y1="0" x2="780" y2="800" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.55" />
+              <stop offset="30%" stopColor="#F0F5FF" stopOpacity="0.30" />
+              <stop offset="70%" stopColor="#D2E4FF" stopOpacity="0.10" />
+              <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
+            </linearGradient>
+
+            {/* Controlled Feather Blur Filter */}
+            <filter id="beamFeatherBlur" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur stdDeviation="12" />
+            </filter>
+            <filter id="coreFeatherBlur" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur stdDeviation="6" />
+            </filter>
+          </defs>
+
+          {/* Broad Volumetric Cone */}
+          <polygon points="1190,0 1120,0 440,900 1190,900" fill="url(#screenBeamGrad)" filter="url(#beamFeatherBlur)" />
+
+          {/* Core Spotlight Beam hitting the 3D Ring */}
+          <polygon points="1190,0 1145,0 620,880 1060,880" fill="url(#screenCoreGrad)" filter="url(#coreFeatherBlur)" />
+        </svg>
+
+        {/* 3. Luminous Elliptical Stage Light Pool / Floor Highlight Blur beneath the 3D Ring (Centered under Ring Base) */}
+        <div className="absolute bottom-3 sm:bottom-6 lg:bottom-7 right-[8%] sm:right-[11%] lg:right-[13%] w-[380px] sm:w-[480px] lg:w-[540px] h-[75px] sm:h-[95px] rounded-[100%] bg-gradient-to-r from-transparent via-[#dbe8fc]/25 to-transparent blur-[24px]" />
+        <div className="absolute bottom-5 sm:bottom-9 lg:bottom-10 right-[13%] sm:right-[16%] lg:right-[18%] w-[200px] sm:w-[260px] lg:w-[320px] h-[30px] sm:h-[42px] rounded-[100%] bg-gradient-to-r from-transparent via-white/45 to-transparent blur-[12px]" />
+      </div>
+
+      {/* FLOATING 3D SPHERES (Proportionally Scaled +12-15%, Hardware Accelerated) */}
+      <div className="absolute inset-0 pointer-events-none z-10 overflow-hidden transform-gpu">
+        <div className="absolute top-[36%] right-[27%] lg:right-[31%] animate-float-2 transform-gpu">
+          <div className="w-24 h-24 lg:w-35 lg:h-35 rounded-full bg-gradient-to-br from-[#4a5060] via-[#22252e] to-[#0a0b0e] shadow-[15px_24px_40px_rgba(0,0,0,0.9),inset_-7px_-7px_14px_rgba(0,0,0,0.95),inset_7px_7px_14px_rgba(255,255,255,0.25)]" />
         </div>
 
-        <div className="absolute top-[38%] right-[28%] lg:right-[32%] animate-float-2">
-          <div className="w-20 h-20 lg:w-28 lg:h-28 rounded-full bg-gradient-to-br from-[#4a5060] via-[#22252e] to-[#0a0b0e] shadow-[12px_20px_35px_rgba(0,0,0,0.9),inset_-6px_-6px_12px_rgba(0,0,0,0.95),inset_6px_6px_12px_rgba(255,255,255,0.25)]" />
-        </div>
-
-        <div className="absolute bottom-[28%] right-[16%] lg:right-[20%] animate-float-3">
-          <div className="w-10 h-10 lg:w-14 lg:h-14 rounded-full bg-gradient-to-br from-[#f5d77f] via-[#c59b27] to-[#5c4409] shadow-[8px_12px_25px_rgba(0,0,0,0.7),inset_-3px_-3px_8px_rgba(0,0,0,0.8),inset_3px_3px_8px_rgba(255,255,255,0.6)]" />
+        <div className="absolute bottom-[26%] right-[15%] lg:right-[19%] animate-float-3 transform-gpu">
+          <div className="w-12 h-12 lg:w-18 lg:h-18 rounded-full bg-gradient-to-br from-[#f5d77f] via-[#c59b27] to-[#5c4409] shadow-[10px_14px_28px_rgba(0,0,0,0.7),inset_-4px_-4px_10px_rgba(0,0,0,0.8),inset_4px_4px_10px_rgba(255,255,255,0.6)]" />
         </div>
       </div>
 
@@ -145,11 +194,14 @@ export default function HeroSectionUI({ onOpenShop, onOpenSignup }) {
 
         </div>
 
-        {/* Right Side Content (Span 6) — REAL 3D GOLD RING FRAME */}
-        <div className="lg:col-span-6 relative flex items-center justify-center h-[340px] sm:h-[420px] lg:h-[480px]">
+        {/* Right Side Content (Span 6) — REAL 3D GOLD RING & JEWELLERY FRAME */}
+        <div className="lg:col-span-6 relative flex items-center justify-center h-[390px] sm:h-[490px] lg:h-[570px] transform-gpu">
           
-          {/* 3D Canvas Frame — Scaled 3D visual container */}
-          <div className="relative z-10 w-[360px] sm:w-[460px] lg:w-[500px] h-[360px] sm:h-[460px] lg:h-[500px]">
+          {/* Ambient Glow Halo Ring Backdrop behind 3D Model (+12-15% Scaled) */}
+          <div className="absolute w-[350px] sm:w-[450px] lg:w-[520px] h-[350px] sm:h-[450px] lg:h-[520px] rounded-full bg-gradient-to-tr from-[#D4AF37]/10 via-[#F7E09A]/8 to-transparent blur-[70px] pointer-events-none z-0 animate-pulse transform-gpu" />
+
+          {/* 3D Canvas Frame — Proportionally enlarged (+12-15%) */}
+          <div className="relative z-10 w-[430px] sm:w-[540px] lg:w-[610px] h-[430px] sm:h-[540px] lg:h-[610px] transform-gpu">
             <Ring3DCanvas activeId="public_ring_model" />
 
             {/* Pulsing Hotspot Dots */}

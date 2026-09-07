@@ -5,7 +5,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 
 import ring1Url from '../assets/models/ring_ornament_1.glb?url';
-import ring2Url from '../assets/models/ring_ornament_2.glb?url';
+import ring2Url from '../assets/models/dymond-model2.glb?url';
 import ring3Url from '../assets/models/ring_ornament_3.glb?url';
 
 export default function Ring3DCanvas() {
@@ -14,6 +14,11 @@ export default function Ring3DCanvas() {
   const controlsRef = useRef(null);
   const [loading, setLoading] = useState(true);
   const [activeModelIndex, setActiveModelIndex] = useState(0);
+  const [zoomStyle, setZoomStyle] = useState({
+    scale: 1,
+    opacity: 1,
+    transition: 'none'
+  });
 
   // Model files list from 66-ring ornament: Calibrated model scales & rotations
   const modelConfigs = [
@@ -27,11 +32,13 @@ export default function Ring3DCanvas() {
     },
     {
       id: 'vers4_men_design',
-      name: 'MEN DESIGN 4',
+      name: 'ETERNITY DESIGN 2',
       url: ring2Url,
-      explicitScale: 0.12, // Model 2: Completely UNCHANGED
+      explicitScale: 0.10,
       positionY: -0.18,
-      rawRotation: [0, Math.PI / 2, 0]
+      rawRotation: [0, 0, 0], // Flat base horizontal plane
+      tiltRotation: [0.52, 0, 0.28], // Earth-like 28° diagonal axial tilt as shown in screenshot
+      isEarthSpin: true
     },
     {
       id: 'ring3_design',
@@ -58,34 +65,61 @@ export default function Ring3DCanvas() {
     camera.position.set(0, 0.25, 7.4);
     camera.lookAt(0, -0.15, 0);
 
-    // 3. Renderer Setup
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    // 3. High-Performance WebGL Renderer Setup (Optimized for 60FPS Mobile & Desktop)
+    const isMobile = typeof window !== 'undefined' && 
+      (/Android|iPhone|iPad|iPod|Opera Mini|IEMobile|WPDesktop/i.test(navigator.userAgent) || window.innerWidth < 768);
+
+    const renderer = new THREE.WebGLRenderer({ 
+      antialias: !isMobile, // On mobile, high-DPI displays do not need heavy multi-sample antialiasing
+      alpha: true,
+      powerPreference: 'high-performance',
+      stencil: false,
+      depth: true
+    });
     renderer.setSize(width, height);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setPixelRatio(isMobile ? Math.min(window.devicePixelRatio, 1.35) : Math.min(window.devicePixelRatio, 2));
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.35;
 
-    // 4. HDRI Studio Environment & Directional Studio Spotlights for Diamond Sparkle
+    // 4. HDRI Studio Environment & Dominant Top-Right Theatrical Stage Spotlight
     const pmremGenerator = new THREE.PMREMGenerator(renderer);
     pmremGenerator.compileEquirectangularShader();
     const roomEnv = new RoomEnvironment(renderer);
     scene.environment = pmremGenerator.fromScene(roomEnv, 0.04).texture;
 
-    // Add high-intensity directional studio lights to generate bright facet glints & specular highlights
-    const diamondKeyLight = new THREE.DirectionalLight(0xffffff, 4.0);
-    diamondKeyLight.position.set(4, 7, 6);
-    scene.add(diamondKeyLight);
+    // 1. Dominant Top-Right Theatrical Stage Spotlight (Directional light cone targeting ring center directly)
+    const stageSpotLight = new THREE.SpotLight(0xfff8fa, 26.0, 35, Math.PI / 3.8, 0.65, 1.0);
+    stageSpotLight.position.set(5.2, 7.2, 4.2);
+    stageSpotLight.target.position.set(0, -0.18, 0);
+    stageSpotLight.castShadow = true;
+    stageSpotLight.shadow.mapSize.width = 1024;
+    stageSpotLight.shadow.mapSize.height = 1024;
+    stageSpotLight.shadow.bias = -0.0001;
+    scene.add(stageSpotLight);
+    scene.add(stageSpotLight.target);
 
-    const diamondFillLight = new THREE.DirectionalLight(0xfff8ee, 2.5);
-    diamondFillLight.position.set(-4, 4, 4);
-    scene.add(diamondFillLight);
+    // Top-right razor-sharp key directional light for specular metal ribbons & diamond fire
+    const stageKeyLight = new THREE.DirectionalLight(0xfffaee, 5.5);
+    stageKeyLight.position.set(6.0, 8.0, 5.0);
+    stageKeyLight.castShadow = true;
+    scene.add(stageKeyLight);
 
-    // Dedicated point light focused directly on the top diamond gemstone crown for sparkling highlights
-    const diamondGlintLight = new THREE.PointLight(0xffffff, 6.0, 15);
-    diamondGlintLight.position.set(0, 1.8, 3.0);
+    // Top-right elevated point light focused on the illuminated diamond crown & right facet shoulder
+    const diamondGlintLight = new THREE.PointLight(0xffffff, 8.5, 12);
+    diamondGlintLight.position.set(3.2, 4.2, 2.8);
     scene.add(diamondGlintLight);
+
+    // 2. Soft, Dim Ambient & Opposite Shadow Falloff
+    // Reduced ambient lighting so shadow side has real falloff depth
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.22);
+    scene.add(ambientLight);
+
+    // Opposite-side (left/bottom) very soft dark shadow rim light to keep silhouette visible
+    const shadowRimLight = new THREE.DirectionalLight(0x182030, 0.35);
+    shadowRimLight.position.set(-6.5, -2.5, -4.0);
+    scene.add(shadowRimLight);
 
     // Clear previous DOM
     container.innerHTML = '';
@@ -109,48 +143,61 @@ export default function Ring3DCanvas() {
     const loadedPivots = {};
     const loader = new GLTFLoader();
 
-    // Helper to generate a 4-point star flare texture dynamically via Canvas2D
-    const createSparkleTexture = () => {
+    // Helper to generate a crisp, high-definition diamond star-flare texture with prismatic fire & spectral dispersion
+    const createDiamondFlareTexture = () => {
       const canvas = document.createElement('canvas');
       canvas.width = 128;
       canvas.height = 128;
       const ctx = canvas.getContext('2d');
 
-      // Soft glowing central core
-      const radial = ctx.createRadialGradient(64, 64, 0, 64, 64, 50);
+      // 1. Radiant central pinpoint core with spectral rainbow dispersion
+      const radial = ctx.createRadialGradient(64, 64, 0, 64, 64, 28);
       radial.addColorStop(0, 'rgba(255, 255, 255, 1.0)');
-      radial.addColorStop(0.2, 'rgba(255, 250, 240, 0.85)');
-      radial.addColorStop(0.5, 'rgba(230, 210, 160, 0.25)');
+      radial.addColorStop(0.15, 'rgba(255, 250, 235, 0.95)');
+      radial.addColorStop(0.35, 'rgba(180, 235, 255, 0.55)'); // Prismatic cyan fire
+      radial.addColorStop(0.6, 'rgba(255, 200, 245, 0.25)');  // Prismatic magenta fire
+      radial.addColorStop(0.85, 'rgba(255, 240, 180, 0.12)'); // Warm gold reflection
       radial.addColorStop(1, 'rgba(255, 255, 255, 0)');
       ctx.fillStyle = radial;
       ctx.fillRect(0, 0, 128, 128);
 
-      // Main horizontal light streak
+      // 2. Anamorphic wide horizontal needle ray
       const gradH = ctx.createLinearGradient(0, 64, 128, 64);
-      gradH.addColorStop(0, 'rgba(255, 255, 255, 0)');
+      gradH.addColorStop(0, 'rgba(140, 210, 255, 0)');
+      gradH.addColorStop(0.35, 'rgba(180, 240, 255, 0.75)');
       gradH.addColorStop(0.5, 'rgba(255, 255, 255, 1.0)');
-      gradH.addColorStop(1, 'rgba(255, 255, 255, 0)');
+      gradH.addColorStop(0.65, 'rgba(255, 220, 190, 0.75)');
+      gradH.addColorStop(1, 'rgba(255, 230, 150, 0)');
       ctx.fillStyle = gradH;
-      ctx.fillRect(0, 62, 128, 4);
+      ctx.fillRect(0, 62.5, 128, 3);
 
-      // Main vertical light streak
+      // 3. Razor-sharp vertical needle ray
       const gradV = ctx.createLinearGradient(64, 0, 64, 128);
-      gradV.addColorStop(0, 'rgba(255, 255, 255, 0)');
+      gradV.addColorStop(0, 'rgba(255, 200, 240, 0)');
+      gradV.addColorStop(0.35, 'rgba(255, 235, 180, 0.75)');
       gradV.addColorStop(0.5, 'rgba(255, 255, 255, 1.0)');
-      gradV.addColorStop(1, 'rgba(255, 255, 255, 0)');
+      gradV.addColorStop(0.65, 'rgba(150, 220, 255, 0.75)');
+      gradV.addColorStop(1, 'rgba(170, 190, 255, 0)');
       ctx.fillStyle = gradV;
-      ctx.fillRect(62, 0, 4, 128);
+      ctx.fillRect(62.5, 0, 3, 128);
 
-      // Diagonal subtle light streaks
+      // 4. Delicate 45-degree diagonal needle rays (8-point starburst)
       ctx.save();
       ctx.translate(64, 64);
       ctx.rotate(Math.PI / 4);
-      const gradD = ctx.createLinearGradient(-40, 0, 40, 0);
-      gradD.addColorStop(0, 'rgba(255, 255, 255, 0)');
-      gradD.addColorStop(0.5, 'rgba(255, 255, 255, 0.7)');
-      gradD.addColorStop(1, 'rgba(255, 255, 255, 0)');
-      ctx.fillStyle = gradD;
-      ctx.fillRect(-40, -1, 80, 2);
+      const gradD1 = ctx.createLinearGradient(-36, 0, 36, 0);
+      gradD1.addColorStop(0, 'rgba(160, 235, 255, 0)');
+      gradD1.addColorStop(0.5, 'rgba(255, 255, 255, 0.9)');
+      gradD1.addColorStop(1, 'rgba(255, 210, 245, 0)');
+      ctx.fillStyle = gradD1;
+      ctx.fillRect(-36, -1.2, 72, 2.4);
+
+      const gradD2 = ctx.createLinearGradient(0, -36, 0, 36);
+      gradD2.addColorStop(0, 'rgba(255, 230, 180, 0)');
+      gradD2.addColorStop(0.5, 'rgba(255, 255, 255, 0.9)');
+      gradD2.addColorStop(1, 'rgba(160, 220, 255, 0)');
+      ctx.fillStyle = gradD2;
+      ctx.fillRect(-1.2, -36, 2.4, 72);
       ctx.restore();
 
       const texture = new THREE.CanvasTexture(canvas);
@@ -158,46 +205,86 @@ export default function Ring3DCanvas() {
       return texture;
     };
 
+    // Helper to generate a soft, luminous diamond optical glow bloom halo texture
+    const createDiamondGlowTexture = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = 128;
+      canvas.height = 128;
+      const ctx = canvas.getContext('2d');
+
+      const radial = ctx.createRadialGradient(64, 64, 0, 64, 64, 60);
+      radial.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
+      radial.addColorStop(0.2, 'rgba(255, 245, 215, 0.75)');
+      radial.addColorStop(0.45, 'rgba(240, 215, 140, 0.40)'); // Warm luxury gold aura
+      radial.addColorStop(0.7, 'rgba(180, 225, 255, 0.15)');  // Subtle diamond blue rim
+      radial.addColorStop(1, 'rgba(255, 255, 255, 0)');
+      ctx.fillStyle = radial;
+      ctx.fillRect(0, 0, 128, 128);
+
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.needsUpdate = true;
+      return texture;
+    };
+
+    // Cache textures for performance across all models
+    const diamondFlareTexture = createDiamondFlareTexture();
+    const diamondGlowTexture = createDiamondGlowTexture();
+
     // Helper to process GLB model geometry
     const processGltfModel = (gltf, config) => {
       const rawModel = gltf.scene;
 
-      // 1. Ultra-Realistic Crystal Diamond Material (High Optical Clarity, Refraction & Prismatic Fire)
+      // 1. Ultra-Realistic Crystal Diamond Material (High Dispersion Rainbow Fire & Iridescence)
       const diamondMaterial = new THREE.MeshPhysicalMaterial({
         color: new THREE.Color(0xffffff),
         transmission: 0.95,                // 95% crystal clarity
-        thickness: 0.5,                    // Calibrated facet thickness
+        thickness: 1.4,                    // Deep facet refraction depth
         ior: 2.417,                        // Diamond Index of Refraction
-        roughness: 0.0,                    // Zero roughness for crystal sharpness
+        roughness: 0.0,                    // Zero roughness for razor-sharp facets
         metalness: 0.0,
         reflectivity: 1.0,
         clearcoat: 1.0,
         clearcoatRoughness: 0.0,
-        specularIntensity: 8.0,            // Razor-sharp specular facet glints
+        specularIntensity: 18.0,           // Razor-sharp brilliant specular glints
         specularColor: new THREE.Color(0xffffff),
-        dispersion: 0.15,                  // Chromatic rainbow spectrum fire glints
-        envMapIntensity: 18.0,             // Studio environment reflections for diamond sparkle
-        side: THREE.DoubleSide,
+        dispersion: 0.85,                  // Prismatic rainbow spectrum dispersion fire glints
+        iridescence: 0.45,                 // Rainbow optical thin-film interference fire
+        iridescenceIOR: 1.33,
+        iridescenceThicknessRange: [100, 400],
+        envMapIntensity: 16.0,             // Calibrated studio reflections for high spotlight contrast
+        side: THREE.FrontSide,             // FrontSide for clear crystal refractive definition
         transparent: true,
         opacity: 1.0,
-        depthWrite: false
+        depthWrite: true                   // Prevents transparency clipping and sorting anomalies
       });
 
-      // 2. High-Luxury 18K Polish Gold Material for Model 1 & 2 Ring Bands
+      // 2. High-Luxury 18K Polish Gold Material for Warm Gold Rings
       const goldMaterial = new THREE.MeshStandardMaterial({
-        color: new THREE.Color(0xefc85a),   // Authentic Warm 18K Luxury Gold (rich warm golden metallic shine)
-        metalness: 0.96,                    // High metallic reflectivity
-        roughness: 0.05,                    // Ultra-smooth mirror polish for jewelers
-        envMapIntensity: 6.0,               // High studio HDRI reflections
+        color: new THREE.Color(0xefc85a),   // Authentic Warm 18K Luxury Gold
+        metalness: 0.98,                    // High metallic reflectivity
+        roughness: 0.08,                    // Ultra-smooth mirror polish for jewelers
+        envMapIntensity: 4.0,               // Calibrated reflections for dramatic shadow falloff
+        vertexColors: true,                 // Supports inner surface occlusion
         side: THREE.DoubleSide
       });
 
-      // 3. High-Contrast Polished Dark Platinum / Titanium Metallic Material for Model 3 Ring Band
-      const silverMaterial = new THREE.MeshStandardMaterial({
-        color: new THREE.Color(0x788090),   // High-contrast deep metallic platinum grey tone for crystal diamond distinction
-        metalness: 0.96,                    // High metallic sheen
-        roughness: 0.08,                    // Smooth mirror polish
-        envMapIntensity: 5.5,               // Environment reflections
+      // 3. High-Contrast Mirror-Polished Platinum / White Gold with Smooth Inner Occlusion
+      const whiteGoldMaterial = new THREE.MeshStandardMaterial({
+        color: new THREE.Color(0xd0d5e0),   // High-definition Platinum tone
+        metalness: 0.98,                    // Authentic metallic definition
+        roughness: 0.12,                    // Balanced silky mirror polish
+        envMapIntensity: 3.5,               // Controlled reflections allowing rich dark shadow side
+        vertexColors: true,                 // Smooth vertex-color inner band occlusion gradient
+        side: THREE.DoubleSide
+      });
+
+      // 4. Natural Lighter Silver-Platinum Material for Diamond Mounting Prongs, Basket & Settings
+      const settingMetalMaterial = new THREE.MeshStandardMaterial({
+        color: new THREE.Color(0xa8b2c2),   // Natural, clean lighter silver-platinum tone
+        metalness: 0.98,                    // High-polish metallic definition
+        roughness: 0.14,                    // Silky mirror-like metallic polish
+        envMapIntensity: 3.5,               // Controlled natural specular studio reflection
+        vertexColors: true,
         side: THREE.DoubleSide
       });
 
@@ -223,32 +310,46 @@ export default function Ring3DCanvas() {
         }
       });
 
-      // Traverse sub-meshes: Assign diamondMaterial strictly to gemstone parts
+      // Find and collect all diamond meshes and assign materials
+      const diamondMeshes = [];
       let meshIdx = 0;
       rawModel.traverse((child) => {
         if (child.isMesh && child.geometry) {
           child.geometry.computeBoundingBox();
           const box = child.geometry.boundingBox;
+          const nameLower = (child.name || '').toLowerCase();
+          const matName = (child.material && child.material.name ? child.material.name : '').toLowerCase();
 
           let isDiamondStone = false;
+          let isSettingProng = false;
+
           if (config.id === 'ring_shader_pos1') {
             isDiamondStone = (box && box.min.y > 3.0);
           } else if (config.id === 'ring3_design') {
-            // Meshes 6..25 (20 left micro-pave), 30..49 (20 right micro-pave), and 51 (Main Solitaire) are diamonds!
-            // Meshes 0..5 (6 Platinum Prongs marked by user), 26..29 (Shoulders), 50 (Shank), 52..53 (Basket) are Solid Platinum!
             isDiamondStone = (meshIdx >= 6 && meshIdx <= 25) || 
                              (meshIdx >= 30 && meshIdx <= 49) || 
                              (meshIdx === 51);
+            // 6 cathedral prongs (0-5), collet basket (52) & gallery support (53)
+            isSettingProng = (meshIdx >= 0 && meshIdx <= 5) || (meshIdx === 52) || (meshIdx === 53);
+          } else if (config.id === 'vers4_men_design') {
+            isDiamondStone = nameLower.includes('diamond') || nameLower.includes('round') || nameLower.includes('gem');
+            // 20 main top prong claw settings (empty_4 to empty_23) and side pave prongs (Belprongs)
+            isSettingProng = (nameLower.startsWith('empty_') && nameLower !== 'empty_3') || 
+                             nameLower.includes('prong') || 
+                             nameLower.includes('setting');
           } else {
-            isDiamondStone = child.name.toLowerCase().includes('diamond') || 
-                             child.name.toLowerCase().includes('gem');
+            isDiamondStone = matName.includes('diamond') || 
+                             nameLower.includes('diamond') || 
+                             nameLower.includes('gem');
           }
 
           if (isDiamondStone) {
             child.material = diamondMaterial;
+            diamondMeshes.push(child);
+          } else if (isSettingProng) {
+            child.material = settingMetalMaterial;
           } else {
-            // Model 1 and Model 3 use Solid Platinum 950 Silver, Model 2 uses 18K Gold
-            child.material = (config.id === 'ring_shader_pos1' || config.id === 'ring3_design') ? silverMaterial : goldMaterial;
+            child.material = whiteGoldMaterial;
           }
 
           child.castShadow = true;
@@ -256,23 +357,6 @@ export default function Ring3DCanvas() {
           meshIdx++;
         }
       });
-
-      // Attach billboarded star flare sparkle sprite to diamond crown for solitaire Model 1 & 3
-      let sparkleSprite = null;
-      if (config.id === 'ring_shader_pos1' || config.id === 'ring3_design') {
-        const sparkleTexture = createSparkleTexture();
-        const sparkleMaterial = new THREE.SpriteMaterial({
-          map: sparkleTexture,
-          blending: THREE.AdditiveBlending,
-          transparent: true,
-          opacity: 0.0,
-          depthTest: false
-        });
-        sparkleSprite = new THREE.Sprite(sparkleMaterial);
-        sparkleSprite.position.set(0, 3.4, 0.45);
-        sparkleSprite.scale.set(1.2, 1.2, 1.0);
-        rawModel.add(sparkleSprite);
-      }
 
       // 1. Set rawModel base rotation FIRST
       if (config.rawRotation) {
@@ -290,25 +374,261 @@ export default function Ring3DCanvas() {
       if (isFinite(center.x)) rawModel.position.x = -center.x;
       if (isFinite(center.y)) rawModel.position.y = -center.y;
       if (isFinite(center.z)) rawModel.position.z = -center.z;
+      rawModel.updateMatrixWorld(true);
+
+      // Apply subtle natural inward surface occlusion and diamond setting shading on metal meshes
+      rawModel.traverse((child) => {
+        if (child.isMesh && child.geometry && child.geometry.attributes.position && child.geometry.attributes.normal) {
+          if (child.material !== diamondMaterial) {
+            const pos = child.geometry.attributes.position;
+            const norm = child.geometry.attributes.normal;
+            const colors = [];
+            const normalMatrix = new THREE.Matrix3().getNormalMatrix(child.matrixWorld);
+
+            for (let i = 0; i < pos.count; i++) {
+              const v = new THREE.Vector3(pos.getX(i), pos.getY(i), pos.getZ(i));
+              child.localToWorld(v);
+              const n = new THREE.Vector3(norm.getX(i), norm.getY(i), norm.getZ(i));
+              n.applyMatrix3(normalMatrix).normalize();
+
+              // Directional spotlight alignment vector (pointing from top-right +X, +Y, +Z toward center)
+              const spotlightDir = new THREE.Vector3(0.58, 0.72, 0.38).normalize();
+              const lightAlignment = n.dot(spotlightDir); // -1 (in shadow) to +1 (facing spotlight)
+
+              // Radial alignment in YZ plane relative to the central X axis of the ring
+              const rLen = Math.sqrt(v.y * v.y + v.z * v.z);
+              let dot = 1.0;
+              if (rLen > 0.1) {
+                const ry = v.y / rLen;
+                const rz = v.z / rLen;
+                dot = ry * n.y + rz * n.z; // +1 if facing outward, -1 if facing inward towards the hole
+              }
+
+              // Inward surface darkening gradient
+              let factor = 1.0;
+              if (dot < 0.2) {
+                const t = Math.max(0, Math.min(1, (0.2 - dot) / 0.6));
+                factor = 1.0 - t * 0.40;
+              }
+
+              // Directional Top-Right Spotlight Shading:
+              // Surfaces facing top-right spotlight receive bright highlight boost (up to 1.25)
+              // Surfaces facing bottom-left / shadow side drop down to (0.42) for crisp shadow falloff!
+              if (lightAlignment > 0.1) {
+                const highlight = Math.min(1.0, (lightAlignment - 0.1) / 0.9);
+                factor *= (1.0 + highlight * 0.28);
+              } else {
+                const shadow = Math.min(1.0, (0.1 - lightAlignment) / 1.1);
+                factor *= (1.0 - shadow * 0.55);
+              }
+
+              // For Model 1 prongs near diamond crown, add subtle darkening for setting contrast
+              if (config.id === 'ring_shader_pos1' && pos.getY(i) >= 2.2) {
+                const prongDarken = Math.min(1.0, (pos.getY(i) - 2.2) / 1.0);
+                factor *= (1.0 - prongDarken * 0.25);
+              }
+
+              colors.push(factor, factor, factor);
+            }
+
+            child.geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+          }
+        }
+      });
+
+      // 3. Anchor High-End Diamond Star-Flares and Soft Glow Halos across ALL Models
+      const sparklesList = [];
+
+      // Collect calibrated sparkle/flare points for each model type
+      const flarePoints = [];
+
+      if (config.id === 'ring_shader_pos1') {
+        // Model 1 (Solitaire Gold Ring): Multi-facet crown table & bevel flare points
+        flarePoints.push(
+          // Center Solitaire Crown Table Facet (Primary Star-Flare)
+          { pos: new THREE.Vector3(0.44, 3.82, 0.0), phase: 0.0, scale: 0.78, isGlow: false, maxOpacity: 0.95 },
+          // Soft Luminous Glow Halo behind Primary Crown Flare
+          { pos: new THREE.Vector3(0.44, 3.82, 0.0), phase: 0.0, scale: 1.25, isGlow: true, maxOpacity: 0.82 },
+          // Side Upper Girdle Facet 1
+          { pos: new THREE.Vector3(-0.25, 3.78, 0.35), phase: (Math.PI * 2) / 3, scale: 0.65, isGlow: false, maxOpacity: 0.90 },
+          { pos: new THREE.Vector3(-0.25, 3.78, 0.35), phase: (Math.PI * 2) / 3, scale: 0.95, isGlow: true, maxOpacity: 0.75 },
+          // Side Upper Girdle Facet 2
+          { pos: new THREE.Vector3(-0.25, 3.78, -0.35), phase: (Math.PI * 4) / 3, scale: 0.65, isGlow: false, maxOpacity: 0.90 },
+          { pos: new THREE.Vector3(-0.25, 3.78, -0.35), phase: (Math.PI * 4) / 3, scale: 0.95, isGlow: true, maxOpacity: 0.75 },
+          // Girdle Facets 3 & 4
+          { pos: new THREE.Vector3(0.80, 3.75, 0.28), phase: Math.PI * 0.4, scale: 0.58, isGlow: false, maxOpacity: 0.85 },
+          { pos: new THREE.Vector3(0.80, 3.75, -0.28), phase: Math.PI * 1.2, scale: 0.58, isGlow: false, maxOpacity: 0.85 },
+          // Crown Corner Glints
+          { pos: new THREE.Vector3(0.22, 3.84, 0.38), phase: Math.PI * 0.5, scale: 0.55, isGlow: false, maxOpacity: 0.85 },
+          { pos: new THREE.Vector3(0.22, 3.84, -0.38), phase: Math.PI * 1.5, scale: 0.55, isGlow: false, maxOpacity: 0.85 }
+        );
+      } else if (config.id === 'vers4_men_design') {
+        // Model 2 (Eternity Band / Men's Ring): Diamonds arrayed around ring band
+        const bandRadius = 8.8;
+        const totalTopPoints = 16;
+        for (let i = 0; i < totalTopPoints; i++) {
+          const theta = (i / totalTopPoints) * Math.PI * 2;
+          const x = Math.cos(theta) * bandRadius;
+          const z = Math.sin(theta) * bandRadius;
+          
+          flarePoints.push({
+            pos: new THREE.Vector3(x, 2.85, z),
+            phase: theta,
+            scale: 2.8,
+            isGlow: false,
+            angleOnBand: theta,
+            useWorldAngle: true,
+            maxOpacity: 0.95
+          });
+
+          // Soft glow bloom halo on cardinal facet nodes
+          if (i % 3 === 0) {
+            flarePoints.push({
+              pos: new THREE.Vector3(x, 2.85, z),
+              phase: theta,
+              scale: 4.2,
+              isGlow: true,
+              angleOnBand: theta,
+              useWorldAngle: true,
+              maxOpacity: 0.80
+            });
+          }
+        }
+
+        // Bottom channel accent glints (8 points)
+        for (let j = 0; j < 8; j++) {
+          const bTheta = (j / 8) * Math.PI * 2 + Math.PI / 8;
+          const bx = Math.cos(bTheta) * bandRadius;
+          const bz = Math.sin(bTheta) * bandRadius;
+          flarePoints.push({
+            pos: new THREE.Vector3(bx, -2.85, bz),
+            phase: bTheta + Math.PI,
+            scale: 2.4,
+            isGlow: false,
+            angleOnBand: bTheta,
+            useWorldAngle: true,
+            maxOpacity: 0.85
+          });
+        }
+      } else if (config.id === 'ring3_design') {
+        // Model 3 (Three-stone / Crown Solitaire): Top solitaire crown + all 40 shank pavé diamonds
+        // 1. Center Solitaire Crown Diamond (Large primary star-flare + glow halo)
+        flarePoints.push(
+          { pos: new THREE.Vector3(0.0, 0.0, 15.48), phase: 0.0, scale: 3.2, isGlow: false, maxOpacity: 0.95 },
+          { pos: new THREE.Vector3(0.0, 0.0, 15.48), phase: 0.0, scale: 4.8, isGlow: true, maxOpacity: 0.85 },
+          { pos: new THREE.Vector3(0.85, 0.85, 15.35), phase: (Math.PI * 2) / 3, scale: 2.5, isGlow: false, maxOpacity: 0.90 },
+          { pos: new THREE.Vector3(0.85, 0.85, 15.35), phase: (Math.PI * 2) / 3, scale: 3.6, isGlow: true, maxOpacity: 0.75 },
+          { pos: new THREE.Vector3(-0.85, -0.85, 15.35), phase: (Math.PI * 4) / 3, scale: 2.5, isGlow: false, maxOpacity: 0.90 },
+          { pos: new THREE.Vector3(-0.85, -0.85, 15.35), phase: (Math.PI * 4) / 3, scale: 3.6, isGlow: true, maxOpacity: 0.75 },
+          { pos: new THREE.Vector3(-0.85, 0.85, 15.35), phase: Math.PI * 0.5, scale: 2.5, isGlow: false, maxOpacity: 0.85 },
+          { pos: new THREE.Vector3(0.85, -0.85, 15.35), phase: Math.PI * 1.5, scale: 2.5, isGlow: false, maxOpacity: 0.85 }
+        );
+
+        // 2. Automatically compute exact 3D coordinates for ALL 40 pavé diamonds along the two shank rows!
+        rawModel.updateMatrixWorld(true);
+        diamondMeshes.forEach((dMesh, dIdx) => {
+          if (dMesh.geometry) {
+            dMesh.geometry.computeBoundingBox();
+            const b = dMesh.geometry.boundingBox;
+            const center = new THREE.Vector3();
+            b.getCenter(center);
+
+            // Transform center from mesh local coordinates into rawModel space
+            const worldCenter = center.clone();
+            dMesh.localToWorld(worldCenter);
+            const localPos = worldCenter.clone();
+            rawModel.worldToLocal(localPos);
+
+            // If it's one of the 40 shank pavé diamonds (z < 14.2)
+            if (localPos.z < 14.2) {
+              // Arc angle along the ring circle for world-aligned light catching
+              const angleOnBand = Math.atan2(localPos.z, localPos.x);
+              const phase = dIdx * 0.45;
+
+              flarePoints.push({
+                pos: localPos,
+                phase: phase,
+                scale: 1.55, // Crisp, delicate sparkling starburst for individual pavé diamond
+                isGlow: false,
+                angleOnBand: angleOnBand,
+                useWorldAngle: true,
+                maxOpacity: 0.92
+              });
+
+              // Subtle glow aura on every 3rd pavé diamond for depth
+              if (dIdx % 3 === 0) {
+                flarePoints.push({
+                  pos: localPos,
+                  phase: phase,
+                  scale: 2.4,
+                  isGlow: true,
+                  angleOnBand: angleOnBand,
+                  useWorldAngle: true,
+                  maxOpacity: 0.72
+                });
+              }
+            }
+          }
+        });
+      }
+
+      const GLOBAL_SCALE_FACTOR = 1.28;
+      flarePoints.forEach((fp, idx) => {
+        const spriteMaterial = new THREE.SpriteMaterial({
+          map: fp.isGlow ? diamondGlowTexture : diamondFlareTexture,
+          blending: THREE.AdditiveBlending,
+          transparent: true,
+          opacity: 0.0,
+          depthTest: false
+        });
+        const sprite = new THREE.Sprite(spriteMaterial);
+        sprite.position.copy(fp.pos);
+
+        const finalScale = fp.scale * GLOBAL_SCALE_FACTOR;
+        sprite.scale.set(finalScale, finalScale, 1.0);
+        sprite.userData.baseScale = finalScale;
+        sprite.userData.phase = fp.phase;
+        sprite.userData.isGlow = fp.isGlow;
+        sprite.userData.maxOpacity = fp.maxOpacity || 0.95;
+        sprite.userData.angleOnBand = fp.angleOnBand;
+        sprite.userData.useWorldAngle = !!fp.useWorldAngle;
+        sprite.userData.facetIndex = idx;
+
+        rawModel.add(sprite);
+        sparklesList.push(sprite);
+      });
 
       const modelPivot = new THREE.Group();
       modelPivot.add(rawModel);
       modelPivot.position.y = config.positionY || -0.18;
-      modelPivot.rotation.x = 0.32;
-      modelPivot.rotation.z = -0.08;
 
-      // Set explicit scale directly
-      const scaleVal = config.explicitScale || 0.35;
+      if (config.isEarthSpin && config.tiltRotation) {
+        // Planetary axial tilt (28° diagonal tilt like Earth)
+        modelPivot.rotation.set(config.tiltRotation[0], config.tiltRotation[1], config.tiltRotation[2]);
+        modelPivot.userData.isEarthSpin = true;
+        modelPivot.userData.rawModel = rawModel;
+      } else {
+        modelPivot.rotation.x = 0.32;
+        modelPivot.rotation.z = -0.08;
+      }
+
+      // Set explicit scale directly with shared +12-15% global scale factor applied equally to all models
+      const scaleVal = (config.explicitScale || 0.35) * GLOBAL_SCALE_FACTOR;
       modelPivot.scale.set(scaleVal, scaleVal, scaleVal);
 
-      if (sparkleSprite) {
-        modelPivot.userData.sparkleSprite = sparkleSprite;
+      if (sparklesList.length > 0) {
+        modelPivot.userData.sparkles = sparklesList;
       }
 
       return modelPivot;
     };
 
     let currentIndex = 0;
+    const isHoveredRef = { current: false };
+    const isDraggingRef = { current: false };
+    const isTransitioningRef = { current: false };
+    let switchTimer = null;
+    let transitionTimer = null;
 
     // Show model in scene
     const displayPivot = (index) => {
@@ -325,6 +645,88 @@ export default function Ring3DCanvas() {
       }
       currentIndex = index;
       setActiveModelIndex(index);
+    };
+
+    // Cycle to next model in sequence with smooth, luxurious Zoom / Scale Transition (~1.0s total)
+    const switchToNextModel = () => {
+      if (isHoveredRef.current || isDraggingRef.current || isTransitioningRef.current) return;
+      isTransitioningRef.current = true;
+      const nextIndex = (currentIndex + 1) % modelConfigs.length;
+
+      // Phase 1: Slow, gentle zoom out & fade out current model (scale 1 -> 0.1, opacity 1 -> 0) over 0.5s (500ms)
+      setZoomStyle({
+        scale: 0.1,
+        opacity: 0,
+        transition: 'transform 0.5s ease-in-out, opacity 0.5s ease-in-out'
+      });
+
+      transitionTimer = setTimeout(() => {
+        // Phase 2: Swap 3D model at midpoint while invisible & scaled down
+        if (loadedPivots[nextIndex]) {
+          displayPivot(nextIndex);
+        } else {
+          loader.load(
+            modelConfigs[nextIndex].url,
+            (gltf) => {
+              const pivot = processGltfModel(gltf, modelConfigs[nextIndex]);
+              loadedPivots[nextIndex] = pivot;
+              displayPivot(nextIndex);
+            },
+            undefined,
+            (err) => {
+              console.warn(`Error loading model ${nextIndex}, skipping:`, err);
+              displayPivot((nextIndex + 1) % modelConfigs.length);
+            }
+          );
+        }
+
+        // Instantly position incoming model at small scale (without animation)
+        setZoomStyle({
+          scale: 0.1,
+          opacity: 0,
+          transition: 'none'
+        });
+
+        // Phase 3: Slow, gentle zoom in & fade in incoming model (scale 0.1 -> 1, opacity 0 -> 1) over 0.5s (500ms)
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            setZoomStyle({
+              scale: 1,
+              opacity: 1,
+              transition: 'transform 0.5s ease-in-out, opacity 0.5s ease-in-out'
+            });
+          });
+        });
+
+        // Complete transition lifecycle after Phase 3 finishes (500ms after midpoint)
+        transitionTimer = setTimeout(() => {
+          isTransitioningRef.current = false;
+          // Schedule next transition after full 5-second viewing pause
+          if (!isHoveredRef.current && !isDraggingRef.current) {
+            scheduleNextSwitch(5000);
+          }
+        }, 500);
+      }, 500);
+    };
+
+    // Schedule next switch with specified delay (default 5 seconds)
+    const scheduleNextSwitch = (delay = 5000) => {
+      clearSwitchTimer();
+      switchTimer = setTimeout(() => {
+        switchToNextModel();
+      }, delay);
+    };
+
+    // Clear both interval switch timer and in-flight transition timer
+    const clearSwitchTimer = () => {
+      if (switchTimer) {
+        clearTimeout(switchTimer);
+        switchTimer = null;
+      }
+      if (transitionTimer) {
+        clearTimeout(transitionTimer);
+        transitionTimer = null;
+      }
     };
 
     // Preload ALL models simultaneously on mount
@@ -344,66 +746,144 @@ export default function Ring3DCanvas() {
       );
     });
 
-    // 5-Second Interval Looper: Switches between models in a continuous loop
-    const switchInterval = setInterval(() => {
-      const nextIndex = (currentIndex + 1) % modelConfigs.length;
-      
-      if (loadedPivots[nextIndex]) {
-        displayPivot(nextIndex);
-      } else {
-        loader.load(
-          modelConfigs[nextIndex].url,
-          (gltf) => {
-            const pivot = processGltfModel(gltf, modelConfigs[nextIndex]);
-            loadedPivots[nextIndex] = pivot;
-            displayPivot(nextIndex);
-          },
-          undefined,
-          (err) => {
-            console.warn(`Error loading model ${nextIndex}, skipping:`, err);
-            displayPivot((nextIndex + 1) % modelConfigs.length);
-          }
-        );
+    // Start initial 5-second cycle loop
+    scheduleNextSwitch(5000);
+
+    // Interaction Event Handlers: Pause 5s cycling and auto-spin during hover / manual rotation
+    const handlePointerEnter = () => {
+      isHoveredRef.current = true;
+      if (controlsRef.current) {
+        controlsRef.current.autoRotate = false;
       }
-    }, 5000);
+      clearSwitchTimer();
+    };
 
-    // 8. Studio 3-Point Lighting
-    const ambientLight = new THREE.AmbientLight(0xfff5e6, 1.6);
-    scene.add(ambientLight);
+    const handlePointerLeave = () => {
+      isHoveredRef.current = false;
+      if (!isDraggingRef.current) {
+        if (controlsRef.current) {
+          controlsRef.current.autoRotate = true;
+        }
+        scheduleNextSwitch(5000);
+      }
+    };
 
-    const keyLight = new THREE.DirectionalLight(0xffecd1, 3.8);
-    keyLight.position.set(6, 8, 6);
-    scene.add(keyLight);
+    const handlePointerDown = () => {
+      isDraggingRef.current = true;
+      if (controlsRef.current) {
+        controlsRef.current.autoRotate = false;
+      }
+      clearSwitchTimer();
+    };
 
-    const fillGoldLight = new THREE.DirectionalLight(0xd4af37, 2.5);
-    fillGoldLight.position.set(-6, -3, -4);
-    scene.add(fillGoldLight);
+    const handleWindowPointerUp = () => {
+      isDraggingRef.current = false;
+      if (!isHoveredRef.current) {
+        if (controlsRef.current) {
+          controlsRef.current.autoRotate = true;
+        }
+        scheduleNextSwitch(5000);
+      }
+    };
 
-    const rimLight = new THREE.PointLight(0xffffff, 3.0, 25);
-    rimLight.position.set(0, 5, -6);
-    scene.add(rimLight);
+    container.addEventListener('pointerenter', handlePointerEnter);
+    container.addEventListener('pointerleave', handlePointerLeave);
+    container.addEventListener('pointerdown', handlePointerDown);
+    window.addEventListener('pointerup', handleWindowPointerUp);
 
-    // 9. Render Loop with Animated Diamond Star-Flare Sparkle Shimmer
+    // Also hook OrbitControls events
+    controls.addEventListener('start', () => {
+      isDraggingRef.current = true;
+      controls.autoRotate = false;
+      clearSwitchTimer();
+    });
+
+    controls.addEventListener('end', () => {
+      isDraggingRef.current = false;
+      if (!isHoveredRef.current) {
+        controls.autoRotate = true;
+        scheduleNextSwitch(5000);
+      }
+    });
+
+    // 8. Render Loop with Animated Diamond Star-Flare Sparkle Shimmer & Earth-like Spin
     let animationFrameId;
     let animTime = 0;
     const animate = () => {
       animationFrameId = requestAnimationFrame(animate);
-      animTime += 0.035;
+      animTime += 0.022; // Smooth, natural scintillating diamond fire progression
       
+      const activePivot = loadedPivots[currentIndex];
+
+      // Earth-like spin on its own tilted polar axis for Model 2 (Ultra-slow luxury showcase spin)
+      if (activePivot && activePivot.userData.isEarthSpin && activePivot.userData.rawModel) {
+        if (!isDraggingRef.current && !isHoveredRef.current) {
+          activePivot.userData.rawModel.rotation.y += 0.0035;
+        }
+        if (controlsRef.current) {
+          controlsRef.current.autoRotate = false; // Steady camera for pure Earth-like planetary spin
+        }
+      } else if (controlsRef.current && !isDraggingRef.current && !isHoveredRef.current) {
+        controlsRef.current.autoRotate = true; // Regular turntable spin for Models 1 & 3
+      }
+
       if (controlsRef.current) {
         controlsRef.current.update();
       }
 
-      // Animate star-flare sparkle pulse on active diamond crown
-      const activePivot = loadedPivots[currentIndex];
-      if (activePivot && activePivot.userData.sparkleSprite) {
-        const sprite = activePivot.userData.sparkleSprite;
-        // Periodic pulse: sine wave raised to 4th power for realistic flash sweep
-        const pulse = Math.pow(Math.max(0, Math.sin(animTime * 1.8)), 4);
-        sprite.material.opacity = pulse * 0.95;
-        const currentScale = 1.0 + pulse * 0.8;
-        sprite.scale.set(currentScale, currentScale, 1.0);
-        sprite.rotation.z = animTime * 0.25; // Gentle rotation of star-flare light streak
+      // Animate dynamic diamond star-flares and soft glow halos across all 3D models
+      if (activePivot && activePivot.userData.sparkles) {
+        const isEarthModel = !!(activePivot.userData.isEarthSpin && activePivot.userData.rawModel);
+        const currentRot = isEarthModel
+          ? activePivot.userData.rawModel.rotation.y
+          : (controlsRef.current ? controlsRef.current.getAzimuthalAngle() : 0);
+
+        activePivot.userData.sparkles.forEach((sprite) => {
+          const phase = sprite.userData.phase || 0;
+          const baseScale = sprite.userData.baseScale || 0.3;
+          const isGlow = sprite.userData.isGlow;
+          const maxOpacity = sprite.userData.maxOpacity || 0.95;
+
+          if (sprite.userData.useWorldAngle && sprite.userData.angleOnBand !== undefined) {
+            // For circular eternity band diamonds: flash brightly as each diamond rotates into the top-right light beam
+            const netAngle = currentRot + sprite.userData.angleOnBand;
+            const beamAlignment = Math.cos(netAngle - Math.PI / 4.0);
+            const microTwinkle = Math.sin(animTime * 2.8 + sprite.userData.angleOnBand * 4.0);
+            const rawVal = Math.max(0, beamAlignment * 0.75 + microTwinkle * 0.25);
+
+            if (isGlow) {
+              const pulse = Math.pow(rawVal, 1.8);
+              sprite.material.opacity = pulse * maxOpacity;
+              const currentScale = baseScale * (0.85 + pulse * 0.30);
+              sprite.scale.set(currentScale, currentScale, 1.0);
+            } else {
+              const pulse = Math.pow(rawVal, 2.2);
+              sprite.material.opacity = pulse * maxOpacity;
+              const currentScale = baseScale * (0.80 + pulse * 0.40);
+              sprite.scale.set(currentScale, currentScale, 1.0);
+              sprite.rotation.z = animTime * 0.22 + phase;
+            }
+          } else {
+            // For solitaire & pavé crown diamonds: multi-facet scintillation wave with spotlight angle catch
+            const rotBias = Math.cos(currentRot - Math.PI / 4.0);
+            const facetWave = Math.sin(currentRot * 1.6 + animTime * 2.2 + phase);
+            const lightFactor = Math.max(0, rotBias * 0.45 + 0.55);
+            const rawVal = Math.max(0, facetWave * lightFactor);
+
+            if (isGlow) {
+              const pulse = Math.pow(rawVal, 1.6);
+              sprite.material.opacity = pulse * maxOpacity;
+              const currentScale = baseScale * (0.88 + pulse * 0.28);
+              sprite.scale.set(currentScale, currentScale, 1.0);
+            } else {
+              const pulse = Math.pow(rawVal, 2.2);
+              sprite.material.opacity = pulse * maxOpacity;
+              const currentScale = baseScale * (0.82 + pulse * 0.38);
+              sprite.scale.set(currentScale, currentScale, 1.0);
+              sprite.rotation.z = animTime * 0.25 + phase;
+            }
+          }
+        });
       }
 
       renderer.render(scene, camera);
@@ -422,7 +902,11 @@ export default function Ring3DCanvas() {
     window.addEventListener('resize', handleResize);
 
     return () => {
-      clearInterval(switchInterval);
+      clearSwitchTimer();
+      container.removeEventListener('pointerenter', handlePointerEnter);
+      container.removeEventListener('pointerleave', handlePointerLeave);
+      container.removeEventListener('pointerdown', handlePointerDown);
+      window.removeEventListener('pointerup', handleWindowPointerUp);
       window.removeEventListener('resize', handleResize);
       cancelAnimationFrame(animationFrameId);
       pmremGenerator.dispose();
@@ -436,7 +920,10 @@ export default function Ring3DCanvas() {
   }, []);
 
   return (
-    <div className="relative w-full h-full flex items-center justify-center">
+    <div 
+      className="relative w-full h-full flex items-center justify-center"
+      style={{ perspective: '1200px', transformStyle: 'preserve-3d' }}
+    >
       {/* Loading Overlay */}
       {loading && (
         <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
@@ -457,9 +944,16 @@ export default function Ring3DCanvas() {
         </div>
       )}
 
-      {/* Clean Production 3D Canvas */}
+      {/* Clean Production 3D Canvas with Zoom / Scale Transition */}
       <div 
         ref={mountRef} 
+        style={{
+          transform: `scale(${zoomStyle.scale})`,
+          opacity: zoomStyle.opacity,
+          transition: zoomStyle.transition,
+          transformOrigin: 'center center',
+          willChange: 'transform, opacity'
+        }}
         className="w-full h-full flex items-center justify-center cursor-grab active:cursor-grabbing"
       />
     </div>
