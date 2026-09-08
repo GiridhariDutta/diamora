@@ -13,6 +13,7 @@ const __dirname = path.dirname(__filename);
 const credentialPath = process.env.FIREBASE_CREDENTIALS_PATH ||
   path.resolve(__dirname, '../../../cradencial/diamora-e3448-firebase-adminsdk-fbsvc-0dbbe99b14.json');
 
+const projectId = process.env.FIREBASE_PROJECT_ID || 'diamora-e3448';
 const storageBucket = process.env.STORAGE_BUCKET || 'diamora-e3448.firebasestorage.app';
 
 if (!getApps().length) {
@@ -21,12 +22,14 @@ if (!getApps().length) {
       const serviceAccount = JSON.parse(fs.readFileSync(credentialPath, 'utf8'));
       initializeApp({
         credential: cert(serviceAccount),
+        projectId: serviceAccount.project_id || projectId,
         storageBucket
       });
       console.log('✅ Firebase Admin SDK initialized using local Service Account key');
     } else {
       // Cloud Run / Google Application Default Credentials (ADC) approach (No JSON file required)
       initializeApp({
+        projectId,
         storageBucket
       });
       console.log('✅ Firebase Admin SDK initialized using Application Default Credentials (Cloud Run Mode)');
@@ -34,7 +37,7 @@ if (!getApps().length) {
   } catch (error) {
     console.warn('⚠️ Service account load error, falling back to default credentials:', error.message);
     try {
-      initializeApp({ storageBucket });
+      initializeApp({ projectId, storageBucket });
     } catch (e) {
       console.error('❌ Failed to initialize Firebase Admin SDK:', e.message);
     }
