@@ -52,6 +52,15 @@ const MAX_MEDIA_LIMIT = 10;
 
 export default function AdminInventoryPage() {
   const [products, setProducts] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [paginationInfo, setPaginationInfo] = useState({
+    currentPage: 1,
+    totalPages: 1,
+    totalItems: 0,
+    limit: 20,
+    hasNextPage: false,
+    hasPrevPage: false
+  });
   const [categories, setCategories] = useState([]);
   const [collections, setCollections] = useState([]);
   const [colors, setColors] = useState([]);
@@ -60,6 +69,7 @@ export default function AdminInventoryPage() {
 
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -119,12 +129,19 @@ export default function AdminInventoryPage() {
     return str;
   };
 
-  // Fetch Master Data & Products
-  const fetchAllData = async () => {
-    setLoading(true);
+  // Debounce search term input (300ms) and reset page to 1
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(searchTerm);
+      setCurrentPage(1);
+    }, 300);
+    return () => clearTimeout(handler);
+  }, [searchTerm]);
+
+  // Fetch Master Data (categories, collections, colors, etc.) once
+  const fetchMasterData = async () => {
     try {
-      const [prodRes, catRes, colRes, clrRes, purRes, dqRes] = await Promise.allSettled([
-        api.get('/api/products'),
+      const [catRes, colRes, clrRes, purRes, dqRes] = await Promise.allSettled([
         api.get('/api/categories'),
         api.get('/api/collections'),
         api.get('/api/colors'),
@@ -132,9 +149,6 @@ export default function AdminInventoryPage() {
         api.get('/api/diamond-qualities')
       ]);
 
-      if (prodRes.status === 'fulfilled' && prodRes.value.data?.success) {
-        setProducts(prodRes.value.data.data);
-      }
       if (catRes.status === 'fulfilled' && catRes.value.data?.success) {
         setCategories(catRes.value.data.data.filter(c => c.status === 'Active'));
       }
@@ -151,6 +165,31 @@ export default function AdminInventoryPage() {
         setDiamondQualities(dqRes.value.data.data.filter(dq => dq.status === 'Active'));
       }
     } catch (err) {
+      console.warn('Master data fetch warning:', err.message);
+    }
+  };
+
+  // Fetch Paginated Products from Server
+  const fetchProductsOnly = async (page = currentPage, search = debouncedSearch, category = categoryFilter) => {
+    setLoading(true);
+    try {
+      const activeLimit = search.trim() !== '' ? 25 : 20;
+      const res = await api.get('/api/products', {
+        params: {
+          page,
+          limit: activeLimit,
+          search,
+          category
+        }
+      });
+
+      if (res.data?.success) {
+        setProducts(res.data.data || []);
+        if (res.data.pagination) {
+          setPaginationInfo(res.data.pagination);
+        }
+      }
+    } catch (err) {
       console.warn('Inventory fetch warning:', err.message);
     } finally {
       setLoading(false);
@@ -158,8 +197,17 @@ export default function AdminInventoryPage() {
   };
 
   useEffect(() => {
-    fetchAllData();
+    fetchMasterData();
   }, []);
+
+  useEffect(() => {
+    fetchProductsOnly(currentPage, debouncedSearch, categoryFilter);
+  }, [currentPage, debouncedSearch, categoryFilter]);
+
+  const fetchAllData = () => {
+    fetchMasterData();
+    fetchProductsOnly(currentPage, debouncedSearch, categoryFilter);
+  };
 
   // Synchronize ContentEditable canvas with descriptionHtml when modal opens
   useEffect(() => {
@@ -769,14 +817,14 @@ export default function AdminInventoryPage() {
                     </td>
                   </tr>
                 ))
-              ) : filteredProducts.length === 0 ? (
+              ) : products.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="py-8 text-center text-slate-500 text-xs font-medium">
-                    No products found. Click "Add Product" to create your first diamond jewellery catalog item.
+                    No products found matching query. Click "Add Product" to create your first diamond jewellery catalog item.
                   </td>
                 </tr>
               ) : (
-                filteredProducts.map((p) => (
+                products.map((p) => (
                   <tr key={p.id} className="bg-white hover:bg-amber-50/40 transition-colors">
                     
                     {/* Product Info */}
@@ -828,43 +876,50 @@ export default function AdminInventoryPage() {
 
                     {/* Diamond Specs */}
                     <td className="py-2.5 px-3 text-right">
-                      <span className="font-mono font-semibold text-slate-900 text-xs block">
-                        {p.totalDiamondCarats ? `${p.totalDiamondCarats} Ct` : '0 Ct'}
-                      </span>
-                      <span className="text-[10px] text-slate-500 block">
-                        {Array.isArray(p.diamonds) && p.diamonds.length > 1
-                          ? `${p.diamonds.length} Shapes (${p.numberOfDiamonds || 0} Pcs)`
-                          : `${p.diamondQualityTitle || 'Standard'} (${p.numberOfDiamonds || 0} Pcs)`
-                        }
-                      </span>
+                      {p.diamonds && p.diamonds.length > 0 ? (
+                        <div className="text-[11px]">
+                          <span className="font-semibold text-slate-900 font-mono block">
+                            {p.diamonds.reduce((acc, curr) => acc + (Number(curr.totalDiamondCarats) || 0), 0).toFixed(2)} Carats
+                          </span>
+                          <span className="text-[9.5px] text-slate-500 block font-light">
+                            {p.diamonds.reduce((acc, curr) => acc + (Number(curr.numberOfDiamonds) || 0), 0)} Pcs ({p.diamonds.map(d => d.shape || 'Round').join(', ')})
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="text-[11px]">
+                          <span className="font-semibold text-slate-900 font-mono block">
+                            {p.totalDiamondCarats ? `${p.totalDiamondCarats} Carats` : '0.00 Carats'}
+                          </span>
+                          <span className="text-[9.5px] text-slate-500 block font-light">
+                            {p.numberOfDiamonds ? `${p.numberOfDiamonds} Pcs` : '0 Pcs'}
+                          </span>
+                        </div>
+                      )}
                     </td>
 
                     {/* Grand Total */}
-                    <td className="py-2.5 px-3 text-right font-mono font-semibold text-amber-950 text-xs">
+                    <td className="py-2.5 px-3 text-right font-mono font-bold text-amber-900 text-xs">
                       ₹{Number(p.grandTotal || p.computedGoldPrice || 0).toLocaleString('en-IN')}
                     </td>
 
                     {/* Status */}
                     <td className="py-2.5 px-3">
-                      <span className={`px-2 py-0.5 rounded-[3px] text-[8.5px] font-semibold uppercase inline-flex items-center gap-1 ${
-                        p.status === 'Active'
-                          ? 'bg-emerald-100 text-emerald-900 border border-emerald-300'
-                          : 'bg-rose-100 text-rose-900 border border-rose-300'
+                      <span className={`inline-block px-2 py-0.5 rounded-[3px] text-[9.5px] font-bold uppercase tracking-wider ${
+                        p.status === 'Active' ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-slate-100 text-slate-600 border border-slate-300'
                       }`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${p.status === 'Active' ? 'bg-emerald-600' : 'bg-rose-600'}`} />
                         {p.status || 'Active'}
                       </span>
                     </td>
 
-                    {/* Actions: VIEW, EDIT, DELETE */}
+                    {/* Actions */}
                     <td className="py-2.5 px-3 text-right">
                       <div className="flex items-center justify-end gap-1">
                         
-                        {/* View Details Icon */}
+                        {/* View Icon */}
                         <button
-                          onClick={() => handleOpenViewModal(p)}
+                          onClick={() => { setViewingProduct(p); setIsViewModalOpen(true); setActiveMediaIndex(0); }}
                           className="p-1 bg-slate-100 hover:bg-slate-200 border border-slate-300 hover:border-amber-500 text-slate-700 hover:text-amber-800 rounded-[4px] transition-all"
-                          title="View Product Details"
+                          title="View Details"
                         >
                           <Eye className="w-3.5 h-3.5" />
                         </button>
@@ -896,6 +951,53 @@ export default function AdminInventoryPage() {
             </tbody>
           </table>
         </div>
+
+        {/* SERVER-SIDE PAGINATION CONTROLS BAR */}
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mt-3 pt-3 border-t border-slate-200 text-xs text-slate-600 font-open-sans">
+          <div className="flex items-center gap-2">
+            <span className="font-semibold text-slate-800">
+              Showing {paginationInfo.totalItems > 0 ? (paginationInfo.currentPage - 1) * paginationInfo.limit + 1 : 0}–
+              {Math.min(paginationInfo.currentPage * paginationInfo.limit, paginationInfo.totalItems)} of {paginationInfo.totalItems} products
+            </span>
+            <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-900 border border-amber-300">
+              {debouncedSearch.trim() !== '' ? '25 Items / Page (Search Mode)' : '20 Items / Page'}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+              disabled={!paginationInfo.hasPrevPage || loading}
+              className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 border border-slate-300 disabled:opacity-40 disabled:hover:bg-slate-100 rounded-[4px] text-slate-800 font-semibold text-xs transition-colors"
+            >
+              Previous
+            </button>
+
+            {Array.from({ length: paginationInfo.totalPages }, (_, i) => i + 1).map(page => (
+              <button
+                key={`page-btn-${page}`}
+                onClick={() => setCurrentPage(page)}
+                disabled={loading}
+                className={`px-2.5 py-1 rounded-[4px] font-semibold text-xs transition-colors ${
+                  page === paginationInfo.currentPage
+                    ? 'bg-amber-700 text-white font-bold shadow-2xs'
+                    : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200'
+                }`}
+              >
+                {page}
+              </button>
+            ))}
+
+            <button
+              onClick={() => setCurrentPage(prev => Math.min(paginationInfo.totalPages, prev + 1))}
+              disabled={!paginationInfo.hasNextPage || loading}
+              className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 border border-slate-300 disabled:opacity-40 disabled:hover:bg-slate-100 rounded-[4px] text-slate-800 font-semibold text-xs transition-colors"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+
       </div>
 
       {/* MODAL 1 & 2: ADD / EDIT PRODUCT MODAL */}

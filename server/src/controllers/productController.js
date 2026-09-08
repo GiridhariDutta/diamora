@@ -3,10 +3,12 @@ import { ProductService } from '../services/productService.js';
 export class ProductController {
   static async getAll(req, res) {
     try {
-      const products = await ProductService.getAllProducts();
+      const { page, limit, search, category, collection, color, purity, price } = req.query;
+      const result = await ProductService.getAllProducts({ page, limit, search, category, collection, color, purity, price });
       return res.status(200).json({
         success: true,
-        data: products
+        data: result.products,
+        pagination: result.pagination
       });
     } catch (error) {
       console.error('Error in ProductController.getAll:', error);
