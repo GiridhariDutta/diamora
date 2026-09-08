@@ -32,7 +32,7 @@ export default function Footer({ onOpenTickets }) {
               <img 
                 src="/diamora_logo.png" 
                 alt="Diamora Logo" 
-                className="h-20 sm:h-24 md:h-28 w-auto object-contain" 
+                className="h-14 sm:h-16 md:h-20 w-auto object-contain" 
                 onError={(e) => {
                   e.target.style.display = 'none';
                   e.target.nextSibling.style.display = 'flex';

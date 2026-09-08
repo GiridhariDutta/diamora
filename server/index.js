@@ -68,8 +68,9 @@ app.get('*', (req, res) => {
 });
 
 // Start Server
-app.listen(PORT, '0.0.0.0', () => {
+const HOST = process.env.HOST || '0.0.0.0';
+app.listen(PORT, HOST, () => {
   console.log(`=================================`);
-  console.log(`🚀 Diamora Unified Server running on http://0.0.0.0:${PORT}`);
+  console.log(`🚀 Diamora Server running on http://localhost:${PORT}`);
   console.log(`=================================`);
 });

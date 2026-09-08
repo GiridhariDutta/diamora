@@ -168,11 +168,7 @@ export default function Navbar({
 
         {/* CENTER LOGO */}
         <div
-          className={`absolute left-1/2 -translate-x-1/2 z-30 pointer-events-auto transition-all duration-300 ease-in-out ${
-            isCompact
-              ? 'top-[calc(50%+9px)] -translate-y-1/2'
-              : 'top-1/2 -translate-y-[30%]'
-          }`}
+          className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 z-30 pointer-events-auto transition-all duration-300 ease-in-out"
           onMouseEnter={handleCloseShop}
         >
           <a
@@ -185,8 +181,8 @@ export default function Navbar({
               alt="Diamora Logo"
               className={`w-auto object-contain transition-all duration-300 ease-in-out filter drop-shadow-[0_4px_12px_rgba(0,0,0,0.5)] ${
                 isCompact
-                  ? 'h-16 sm:h-20 md:h-24 max-w-[280px] sm:max-w-[360px]'
-                  : 'h-[107px] sm:h-[123px] md:h-[139px] max-w-[380px] sm:max-w-[460px]'
+                  ? 'h-10 sm:h-12 md:h-14 max-w-[160px]'
+                  : 'h-14 sm:h-16 md:h-20 max-w-[220px]'
               }`}
               onError={(e) => {
                 e.target.style.display = 'none';
