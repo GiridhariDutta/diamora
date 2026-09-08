@@ -235,8 +235,8 @@ export default function ShopPage() {
 
       <div className="w-[95vw] max-w-[1700px] mx-auto px-4 sm:px-6 pt-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
 
-        {/* LEFT FILTER SIDEBAR */}
-        <aside className={`lg:col-span-3 sticky top-24 self-start ${mobileFilterOpen ? 'block' : 'hidden lg:block'}`}>
+        {/* LEFT FILTER SIDEBAR (STRICTLY STICKY WITHOUT INTERNAL SCROLLBAR) */}
+        <aside className={`lg:col-span-3 sticky top-28 self-start z-30 ${mobileFilterOpen ? 'block' : 'hidden lg:block'}`}>
           <div className="bg-[#16181F]/90 border border-white/15 rounded-lg p-4 sm:p-5 space-y-4 text-[#F5F5F0] backdrop-blur-3xl shadow-2xl">
             
             <div className="flex items-center justify-between border-b border-white/10 pb-3">
@@ -247,9 +247,9 @@ export default function ShopPage() {
               {(selectedCategory || selectedCollection || selectedColor || selectedPurity || selectedPriceRange) && (
                 <button
                   onClick={clearAllFilters}
-                  className="text-[10px] text-[#E0B094] hover:text-white underline uppercase tracking-wider font-medium"
+                  className="text-[10px] text-[#E0B094] hover:text-white underline uppercase tracking-wider font-medium cursor-pointer"
                 >
-                  Reset
+                  Reset All
                 </button>
               )}
             </div>
@@ -505,7 +505,12 @@ export default function ShopPage() {
             <>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8">
                 {products.map((product, index) => {
-                  const imageUrl = product.media && product.media.length > 0 ? product.media[0].url : 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=800&q=80';
+                  const primaryImage = product.media && product.media.length > 0 
+                    ? product.media[0].url 
+                    : 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=800&q=80';
+                  const secondaryImage = product.media && product.media.length > 1 
+                    ? product.media[1].url 
+                    : null;
                   const formattedPrice = Number(product.grandTotal || product.computedGoldPrice || 0).toLocaleString('en-IN');
 
                   return (
@@ -513,20 +518,33 @@ export default function ShopPage() {
                       key={`${product.id}-${index}`} 
                       className="group bg-[#16181F]/80 backdrop-blur-2xl border border-white/15 hover:border-[#E0B094]/60 rounded-lg overflow-hidden flex flex-col justify-between transition-all duration-500 ease-out hover:shadow-[0_0_30px_rgba(224,176,148,0.2)] animate-fadeInUp"
                     >
-                      {/* PRODUCT IMAGE */}
+                      {/* PRODUCT IMAGE CONTAINER WITH DUAL-IMAGE CROSS-FADE */}
                       <div className="aspect-square bg-slate-950/60 backdrop-blur-md overflow-hidden relative flex items-center justify-center p-4">
+                        {/* Primary Image */}
                         <img 
-                          src={imageUrl} 
+                          src={primaryImage} 
                           alt={product.title} 
-                          className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-500 ease-out filter drop-shadow-[0_4px_10px_rgba(0,0,0,0.6)]"
+                          className={`w-full h-full object-contain filter drop-shadow-[0_4px_10px_rgba(0,0,0,0.6)] transition-all duration-500 ease-out ${
+                            secondaryImage ? 'group-hover:opacity-0 group-hover:scale-105' : 'group-hover:scale-105'
+                          }`}
                           loading="lazy"
                         />
+
+                        {/* Secondary Cover Hover Image */}
+                        {secondaryImage && (
+                          <img 
+                            src={secondaryImage} 
+                            alt={`${product.title} Cover`} 
+                            className="absolute inset-0 w-full h-full object-contain p-4 filter drop-shadow-[0_4px_10px_rgba(0,0,0,0.6)] opacity-0 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500 ease-out"
+                            loading="lazy"
+                          />
+                        )}
                         
                         {/* QUICK ACTION OVERLAY */}
-                        <div className="absolute inset-0 bg-[#0C0D10]/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center p-4">
+                        <div className="absolute inset-0 bg-[#0C0D10]/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center p-4 z-10">
                           <button
                             onClick={onOpenShop}
-                            className="px-4 py-2 bg-[#E0B094] text-[#0C0D10] text-[10px] font-extrabold tracking-widest uppercase rounded-md shadow-xl hover:bg-[#d5a082] transition-colors flex items-center gap-1.5"
+                            className="px-4 py-2 bg-[#E0B094] text-[#0C0D10] text-[10px] font-extrabold tracking-widest uppercase rounded-md shadow-xl hover:bg-[#d5a082] transition-colors flex items-center gap-1.5 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300"
                           >
                             <ShoppingBag className="w-3.5 h-3.5" />
                             <span>Inquire / Shop</span>

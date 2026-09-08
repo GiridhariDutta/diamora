@@ -24,7 +24,10 @@ import {
   CheckCircle2,
   FileText,
   Eye,
-  Gem
+  Gem,
+  ArrowLeft,
+  ArrowRight,
+  Star
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 import api from '../../api/axios';
@@ -488,6 +491,42 @@ export default function AdminInventoryPage() {
       ...prev,
       media: prev.media.filter((_, idx) => idx !== indexToRemove)
     }));
+  };
+
+  // Set selected media item as Primary Thumbnail (Move to Index 0)
+  const handleMakePrimaryMedia = (indexToPrimary) => {
+    if (indexToPrimary === 0) return;
+    setFormData(prev => {
+      const mediaCopy = [...(prev.media || [])];
+      const [item] = mediaCopy.splice(indexToPrimary, 1);
+      mediaCopy.unshift(item);
+      return { ...prev, media: mediaCopy };
+    });
+  };
+
+  // Set selected media item as Secondary Cover (Move to Index 1)
+  const handleMakeSecondaryMedia = (indexToSecondary) => {
+    if (indexToSecondary === 1) return;
+    setFormData(prev => {
+      const mediaCopy = [...(prev.media || [])];
+      if (mediaCopy.length < 2) return prev;
+      const [item] = mediaCopy.splice(indexToSecondary, 1);
+      mediaCopy.splice(1, 0, item);
+      return { ...prev, media: mediaCopy };
+    });
+  };
+
+  // Move Media Left / Right in array
+  const handleMoveMedia = (index, direction) => {
+    setFormData(prev => {
+      const mediaCopy = [...(prev.media || [])];
+      const targetIndex = direction === 'left' ? index - 1 : index + 1;
+      if (targetIndex < 0 || targetIndex >= mediaCopy.length) return prev;
+      const temp = mediaCopy[index];
+      mediaCopy[index] = mediaCopy[targetIndex];
+      mediaCopy[targetIndex] = temp;
+      return { ...prev, media: mediaCopy };
+    });
   };
 
   // Open View Details Modal Card
@@ -1494,34 +1533,125 @@ export default function AdminInventoryPage() {
                   </label>
                 </div>
 
-                {/* Media Thumbnails Grid directly below upload button with Delete action */}
+                {/* Media Thumbnails Grid directly below upload button with Delete & Reorder actions */}
                 {formData.media && formData.media.length > 0 && (
-                  <div className="space-y-1.5 pt-1">
-                    <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider block">
-                      Uploaded Photos & Videos ({formData.media.length}/{MAX_MEDIA_LIMIT})
-                    </span>
+                  <div className="space-y-2 pt-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider block">
+                        Uploaded Photos & Videos ({formData.media.length}/{MAX_MEDIA_LIMIT})
+                      </span>
+                      <span className="text-[10px] text-slate-500 font-medium italic">
+                        #1 = Primary Thumbnail, #2 = Hover Cover Image
+                      </span>
+                    </div>
 
-                    <div className="grid grid-cols-4 sm:grid-cols-6 gap-2">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
                       {formData.media.map((item, idx) => (
-                        <div key={`media-${idx}`} className="relative group aspect-square bg-slate-950 rounded-[4px] overflow-hidden border border-slate-300 shadow-2xs">
-                          {item.type === 'video' ? (
-                            <div className="w-full h-full flex flex-col items-center justify-center bg-slate-900 text-amber-400 p-1">
-                              <Video className="w-5 h-5 mb-1" />
-                              <span className="text-[8.5px] uppercase font-semibold text-slate-300">Video</span>
-                            </div>
-                          ) : (
-                            <img src={item.url} alt={`Media ${idx + 1}`} className="w-full h-full object-cover" />
-                          )}
+                        <div 
+                          key={`media-${idx}`} 
+                          className={`relative flex flex-col bg-white rounded-[4px] overflow-hidden border shadow-2xs transition-all ${
+                            idx === 0 
+                              ? 'border-amber-500 ring-2 ring-amber-500/20' 
+                              : idx === 1 
+                                ? 'border-amber-400/80' 
+                                : 'border-slate-200'
+                          }`}
+                        >
+                          {/* Image / Video Container */}
+                          <div className="relative aspect-square bg-slate-950 overflow-hidden group">
+                            {item.type === 'video' ? (
+                              <div className="w-full h-full flex flex-col items-center justify-center bg-slate-900 text-amber-400 p-2">
+                                <Video className="w-6 h-6 mb-1" />
+                                <span className="text-[9px] uppercase font-semibold text-slate-300">Video</span>
+                              </div>
+                            ) : (
+                              <img src={item.url} alt={`Media ${idx + 1}`} className="w-full h-full object-cover" />
+                            )}
 
-                          {/* Delete Media Button */}
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveMedia(idx)}
-                            className="absolute top-1 right-1 p-1 bg-rose-600 hover:bg-rose-700 text-white rounded-full shadow-md transition-all opacity-90 hover:opacity-100"
-                            title="Delete this media file"
-                          >
-                            <Trash2 className="w-3 h-3" />
-                          </button>
+                            {/* Status Badges */}
+                            <div className="absolute top-1.5 left-1.5 z-10 flex flex-col gap-1">
+                              {idx === 0 && (
+                                <span className="bg-amber-500 text-slate-950 font-extrabold text-[9px] px-1.5 py-0.5 rounded-[2px] shadow-sm uppercase tracking-wider flex items-center gap-1">
+                                  <Star className="w-2.5 h-2.5 fill-slate-950" />
+                                  Primary
+                                </span>
+                              )}
+                              {idx === 1 && (
+                                <span className="bg-slate-950/90 text-amber-400 border border-amber-500/60 font-bold text-[9px] px-1.5 py-0.5 rounded-[2px] shadow-sm uppercase tracking-wider">
+                                  Hover Cover
+                                </span>
+                              )}
+                              {idx > 1 && (
+                                <span className="bg-slate-950/70 text-slate-300 text-[9px] font-mono px-1.5 py-0.5 rounded-[2px]">
+                                  #{idx + 1}
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Delete Media Button */}
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveMedia(idx)}
+                              className="absolute top-1.5 right-1.5 z-10 p-1 bg-rose-600/90 hover:bg-rose-700 text-white rounded-[3px] shadow-md transition-all"
+                              title="Delete media"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          </div>
+
+                          {/* Control Buttons Strip */}
+                          <div className="p-1.5 bg-slate-50 border-t border-slate-200 flex flex-col gap-1">
+                            {/* Quick Position Assignment */}
+                            <div className="flex items-center gap-1">
+                              <button
+                                type="button"
+                                disabled={idx === 0}
+                                onClick={() => handleMakePrimaryMedia(idx)}
+                                className={`flex-1 py-1 text-[9px] font-semibold uppercase tracking-wider rounded-[3px] transition-colors ${
+                                  idx === 0 
+                                    ? 'bg-amber-100 text-amber-900 cursor-default border border-amber-300/60' 
+                                    : 'bg-white hover:bg-amber-50 text-slate-700 hover:text-amber-800 border border-slate-300'
+                                }`}
+                              >
+                                {idx === 0 ? 'Primary' : 'Set Primary'}
+                              </button>
+                              
+                              <button
+                                type="button"
+                                disabled={idx === 1 || formData.media.length < 2}
+                                onClick={() => handleMakeSecondaryMedia(idx)}
+                                className={`flex-1 py-1 text-[9px] font-semibold uppercase tracking-wider rounded-[3px] transition-colors ${
+                                  idx === 1 
+                                    ? 'bg-amber-100 text-amber-900 cursor-default border border-amber-300/60' 
+                                    : 'bg-white hover:bg-amber-50 text-slate-700 hover:text-amber-800 border border-slate-300 disabled:opacity-40'
+                                }`}
+                              >
+                                {idx === 1 ? 'Cover' : 'Set Cover'}
+                              </button>
+                            </div>
+
+                            {/* Reorder Arrows */}
+                            <div className="flex items-center justify-between gap-1 pt-0.5">
+                              <button
+                                type="button"
+                                disabled={idx === 0}
+                                onClick={() => handleMoveMedia(idx, 'left')}
+                                className="flex-1 py-0.5 flex items-center justify-center bg-white hover:bg-slate-100 border border-slate-300 rounded-[3px] text-slate-700 disabled:opacity-30"
+                                title="Move left"
+                              >
+                                <ArrowLeft className="w-3 h-3" />
+                              </button>
+                              <button
+                                type="button"
+                                disabled={idx === formData.media.length - 1}
+                                onClick={() => handleMoveMedia(idx, 'right')}
+                                className="flex-1 py-0.5 flex items-center justify-center bg-white hover:bg-slate-100 border border-slate-300 rounded-[3px] text-slate-700 disabled:opacity-30"
+                                title="Move right"
+                              >
+                                <ArrowRight className="w-3 h-3" />
+                              </button>
+                            </div>
+                          </div>
                         </div>
                       ))}
                     </div>
