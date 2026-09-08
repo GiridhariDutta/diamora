@@ -1,7 +1,13 @@
+# Exclude raw frontend source folder (compiled static bundle lives in server/public)
+/client/
+
 # Exclude local dependencies
 node_modules/
+/client/node_modules/
+/server/node_modules/
 
 # Exclude local credentials and secrets
+/cradencial/
 .env
 
 # Exclude developer environment, git configs and Cloud Build manifests
