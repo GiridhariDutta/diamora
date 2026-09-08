@@ -1,10 +1,12 @@
 steps:
-  # 1. Build the image using Google Cloud Buildpacks (No Dockerfile needed)
+  # 1. Build the image using Google Cloud Buildpacks (targeting server directory)
   - name: 'gcr.io/k8s-skaffold/pack'
     entrypoint: 'pack'
     args:
       - 'build'
       - '$_DEPLOY_REGION-docker.pkg.dev/$PROJECT_ID/$_AR_REPOSITORY/$_SERVICE_NAME'
+      - '--path'
+      - 'server'
       - '--builder'
       - 'gcr.io/buildpacks/builder:v1'
       - '--publish'
