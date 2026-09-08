@@ -4,6 +4,8 @@ import UserLayout from '../layouts/UserLayout';
 import AdminLayout from '../layouts/AdminLayout';
 import AdminRoute from '../components/AdminRoute';
 import HomePage from '../pages/HomePage';
+import ShopPage from '../pages/ShopPage';
+import AboutPage from '../pages/AboutPage';
 import AdminOverviewPage from '../pages/admin/AdminOverviewPage';
 import AdminUsersPage from '../pages/admin/AdminUsersPage';
 import AdminCustomersPage from '../pages/admin/AdminCustomersPage';
@@ -23,9 +25,15 @@ export const router = createBrowserRouter([
     element: <UserLayout />,
     children: [
       { index: true, element: <HomePage /> },
+      { path: 'shop', element: <ShopPage /> },
+      { path: 'about', element: <AboutPage pageKey="about_us" /> },
+      { path: 'about-us', element: <AboutPage pageKey="about_us" /> },
+      { path: 'privacy-policy', element: <AboutPage pageKey="privacy_policy" /> },
+      { path: 'terms-conditions', element: <AboutPage pageKey="terms_conditions" /> },
       { path: '*', element: <Navigate to="/" replace /> }
     ]
   },
+
   {
     path: '/admin',
     element: (

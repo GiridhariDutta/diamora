@@ -1,5 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { Search, User, ShoppingBag, Menu, X } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { Search, User, ShoppingBag, Menu, X, Award, ShieldCheck, Sparkles, Gem } from 'lucide-react';
+import api from '../api/axios';
 
 export default function Navbar({
   onOpenShop,
@@ -9,22 +11,46 @@ export default function Navbar({
   onLogout,
   onNavigateToAdmin
 }) {
+  const navigate = useNavigate();
+  const location = useLocation();
   const [scrolled, setScrolled] = useState(false);
   const [activeTab, setActiveTab] = useState('HOME');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [cartCount, setCartCount] = useState(0);
 
+  // Mega Menu Hover State
+  const [isShopHovered, setIsShopHovered] = useState(false);
+  const hoverTimerRef = useRef(null);
+
+  const isHomePage = location.pathname === '/';
+  const isCompact = scrolled || isShopHovered || !isHomePage;
+
+  // Dynamic Categories & Collections from Backend API
+  const [categories, setCategories] = useState([]);
+  const [collections, setCollections] = useState([]);
+  const [loadingNav, setLoadingNav] = useState(true);
+
   const leftNavItems = [
-    { id: 'HOME', label: 'HOME', href: '#home' },
-    { id: 'COLLECTION', label: 'COLLECTION', href: '#collection' },
-    { id: 'ABOUT US', label: 'ABOUT US', href: '#about' },
+    { id: 'HOME', label: 'HOME', href: '/', isRoute: true },
+    { id: 'COLLECTION', label: 'COLLECTION', href: '#collection', isRoute: false },
+    { id: 'ABOUT US', label: 'ABOUT US', href: '/about', isRoute: true },
   ];
 
   const rightNavItems = [
-    { id: 'SHOP', label: 'SHOP', href: '#shop' },
-    { id: 'WHY DIAMORA', label: 'WHY DIAMORA', href: '#whydiamora' },
-    { id: 'CONTACT', label: 'CONTACT', href: '#contact' },
+    { id: 'SHOP', label: 'SHOP', href: '/shop', isRoute: true },
+    { id: 'WHY DIAMORA', label: 'WHY DIAMORA', href: '#whydiamora', isRoute: false },
+    { id: 'CONTACT', label: 'CONTACT', href: '#contact', isRoute: false },
   ];
+
+  useEffect(() => {
+    if (location.pathname === '/') {
+      setActiveTab('HOME');
+    } else if (location.pathname.startsWith('/shop')) {
+      setActiveTab('SHOP');
+    } else if (location.pathname.startsWith('/about')) {
+      setActiveTab('ABOUT US');
+    }
+  }, [location.pathname]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -34,25 +60,86 @@ export default function Navbar({
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const handleNavClick = (tabId, href) => {
-    setActiveTab(tabId);
-    setMobileMenuOpen(false);
-    if (tabId === 'SHOP' && onOpenShop) {
-      onOpenShop();
-      return;
-    }
-    const element = document.querySelector(href);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
+  useEffect(() => {
+    fetchDynamicNavData();
+  }, []);
+
+  const fetchDynamicNavData = async () => {
+    setLoadingNav(true);
+    try {
+      const [catRes, colRes] = await Promise.allSettled([
+        api.get('/api/categories'),
+        api.get('/api/collections')
+      ]);
+
+      if (catRes.status === 'fulfilled' && catRes.value.data?.success) {
+        setCategories(catRes.value.data.data || []);
+      }
+      if (colRes.status === 'fulfilled' && colRes.value.data?.success) {
+        setCollections(colRes.value.data.data || []);
+      }
+    } catch (err) {
+      console.error('Failed to fetch dynamic nav data:', err);
+    } finally {
+      setLoadingNav(false);
     }
   };
 
+  const handleNavClick = (item) => {
+    setActiveTab(item.id);
+    setMobileMenuOpen(false);
+    setIsShopHovered(false);
+
+    if (item.isRoute) {
+      navigate(item.href);
+      return;
+    }
+
+    const element = document.querySelector(item.href);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    } else {
+      navigate('/');
+    }
+  };
+
+  const handleMouseEnterShop = () => {
+    if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
+    setIsShopHovered(true);
+  };
+
+  const handleMouseLeaveShop = () => {
+    if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
+    hoverTimerRef.current = setTimeout(() => {
+      setIsShopHovered(false);
+    }, 180);
+  };
+
+  const handleCloseShop = () => {
+    if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
+    setIsShopHovered(false);
+  };
+
+  const handleCategoryClick = (filterType, value) => {
+    setIsShopHovered(false);
+    setMobileMenuOpen(false);
+    if (filterType && value) {
+      navigate(`/shop?${filterType}=${encodeURIComponent(value)}`);
+    } else {
+      navigate('/shop');
+    }
+  };
+
+  // Removed fake category arrays. Data is 100% loaded from backend APIs.
+
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-50 font-poppins transition-all duration-300 ${scrolled
+      className={`fixed top-0 left-0 right-0 z-50 font-poppins transition-all duration-300 ${
+        isCompact
           ? 'bg-[#0C0D10]/95 backdrop-blur-md border-b border-white/10 shadow-2xl py-2 sm:py-2.5'
           : 'bg-transparent py-3 sm:py-4'
-        }`}
+      }`}
+      onMouseLeave={handleMouseLeaveShop}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-8 flex items-center justify-between relative h-12">
 
@@ -64,9 +151,11 @@ export default function Navbar({
               <a
                 key={item.id}
                 href={item.href}
-                onClick={(e) => { e.preventDefault(); handleNavClick(item.id, item.href); }}
-                className={`relative py-1 text-xs font-medium tracking-[0.2em] transition-colors duration-300 uppercase ${isActive ? 'text-[#E0B094]' : 'text-[#C5C8D0] hover:text-[#E0B094]'
-                  }`}
+                onMouseEnter={handleCloseShop}
+                onClick={(e) => { e.preventDefault(); handleNavClick(item); }}
+                className={`relative py-1 text-xs font-medium tracking-[0.2em] transition-colors duration-300 uppercase ${
+                  isActive ? 'text-[#E0B094]' : 'text-[#C5C8D0] hover:text-[#E0B094]'
+                }`}
               >
                 {item.label}
                 {isActive && (
@@ -77,23 +166,28 @@ export default function Navbar({
           })}
         </nav>
 
-        {/* CENTER LOGO (INDEPENDENT ABSOLUTE POSITIONING WITH SMOOTH SCROLL SCALE) */}
-        <div className={`absolute left-1/2 -translate-x-1/2 z-30 pointer-events-auto transition-all duration-300 ease-in-out ${scrolled
-            ? 'top-[calc(50%+9px)] -translate-y-1/2'
-            : 'top-1/2 -translate-y-[30%]'
-          }`}>
+        {/* CENTER LOGO */}
+        <div
+          className={`absolute left-1/2 -translate-x-1/2 z-30 pointer-events-auto transition-all duration-300 ease-in-out ${
+            isCompact
+              ? 'top-[calc(50%+9px)] -translate-y-1/2'
+              : 'top-1/2 -translate-y-[30%]'
+          }`}
+          onMouseEnter={handleCloseShop}
+        >
           <a
-            href="#home"
-            onClick={(e) => { e.preventDefault(); handleNavClick('HOME', '#home'); }}
+            href="/"
+            onClick={(e) => { e.preventDefault(); navigate('/'); }}
             className="flex items-center justify-center group"
           >
             <img
               src="/diamora_logo.png"
               alt="Diamora Logo"
-              className={`w-auto object-contain transition-all duration-300 ease-in-out filter drop-shadow-[0_4px_12px_rgba(0,0,0,0.5)] ${scrolled
+              className={`w-auto object-contain transition-all duration-300 ease-in-out filter drop-shadow-[0_4px_12px_rgba(0,0,0,0.5)] ${
+                isCompact
                   ? 'h-16 sm:h-20 md:h-24 max-w-[280px] sm:max-w-[360px]'
                   : 'h-[107px] sm:h-[123px] md:h-[139px] max-w-[380px] sm:max-w-[460px]'
-                }`}
+              }`}
               onError={(e) => {
                 e.target.style.display = 'none';
                 e.target.nextSibling.style.display = 'block';
@@ -111,35 +205,43 @@ export default function Navbar({
           <nav className="flex items-center space-x-6 lg:space-x-8">
             {rightNavItems.map((item) => {
               const isActive = activeTab === item.id;
+              const isShop = item.id === 'SHOP';
+              
               return (
-                <a
+                <div
                   key={item.id}
-                  href={item.href}
-                  onClick={(e) => { e.preventDefault(); handleNavClick(item.id, item.href); }}
-                  className={`relative py-1 text-xs font-medium tracking-[0.2em] transition-colors duration-300 uppercase ${isActive ? 'text-[#E0B094]' : 'text-[#C5C8D0] hover:text-[#E0B094]'
-                    }`}
+                  className="relative py-1"
+                  onMouseEnter={isShop ? handleMouseEnterShop : handleCloseShop}
+                  onMouseLeave={isShop ? handleMouseLeaveShop : undefined}
                 >
-                  {item.label}
-                  {isActive && (
+                  <a
+                    href={item.href}
+                    onClick={(e) => { e.preventDefault(); handleNavClick(item); }}
+                    className={`text-xs font-medium tracking-[0.2em] transition-colors duration-300 uppercase block ${
+                      isActive || (isShop && isShopHovered) ? 'text-[#E0B094]' : 'text-[#C5C8D0] hover:text-[#E0B094]'
+                    }`}
+                  >
+                    {item.label}
+                  </a>
+                  {(isActive || (isShop && isShopHovered)) && (
                     <span className="absolute -bottom-1 left-0 w-full h-[1.5px] bg-[#E0B094] shadow-[0_0_8px_rgba(224,176,148,0.6)]" />
                   )}
-                </a>
+                </div>
               );
             })}
           </nav>
 
           {/* UTILITY ICONS: Search, User, Cart */}
-          <div className="flex items-center space-x-4 border-l border-white/10 pl-6 text-[#F5F5F0]">
+          <div className="flex items-center space-x-4 border-l border-white/10 pl-6 text-[#F5F5F0]" onMouseEnter={handleCloseShop}>
 
-            {/* Search Icon */}
             <button
+              onClick={() => navigate('/shop')}
               className="p-1.5 hover:text-[#E0B094] transition-colors focus:outline-none"
-              title="Search"
+              title="Search Jewellery"
             >
               <Search className="w-4 h-4" />
             </button>
 
-            {/* User Account Icon */}
             {user ? (
               <div className="relative group">
                 <button
@@ -152,7 +254,6 @@ export default function Navbar({
                   </span>
                 </button>
 
-                {/* Dropdown Menu on Hover/Focus */}
                 <div className="absolute right-0 top-full mt-2 w-48 bg-[#0C0D10]/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl p-3 hidden group-hover:block transition-all z-50">
                   <div className="px-2 py-1.5 border-b border-white/10 mb-2">
                     <p className="text-xs font-semibold text-[#F5F5F0] truncate">{user.name || 'Valued Member'}</p>
@@ -192,7 +293,6 @@ export default function Navbar({
               </button>
             )}
 
-            {/* Shopping Bag Icon with Badge Counter */}
             <button
               onClick={onOpenShop}
               className="relative p-1.5 hover:text-[#E0B094] transition-colors focus:outline-none"
@@ -208,10 +308,8 @@ export default function Navbar({
 
         </div>
 
-        {/* MOBILE MENU TOGGLE BUTTON */}
+        {/* MOBILE MENU TOGGLE */}
         <div className="md:hidden flex items-center space-x-3">
-
-          {/* Shopping Bag Icon Mobile */}
           <button
             onClick={onOpenShop}
             className="relative p-1.5 text-[#F5F5F0] hover:text-[#E0B094]"
@@ -222,7 +320,6 @@ export default function Navbar({
             </span>
           </button>
 
-          {/* Hamburger Menu */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="p-2 rounded-lg text-[#F5F5F0] hover:text-[#E0B094] focus:outline-none"
@@ -233,30 +330,136 @@ export default function Navbar({
 
       </div>
 
+      {/* COMPACT DARK GLASSMORPHIC SHOP MEGA MENU DROPDOWN (Easy In/Out Animation) */}
+      <div 
+        className={`absolute top-full left-0 right-0 z-50 pt-2 px-4 font-poppins transition-all duration-300 ease-in-out transform origin-top ${
+          isShopHovered
+            ? 'opacity-100 translate-y-0 scale-100 pointer-events-auto'
+            : 'opacity-0 -translate-y-2 scale-[0.98] pointer-events-none'
+        }`}
+        onMouseEnter={handleMouseEnterShop}
+        onMouseLeave={handleMouseLeaveShop}
+      >
+        <div className="max-w-2xl mx-auto bg-[#16181F]/90 backdrop-blur-3xl border border-white/20 rounded-2xl shadow-[0_25px_60px_rgba(0,0,0,0.85)] p-6 text-[#F5F5F0]">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+
+              
+              {/* DYNAMIC JEWELLERY CATEGORIES */}
+              <div className="space-y-3">
+                <span className="text-[11px] font-semibold tracking-[0.2em] text-[#E0B094] uppercase block border-b border-white/10 pb-1.5">
+                  JEWELLERY CATEGORIES
+                </span>
+                <div className="space-y-2 text-xs font-medium text-[#C5C8D0]">
+                  {loadingNav ? (
+                    <div className="space-y-2 animate-pulse py-1">
+                      <div className="h-3.5 bg-white/10 rounded w-28" />
+                      <div className="h-3.5 bg-white/10 rounded w-36" />
+                      <div className="h-3.5 bg-white/10 rounded w-24" />
+                      <div className="h-3.5 bg-white/10 rounded w-32" />
+                    </div>
+                  ) : categories.length === 0 ? (
+                    <span className="text-xs text-[#C5C8D0]/60 italic block py-1 font-normal">No categories created</span>
+                  ) : (
+                    categories.map(cat => (
+                      <button
+                        key={cat.id || cat.title}
+                        onClick={() => handleCategoryClick('category', cat.title)}
+                        className="block hover:text-[#E0B094] transition-colors text-left w-full py-0.5 tracking-wide"
+                      >
+                        {cat.title}
+                      </button>
+                    ))
+                  )}
+                </div>
+              </div>
+
+              {/* DYNAMIC COLLECTIONS */}
+              <div className="space-y-3">
+                <span className="text-[11px] font-semibold tracking-[0.2em] text-[#E0B094] uppercase block border-b border-white/10 pb-1.5">
+                  COLLECTIONS
+                </span>
+                <div className="space-y-2 text-xs font-medium text-[#C5C8D0]">
+                  {loadingNav ? (
+                    <div className="space-y-2 animate-pulse py-1">
+                      <div className="h-3.5 bg-white/10 rounded w-32" />
+                      <div className="h-3.5 bg-white/10 rounded w-24" />
+                      <div className="h-3.5 bg-white/10 rounded w-28" />
+                      <div className="h-3.5 bg-white/10 rounded w-36" />
+                    </div>
+                  ) : collections.length === 0 ? (
+                    <span className="text-xs text-[#C5C8D0]/60 italic block py-1 font-normal">No collections created</span>
+                  ) : (
+                    collections.map(col => (
+                      <button
+                        key={col.id || col.title}
+                        onClick={() => handleCategoryClick('collection', col.title)}
+                        className="block hover:text-[#E0B094] transition-colors text-left w-full py-0.5 tracking-wide"
+                      >
+                        {col.title}
+                      </button>
+                    ))
+                  )}
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+
+
       {/* MOBILE DRAWER */}
       {mobileMenuOpen && (
-        <div className="md:hidden bg-[#0C0D10]/95 backdrop-blur-xl border-t border-white/10 px-6 py-6 mt-3 shadow-2xl space-y-5 animate-fadeIn">
-
-          <div className="flex flex-col space-y-4">
+        <div className="md:hidden bg-[#0C0D10]/95 backdrop-blur-xl border-t border-white/10 px-6 py-6 mt-3 shadow-2xl space-y-5 animate-fadeIn max-h-[80vh] overflow-y-auto">
+          <div className="flex flex-col space-y-3">
             {[...leftNavItems, ...rightNavItems].map((item) => (
               <a
                 key={item.id}
                 href={item.href}
-                onClick={(e) => { e.preventDefault(); handleNavClick(item.id, item.href); }}
-                className={`text-left text-xs font-semibold tracking-[0.2em] py-2 border-b border-white/5 uppercase ${activeTab === item.id ? 'text-[#E0B094]' : 'text-[#C5C8D0]'
-                  }`}
+                onClick={(e) => { e.preventDefault(); handleNavClick(item); }}
+                className={`text-left text-xs font-semibold tracking-[0.2em] py-2 border-b border-white/5 uppercase ${
+                  activeTab === item.id ? 'text-[#E0B094]' : 'text-[#C5C8D0]'
+                }`}
               >
                 {item.label}
               </a>
             ))}
           </div>
 
+          <div className="pt-2 space-y-2 border-t border-white/10">
+            <span className="text-[10px] font-semibold tracking-[0.2em] text-[#E0B094] uppercase block">
+              DYNAMIC CATEGORIES
+            </span>
+            <div className="grid grid-cols-2 gap-2 text-xs text-[#C5C8D0]">
+              {loadingNav ? (
+                <>
+                  <div className="h-7 bg-white/10 rounded-lg animate-pulse col-span-1" />
+                  <div className="h-7 bg-white/10 rounded-lg animate-pulse col-span-1" />
+                  <div className="h-7 bg-white/10 rounded-lg animate-pulse col-span-1" />
+                  <div className="h-7 bg-white/10 rounded-lg animate-pulse col-span-1" />
+                </>
+              ) : categories.length === 0 ? (
+                <span className="text-xs text-[#C5C8D0]/60 italic col-span-2">No categories available</span>
+              ) : (
+                categories.map(cat => (
+                  <button
+                    key={`mcat-${cat.id || cat.title}`}
+                    onClick={() => handleCategoryClick('category', cat.title)}
+                    className="text-left py-1.5 px-2.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-200 transition-colors"
+                  >
+                    {cat.title}
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
+
           <div className="flex items-center justify-around pt-3 border-t border-white/10 text-[#F5F5F0]">
             <button
-              className="flex items-center gap-2 text-xs text-[#C5C8D0] hover:text-[#E0B094]"
+              onClick={() => { setMobileMenuOpen(false); navigate('/shop'); }}
+              className="flex items-center gap-2 text-xs text-[#E0B094] hover:text-white font-semibold"
             >
               <Search className="w-4 h-4" />
-              <span>SEARCH</span>
+              <span>ALL JEWELLERY</span>
             </button>
             {user ? (
               <button
@@ -268,7 +471,7 @@ export default function Navbar({
               </button>
             ) : (
               <button
-                onClick={onOpenAuthModal || onOpenSignup}
+                onClick={() => { setMobileMenuOpen(false); if (onOpenAuthModal) onOpenAuthModal(); }}
                 className="flex items-center gap-2 text-xs text-[#C5C8D0] hover:text-[#E0B094]"
               >
                 <User className="w-4 h-4" />
@@ -276,9 +479,9 @@ export default function Navbar({
               </button>
             )}
           </div>
-
         </div>
       )}
+
     </header>
   );
 }

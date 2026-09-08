@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 
 export default function Footer({ onOpenTickets }) {
@@ -90,12 +91,12 @@ export default function Footer({ onOpenTickets }) {
               QUICK LINKS
             </h4>
             <ul className="space-y-2.5 text-xs text-[#9094A0]">
-              <li><a href="#" className="hover:text-[#E0B094] transition-colors">About Us</a></li>
-              <li><a href="#" className="hover:text-[#E0B094] transition-colors">Collection</a></li>
-              <li><a href="#" className="hover:text-[#E0B094] transition-colors">Shop</a></li>
-              <li><a href="#" className="hover:text-[#E0B094] transition-colors">Why Diamora</a></li>
-              <li><a href="#" className="hover:text-[#E0B094] transition-colors">Contact Us</a></li>
-              <li><a href="#" className="hover:text-[#E0B094] transition-colors">FAQs</a></li>
+              <li><Link to="/about" className="hover:text-[#E0B094] transition-colors">About Us</Link></li>
+              <li><a href="/#collection" className="hover:text-[#E0B094] transition-colors">Collection</a></li>
+              <li><Link to="/shop" className="hover:text-[#E0B094] transition-colors">Shop</Link></li>
+              <li><a href="/#whydiamora" className="hover:text-[#E0B094] transition-colors">Why Diamora</a></li>
+              <li><a href="/#contact" className="hover:text-[#E0B094] transition-colors">Contact Us</a></li>
+              <li><a href="/#contact" className="hover:text-[#E0B094] transition-colors">FAQs</a></li>
             </ul>
           </div>
 
@@ -109,8 +110,8 @@ export default function Footer({ onOpenTickets }) {
               <li><a href="#" className="hover:text-[#E0B094] transition-colors">Care Instructions</a></li>
               <li><a href="#" className="hover:text-[#E0B094] transition-colors">Shipping & Delivery</a></li>
               <li><a href="#" className="hover:text-[#E0B094] transition-colors">Returns & Exchanges</a></li>
-              <li><a href="#" className="hover:text-[#E0B094] transition-colors">Terms & Conditions</a></li>
-              <li><a href="#" className="hover:text-[#E0B094] transition-colors">Privacy Policy</a></li>
+              <li><Link to="/terms-conditions" className="hover:text-[#E0B094] transition-colors">Terms & Conditions</Link></li>
+              <li><Link to="/privacy-policy" className="hover:text-[#E0B094] transition-colors">Privacy Policy</Link></li>
             </ul>
           </div>
 

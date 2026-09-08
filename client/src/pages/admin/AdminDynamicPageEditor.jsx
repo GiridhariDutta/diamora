@@ -21,7 +21,8 @@ import {
   RotateCcw, 
   RotateCw,
   FileText,
-  Clock
+  Clock,
+  Eraser
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 import api from '../../api/axios';
@@ -102,6 +103,18 @@ export default function AdminDynamicPageEditor({ pageKey, defaultTitle }) {
     }
   }, [activeTab]);
 
+  const sanitizeHtml = (rawHtml) => {
+    if (!rawHtml) return '';
+    let cleaned = rawHtml.replace(/<font[^>]*>/gi, '').replace(/<\/font>/gi, '');
+    cleaned = cleaned.replace(/style="[^"]*"/gi, (match) => {
+      let style = match.replace(/color\s*:\s*[^;"]+;?/gi, '');
+      style = style.replace(/background-color\s*:\s*[^;"]+;?/gi, '');
+      if (style === 'style=""' || style === 'style=" "' || style === 'style=";"') return '';
+      return style;
+    });
+    return cleaned;
+  };
+
   // Exec Command Handler for Rich Text Formatting
   const handleExecCommand = (command, value = null) => {
     if (activeTab !== 'editor') setActiveTab('editor');
@@ -125,17 +138,20 @@ export default function AdminDynamicPageEditor({ pageKey, defaultTitle }) {
   const handleSave = async () => {
     setSaving(true);
     try {
+      const cleanedContent = sanitizeHtml(contentHtml);
       const res = await api.put(`/api/settings/${pageKey}`, {
         title,
-        content: contentHtml
+        content: cleanedContent
       });
 
       if (res.data?.success) {
+        setContentHtml(cleanedContent);
+        if (editorRef.current) editorRef.current.innerHTML = cleanedContent;
         setLastUpdated(res.data.data.updatedAt || new Date().toISOString());
         lightSwal.fire({
           icon: 'success',
           title: 'Page Saved Successfully!',
-          text: `"${title}" has been updated live in Firestore.`,
+          text: `"${title}" has been updated live in database.`,
           timer: 1800,
           showConfirmButton: false
         });
@@ -231,6 +247,23 @@ export default function AdminDynamicPageEditor({ pageKey, defaultTitle }) {
                 title="Strikethrough"
               >
                 <Strikethrough className="w-3.5 h-3.5" />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  handleExecCommand('removeFormat');
+                  if (editorRef.current) {
+                    const cleaned = sanitizeHtml(editorRef.current.innerHTML);
+                    editorRef.current.innerHTML = cleaned;
+                    setContentHtml(cleaned);
+                  }
+                }}
+                className="p-1.5 bg-amber-50 hover:bg-amber-100 border border-amber-300 rounded-[3px] text-amber-900 transition-colors shadow-2xs flex items-center gap-1 text-[11px] font-medium"
+                title="Clear Formatting & Clean Dark Styles"
+              >
+                <Eraser className="w-3.5 h-3.5 text-amber-700" />
+                <span className="hidden md:inline text-[10px]">Clean Format</span>
               </button>
 
               <div className="w-px h-5 bg-slate-300 mx-0.5" />
