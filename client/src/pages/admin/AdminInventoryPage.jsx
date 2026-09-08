@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
+import JoditEditor from 'jodit-react';
 import { 
   Package, 
   Plus, 
@@ -119,7 +120,21 @@ export default function AdminInventoryPage() {
   const [uploadingMedia, setUploadingMedia] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
-  const editorRef = useRef(null);
+  const joditConfig = useMemo(() => ({
+    readonly: false,
+    placeholder: 'Enter product story and specifications...',
+    height: 240,
+    buttons: [
+      'bold', 'italic', 'underline', 'strikethrough', '|',
+      'font', 'fontsize', 'brush', 'paragraph', '|',
+      'ul', 'ol', '|',
+      'align', 'undo', 'redo', '|',
+      'hr', 'table', 'link', '|',
+      'fullsize'
+    ],
+    toolbarAdaptive: false,
+    showXPathInStatusbar: false
+  }), []);
 
   // Helper to cap decimal inputs to at most 3 decimal places
   const limitDecimalPlaces = (val, maxDecimals = 3) => {
@@ -212,12 +227,7 @@ export default function AdminInventoryPage() {
     fetchProductsOnly(currentPage, debouncedSearch, categoryFilter);
   };
 
-  // Synchronize ContentEditable canvas with descriptionHtml when modal opens
-  useEffect(() => {
-    if ((isAddModalOpen || isEditModalOpen) && editorRef.current) {
-      editorRef.current.innerHTML = formData.descriptionHtml || '';
-    }
-  }, [isAddModalOpen, isEditModalOpen]);
+
 
   // Dynamic Diamond Component Array Handlers
   const handleAddDiamondRow = () => {
@@ -1659,35 +1669,19 @@ export default function AdminInventoryPage() {
                 )}
               </div>
 
-              {/* SECTION 7: PRODUCT DESCRIPTION (RICH TEXT CKEDITOR CANVAS) */}
+              {/* SECTION 7: PROFESSIONAL JODIT WYSIWYG RICH TEXT EDITOR */}
               <div className="bg-slate-50/80 border border-slate-200 rounded-[4px] p-3 space-y-2">
                 <span className="text-xs font-semibold text-slate-900 uppercase tracking-wider block border-b border-slate-200 pb-1 flex items-center gap-1.5">
                   <FileText className="w-3.5 h-3.5 text-amber-700" />
                   Product Description Editor
                 </span>
 
-                <div className="border border-slate-300 rounded-[4px] bg-white overflow-hidden shadow-2xs">
-                  {/* Toolbar */}
-                  <div className="flex flex-wrap items-center gap-1 p-1.5 bg-slate-100 border-b border-slate-300">
-                    <button type="button" onClick={() => handleExecCommand('bold')} className="p-1 bg-white border border-slate-300 rounded-[3px]" title="Bold"><Bold className="w-3.5 h-3.5" /></button>
-                    <button type="button" onClick={() => handleExecCommand('italic')} className="p-1 bg-white border border-slate-300 rounded-[3px]" title="Italic"><Italic className="w-3.5 h-3.5" /></button>
-                    <button type="button" onClick={() => handleExecCommand('underline')} className="p-1 bg-white border border-slate-300 rounded-[3px]" title="Underline"><Underline className="w-3.5 h-3.5" /></button>
-                    <div className="w-px h-4 bg-slate-300 mx-0.5" />
-                    <button type="button" onClick={() => handleExecCommand('formatBlock', 'h1')} className="p-1 bg-white border border-slate-300 rounded-[3px]" title="H1"><Heading1 className="w-3.5 h-3.5" /></button>
-                    <button type="button" onClick={() => handleExecCommand('formatBlock', 'h2')} className="p-1 bg-white border border-slate-300 rounded-[3px]" title="H2"><Heading2 className="w-3.5 h-3.5" /></button>
-                    <button type="button" onClick={() => handleExecCommand('formatBlock', 'h3')} className="p-1 bg-white border border-slate-300 rounded-[3px]" title="H3"><Heading3 className="w-3.5 h-3.5" /></button>
-                    <div className="w-px h-4 bg-slate-300 mx-0.5" />
-                    <button type="button" onClick={() => handleExecCommand('insertUnorderedList')} className="p-1 bg-white border border-slate-300 rounded-[3px]" title="Bullets"><List className="w-3.5 h-3.5" /></button>
-                    <button type="button" onClick={() => handleExecCommand('insertOrderedList')} className="p-1 bg-white border border-slate-300 rounded-[3px]" title="Numbers"><ListOrdered className="w-3.5 h-3.5" /></button>
-                    <button type="button" onClick={() => handleExecCommand('formatBlock', 'blockquote')} className="p-1 bg-white border border-slate-300 rounded-[3px]" title="Quote"><Quote className="w-3.5 h-3.5" /></button>
-                  </div>
-
-                  {/* Canvas */}
-                  <div
-                    ref={editorRef}
-                    contentEditable
-                    onInput={handleEditorInput}
-                    className="min-h-[140px] max-h-[220px] p-3 text-xs leading-relaxed text-slate-900 focus:outline-none overflow-y-auto space-y-1.5 [&_h1]:text-base [&_h1]:font-semibold [&_h2]:text-sm [&_h2]:font-semibold [&_p]:mb-1 [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4"
+                <div className="border border-slate-300 rounded-[4px] bg-white overflow-hidden shadow-2xs text-slate-900">
+                  <JoditEditor
+                    value={formData.descriptionHtml || ''}
+                    config={joditConfig}
+                    onBlur={(newContent) => setFormData(prev => ({ ...prev, descriptionHtml: newContent }))}
+                    onChange={(newContent) => setFormData(prev => ({ ...prev, descriptionHtml: newContent }))}
                   />
                 </div>
               </div>

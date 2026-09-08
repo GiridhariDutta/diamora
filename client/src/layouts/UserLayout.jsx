@@ -4,11 +4,14 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import AmbientAudioPlayer from '../components/AmbientAudioPlayer';
 import TicketModal from '../components/TicketModal';
+import InquiryModal from '../components/InquiryModal';
 import AuthModal from '../components/AuthModal';
 import { removeCookie } from '../utils/cookies';
 
 export default function UserLayout() {
   const [isTicketModalOpen, setIsTicketModalOpen] = useState(false);
+  const [isInquiryModalOpen, setIsInquiryModalOpen] = useState(false);
+  const [inquiryProduct, setInquiryProduct] = useState(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [user, setUser] = useState(null);
   const [audioPlaying, setAudioPlaying] = useState(false);
@@ -25,6 +28,11 @@ export default function UserLayout() {
       }
     }
   }, []);
+
+  const handleOpenInquiry = (prod = null) => {
+    setInquiryProduct(prod);
+    setIsInquiryModalOpen(true);
+  };
 
   const handleAuthSuccess = (userData) => {
     setUser(userData);
@@ -48,7 +56,7 @@ export default function UserLayout() {
 
       {/* Sticky Glassmorphic Navbar */}
       <Navbar 
-        onOpenShop={() => setIsTicketModalOpen(true)}
+        onOpenShop={() => handleOpenInquiry(null)}
         onOpenSignup={() => setIsAuthModalOpen(true)}
         onOpenAuthModal={() => setIsAuthModalOpen(true)}
         user={user}
@@ -59,14 +67,25 @@ export default function UserLayout() {
       {/* Dynamic Outlet for Public Pages */}
       <main className="w-full">
         <Outlet context={{ 
-          onOpenShop: () => setIsTicketModalOpen(true), 
+          onOpenShop: () => handleOpenInquiry(null), 
+          onOpenInquiry: (prod) => handleOpenInquiry(prod),
           onOpenSignup: () => setIsAuthModalOpen(true),
           user
         }} />
       </main>
 
       {/* Footer */}
-      <Footer onOpenTickets={() => setIsTicketModalOpen(true)} />
+      <Footer onOpenTickets={() => handleOpenInquiry(null)} />
+
+      {/* Product Inquiry & Order Modal */}
+      <InquiryModal
+        isOpen={isInquiryModalOpen}
+        onClose={() => {
+          setIsInquiryModalOpen(false);
+          setInquiryProduct(null);
+        }}
+        product={inquiryProduct}
+      />
 
       {/* Appointment & Order Modal */}
       <TicketModal

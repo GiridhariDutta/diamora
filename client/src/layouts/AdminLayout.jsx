@@ -114,7 +114,7 @@ export default function AdminLayout() {
     { id: 'purities', label: 'PURITY', icon: Award, path: '/admin/purities' },
     { id: 'diamond_qualities', label: 'DIAMOND QUALITY', icon: Gem, path: '/admin/diamond-qualities' },
     { id: 'inventory', label: 'INVENTORY', icon: Package, path: '/admin/inventory' },
-    { id: 'orders', label: 'VAULT ORDERS', icon: ShoppingBag, path: '/admin/orders' },
+    { id: 'orders', label: 'ORDERS / ENQUIRIES', icon: ShoppingBag, path: '/admin/orders' },
     { id: 'customers', label: 'CLIENT DIRECTORY', icon: Users, path: '/admin/customers' },
     { id: 'settings', label: 'SETTINGS', icon: Settings, path: '/admin/settings' },
   ];
@@ -324,7 +324,7 @@ export default function AdminLayout() {
                currentPath === '/admin/purities' ? 'Purity Management' :
                currentPath === '/admin/diamond-qualities' ? 'Diamond Quality Management' :
                currentPath === '/admin/inventory' ? 'Inventory Management' :
-               currentPath === '/admin/orders' ? 'Client Orders & Reservations' :
+               currentPath === '/admin/orders' ? 'Orders & Customer Enquiries' :
                currentPath === '/admin/customers' ? 'Client Directory' :
                'Dashboard'}
             </h2>

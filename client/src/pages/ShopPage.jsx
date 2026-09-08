@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useSearchParams, useOutletContext } from 'react-router-dom';
+import { useSearchParams, useOutletContext, useNavigate } from 'react-router-dom';
 import { Sparkles, ShoppingBag, SlidersHorizontal, Loader2, ChevronDown } from 'lucide-react';
 import api from '../api/axios';
 
 export default function ShopPage() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const { onOpenShop } = useOutletContext() || {};
 
   // Master Data States
@@ -194,27 +195,27 @@ export default function ShopPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0C0D10] text-[#F5F5F0] pt-28 pb-20 font-poppins">
+    <div className="min-h-screen bg-[#0C0D10] text-[#F5F5F0] pt-24 pb-16 font-poppins">
       
       {/* PAGE HEADER */}
-      <div className="w-[95vw] max-w-[1700px] mx-auto px-4 sm:px-6 text-center pb-8">
+      <div className="w-[95vw] max-w-[1700px] mx-auto px-4 sm:px-6 text-center pb-3">
         <h1 className="font-cinzel text-xl sm:text-2xl md:text-3xl font-bold tracking-[0.16em] uppercase drop-shadow-[0_2px_15px_rgba(247,224,154,0.35)]">
           <span className="bg-gradient-to-r from-white via-[#F7E09A] to-[#E0B094] bg-clip-text text-transparent">
             {getHeaderTitle()}
           </span>
         </h1>
-        <div className="flex items-center justify-center gap-3 mt-3">
+        <div className="flex items-center justify-center gap-3 mt-2">
           <span className="h-[1px] w-10 bg-gradient-to-r from-transparent to-[#E0B094]/60" />
           <Sparkles className="w-3.5 h-3.5 text-[#E0B094]" />
           <span className="h-[1px] w-10 bg-gradient-to-l from-transparent to-[#E0B094]/60" />
         </div>
-        <p className="text-xs text-[#C5C8D0] tracking-[0.15em] uppercase mt-3 font-light">
+        <p className="text-[11px] text-[#C5C8D0] tracking-[0.15em] uppercase mt-2 font-light">
           {loadingInitial ? 'Curating catalog...' : `${totalItems} Exclusive Masterpieces Available`}
         </p>
       </div>
 
       {/* MOBILE FILTER TOGGLE */}
-      <div className="lg:hidden w-[95vw] max-w-[1700px] mx-auto px-4 py-3 border-b border-white/10 flex items-center justify-between">
+      <div className="lg:hidden w-[95vw] max-w-[1700px] mx-auto px-4 py-2 border-b border-white/10 flex items-center justify-between">
         <button
           onClick={() => setMobileFilterOpen(!mobileFilterOpen)}
           className="flex items-center gap-2 text-xs font-semibold tracking-widest text-[#E0B094] uppercase"
@@ -233,7 +234,7 @@ export default function ShopPage() {
         )}
       </div>
 
-      <div className="w-[95vw] max-w-[1700px] mx-auto px-4 sm:px-6 pt-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <div className="w-[95vw] max-w-[1700px] mx-auto px-4 sm:px-6 pt-4 grid grid-cols-1 lg:grid-cols-12 gap-6">
 
         {/* LEFT FILTER SIDEBAR (STRICTLY STICKY WITHOUT INTERNAL SCROLLBAR) */}
         <aside className={`lg:col-span-3 sticky top-28 self-start z-30 ${mobileFilterOpen ? 'block' : 'hidden lg:block'}`}>
@@ -503,7 +504,7 @@ export default function ShopPage() {
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 sm:gap-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5 sm:gap-6">
                 {products.map((product, index) => {
                   const primaryImage = product.media && product.media.length > 0 
                     ? product.media[0].url 
@@ -516,7 +517,8 @@ export default function ShopPage() {
                   return (
                     <div 
                       key={`${product.id}-${index}`} 
-                      className="group bg-[#16181F]/80 backdrop-blur-2xl border border-white/15 hover:border-[#E0B094]/60 rounded-lg overflow-hidden flex flex-col justify-between transition-all duration-500 ease-out hover:shadow-[0_0_30px_rgba(224,176,148,0.2)] animate-fadeInUp"
+                      onClick={() => navigate(`/product/${product.id}`)}
+                      className="group bg-[#16181F]/80 backdrop-blur-2xl border border-white/15 hover:border-[#E0B094]/60 rounded-lg overflow-hidden flex flex-col justify-between transition-all duration-500 ease-out hover:shadow-[0_0_30px_rgba(224,176,148,0.2)] animate-fadeInUp cursor-pointer"
                     >
                       {/* PRODUCT IMAGE CONTAINER WITH DUAL-IMAGE CROSS-FADE */}
                       <div className="aspect-square bg-slate-950/60 backdrop-blur-md overflow-hidden relative flex items-center justify-center p-4">
@@ -539,22 +541,11 @@ export default function ShopPage() {
                             loading="lazy"
                           />
                         )}
-                        
-                        {/* QUICK ACTION OVERLAY */}
-                        <div className="absolute inset-0 bg-[#0C0D10]/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center p-4 z-10">
-                          <button
-                            onClick={onOpenShop}
-                            className="px-4 py-2 bg-[#E0B094] text-[#0C0D10] text-[10px] font-extrabold tracking-widest uppercase rounded-md shadow-xl hover:bg-[#d5a082] transition-colors flex items-center gap-1.5 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-300"
-                          >
-                            <ShoppingBag className="w-3.5 h-3.5" />
-                            <span>Inquire / Shop</span>
-                          </button>
-                        </div>
                       </div>
 
                       {/* PRODUCT CARD DETAILS */}
                       <div className="p-4 text-center space-y-1.5 flex-1 flex flex-col justify-end">
-                        <h3 className="font-poppins text-xs font-medium tracking-wide text-[#F5F5F0] uppercase line-clamp-2 leading-relaxed">
+                        <h3 className="font-poppins text-xs font-medium tracking-wide text-[#F5F5F0] uppercase line-clamp-2 leading-relaxed group-hover:text-[#E0B094] transition-colors">
                           {product.title}
                         </h3>
                         <p className="font-mono text-xs font-semibold text-[#E0B094]">

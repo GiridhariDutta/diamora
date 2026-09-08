@@ -9,6 +9,7 @@ import purityRoutes from './src/routes/purityRoutes.js';
 import diamondQualityRoutes from './src/routes/diamondQualityRoutes.js';
 import productRoutes from './src/routes/productRoutes.js';
 import settingsRoutes from './src/routes/settingsRoutes.js';
+import orderRoutes from './src/routes/orderRoutes.js';
 import './src/config/firebase.js';
 
 // Load environment variables
@@ -34,6 +35,7 @@ app.use('/api/purities', purityRoutes);
 app.use('/api/diamond-qualities', diamondQualityRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/orders', orderRoutes);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {
