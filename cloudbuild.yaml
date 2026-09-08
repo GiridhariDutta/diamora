@@ -33,4 +33,4 @@ options:
 substitutions:
   _AR_REPOSITORY: 'diamora'
   _SERVICE_NAME: 'diamora-web'
-  _DEPLOY_REGION: 'asia-south1'
+  _DEPLOY_REGION: 'asia-southeast1'
