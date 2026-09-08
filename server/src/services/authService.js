@@ -100,13 +100,15 @@ export class AuthService {
 
     const decodedToken = await adminAuth.verifyIdToken(idToken);
     const { uid, email, name, picture } = decodedToken;
+    const nowIso = new Date().toISOString();
 
     let userProfile = {
       uid,
       email: email || '',
       name: name || email?.split('@')[0] || 'User',
       photoURL: picture || '',
-      createdAt: new Date().toISOString(),
+      createdAt: nowIso,
+      lastSignInAt: nowIso,
       role: 'customer'
     };
 
@@ -117,7 +119,8 @@ export class AuthService {
       if (!docSnap.exists) {
         await userRef.set(userProfile);
       } else {
-        userProfile = docSnap.data();
+        userProfile = { ...docSnap.data(), lastSignInAt: nowIso };
+        await userRef.update({ lastSignInAt: nowIso });
       }
     } catch (dbError) {
       console.error('Firestore sync error:', dbError.message);
@@ -174,12 +177,23 @@ export class AuthService {
       }
       throw error;
     }
+
+    const nowIso = new Date().toISOString();
+
+    // Automatically update lastSignInAt in Firestore DB
+    try {
+      await db.collection('users').doc(userRecord.uid).set({
+        lastSignInAt: nowIso
+      }, { merge: true });
+    } catch (dbErr) {
+      console.warn('Failed to update lastSignInAt in Firestore:', dbErr.message);
+    }
     
     const userProfile = await this.getUserProfile(userRecord.uid);
     const token = generateJwtToken(userProfile);
 
     return {
-      user: userProfile,
+      user: { ...userProfile, lastSignInAt: nowIso },
       token
     };
   }
@@ -233,14 +247,14 @@ export class AuthService {
             ...userDoc,
             name: userDoc.name || authRecord.displayName || userDoc.email?.split('@')[0] || 'Admin',
             email: userDoc.email || authRecord.email || '',
-            lastSignInTime: authRecord.metadata.lastSignInTime || authRecord.metadata.creationTime || 'Recent',
+            lastSignInTime: authRecord.metadata.lastSignInTime || userDoc.lastSignInAt || authRecord.metadata.creationTime || 'Recent',
             creationTime: authRecord.metadata.creationTime || userDoc.createdAt || 'Recent'
           };
         } catch (err) {
           return {
             ...userDoc,
             name: userDoc.name || 'Admin',
-            lastSignInTime: userDoc.createdAt || 'Recent',
+            lastSignInTime: userDoc.lastSignInAt || userDoc.createdAt || 'Recent',
             creationTime: userDoc.createdAt || 'Recent'
           };
         }

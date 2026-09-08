@@ -17,54 +17,54 @@ export default function AdminOverviewPage() {
   const adminUsersList = allUsers.filter(u => u.role === 'admin');
 
   return (
-    <>
+    <div className="space-y-3 font-open-sans">
       {/* METRICS CARDS GRID */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-3">
         
-        <div className="bg-[#12141A] border border-white/10 rounded-lg p-5 relative overflow-hidden group hover:border-[#E0B094]/50 transition-all shadow-md">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-[10px] font-bold tracking-widest text-[#E0B094] uppercase">Total Revenue</span>
-            <div className="p-2 rounded-md bg-[#E0B094]/10 text-[#E0B094]">
-              <TrendingUp className="w-5 h-5" />
+        <div className="bg-white border border-slate-200 rounded-[4px] p-3 sm:p-3.5 relative overflow-hidden group hover:border-amber-500/60 transition-all shadow-2xs">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-[9.5px] font-semibold tracking-widest text-amber-900 uppercase">Total Revenue</span>
+            <div className="p-1 rounded-[3px] bg-amber-50 text-amber-700">
+              <TrendingUp className="w-3.5 h-3.5" />
             </div>
           </div>
-          <h3 className="font-cinzel text-xl sm:text-2xl font-bold text-[#F5F5F0] mb-1">$142,850</h3>
-          <span className="text-[11px] text-emerald-400 flex items-center gap-1">
+          <h3 className="font-open-sans text-base sm:text-lg font-semibold text-slate-900 mb-0.5">$142,850</h3>
+          <span className="text-[10.5px] text-emerald-600 flex items-center gap-1 font-medium">
             <ArrowUpRight className="w-3 h-3" /> +18.4% this month
           </span>
         </div>
 
-        <div className="bg-[#12141A] border border-white/10 rounded-lg p-5 relative overflow-hidden group hover:border-[#E0B094]/50 transition-all shadow-md">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-[10px] font-bold tracking-widest text-[#E0B094] uppercase">Admin Accounts</span>
-            <div className="p-2 rounded-md bg-[#E0B094]/10 text-[#E0B094]">
-              <UserCheck className="w-5 h-5" />
+        <div className="bg-white border border-slate-200 rounded-[4px] p-3 sm:p-3.5 relative overflow-hidden group hover:border-amber-500/60 transition-all shadow-2xs">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-[9.5px] font-semibold tracking-widest text-amber-900 uppercase">Admin Accounts</span>
+            <div className="p-1 rounded-[3px] bg-amber-50 text-amber-700">
+              <UserCheck className="w-3.5 h-3.5" />
             </div>
           </div>
-          <h3 className="font-cinzel text-xl sm:text-2xl font-bold text-[#F5F5F0] mb-1">{adminUsersList.length} Admins</h3>
-          <span className="text-[11px] text-[#E0B094]">Full System Control</span>
+          <h3 className="font-open-sans text-base sm:text-lg font-semibold text-slate-900 mb-0.5">{adminUsersList.length} Admins</h3>
+          <span className="text-[10.5px] text-amber-800 font-medium">Full System Control</span>
         </div>
 
-        <div className="bg-[#12141A] border border-white/10 rounded-lg p-5 relative overflow-hidden group hover:border-[#E0B094]/50 transition-all shadow-md">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-[10px] font-bold tracking-widest text-[#E0B094] uppercase">Masterpieces</span>
-            <div className="p-2 rounded-md bg-[#E0B094]/10 text-[#E0B094]">
-              <Package className="w-5 h-5" />
+        <div className="bg-white border border-slate-200 rounded-[4px] p-3 sm:p-3.5 relative overflow-hidden group hover:border-amber-500/60 transition-all shadow-2xs">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-[9.5px] font-semibold tracking-widest text-amber-900 uppercase">Masterpieces</span>
+            <div className="p-1 rounded-[3px] bg-amber-50 text-amber-700">
+              <Package className="w-3.5 h-3.5" />
             </div>
           </div>
-          <h3 className="font-cinzel text-xl sm:text-2xl font-bold text-[#F5F5F0] mb-1">18 Models</h3>
-          <span className="text-[11px] text-[#E0B094]">3D Canvas Enabled</span>
+          <h3 className="font-open-sans text-base sm:text-lg font-semibold text-slate-900 mb-0.5">18 Models</h3>
+          <span className="text-[10.5px] text-amber-800 font-medium">3D Canvas Enabled</span>
         </div>
 
-        <div className="bg-[#12141A] border border-white/10 rounded-lg p-5 relative overflow-hidden group hover:border-[#E0B094]/50 transition-all shadow-md">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-[10px] font-bold tracking-widest text-[#E0B094] uppercase">Total Users</span>
-            <div className="p-2 rounded-md bg-purple-500/10 text-purple-400">
-              <Users className="w-5 h-5" />
+        <div className="bg-white border border-slate-200 rounded-[4px] p-3 sm:p-3.5 relative overflow-hidden group hover:border-amber-500/60 transition-all shadow-2xs">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="text-[9.5px] font-semibold tracking-widest text-amber-900 uppercase">Total Users</span>
+            <div className="p-1 rounded-[3px] bg-purple-50 text-purple-700">
+              <Users className="w-3.5 h-3.5" />
             </div>
           </div>
-          <h3 className="font-cinzel text-xl sm:text-2xl font-bold text-[#F5F5F0] mb-1">{allUsers.length} Users</h3>
-          <span className="text-[11px] text-emerald-400 flex items-center gap-1">
+          <h3 className="font-open-sans text-base sm:text-lg font-semibold text-slate-900 mb-0.5">{allUsers.length} Users</h3>
+          <span className="text-[10.5px] text-emerald-600 flex items-center gap-1 font-medium">
             <ArrowUpRight className="w-3 h-3" /> Live Firestore Sync
           </span>
         </div>
@@ -72,22 +72,22 @@ export default function AdminOverviewPage() {
       </div>
 
       {/* SYSTEM ACCOUNTS SUMMARY TABLE */}
-      <div className="bg-[#12141A] border border-white/10 rounded-lg p-5 sm:p-6 shadow-xl">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+      <div className="bg-white border border-slate-200 rounded-[4px] p-3 sm:p-3.5 shadow-2xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 mb-3 pb-2 border-b border-slate-200">
           <div>
-            <h3 className="font-cinzel text-base sm:text-lg font-bold text-[#F5F5F0] uppercase">
+            <h3 className="font-open-sans text-sm sm:text-base font-semibold text-slate-900 uppercase">
               All System Accounts & Users
             </h3>
-            <p className="text-xs text-gray-400 mt-0.5">
+            <p className="text-[11px] text-slate-500 mt-0.5">
               Firestore authenticated users and administrators
             </p>
           </div>
 
           <Link 
             to="/admin/users"
-            className="flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-[#E0B094] to-[#D4AF37] text-[#0C0D10] font-semibold text-xs tracking-wider rounded-md uppercase shadow hover:brightness-110 transition-all shrink-0"
+            className="flex items-center justify-center gap-1 px-3 py-1.5 bg-gradient-to-r from-[#D4AF37] to-[#B48811] hover:from-[#c5a12d] hover:to-[#a27a0e] text-slate-950 font-semibold text-[11px] tracking-wider rounded-[4px] uppercase shadow-2xs transition-all shrink-0"
           >
-            <UserCheck className="w-4 h-4" />
+            <UserCheck className="w-3.5 h-3.5" />
             <span>Manage Admin Users ({adminUsersList.length})</span>
           </Link>
         </div>
@@ -96,49 +96,49 @@ export default function AdminOverviewPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs min-w-[600px]">
             <thead>
-              <tr className="border-b border-white/10 text-[10px] font-bold tracking-widest text-[#E0B094] uppercase">
-                <th className="py-3 px-4">User Name</th>
-                <th className="py-3 px-4">Email</th>
-                <th className="py-3 px-4">Role</th>
-                <th className="py-3 px-4">Joined</th>
-                <th className="py-3 px-4">Status</th>
-                <th className="py-3 px-4 text-right">Actions</th>
+              <tr className="border-b border-slate-200 text-[9.5px] font-semibold tracking-widest text-amber-900 bg-slate-50 uppercase">
+                <th className="py-2 px-3">User Name</th>
+                <th className="py-2 px-3">Email</th>
+                <th className="py-2 px-3">Role</th>
+                <th className="py-2 px-3">Joined</th>
+                <th className="py-2 px-3">Status</th>
+                <th className="py-2 px-3 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/5 text-gray-300">
+            <tbody className="divide-y divide-slate-100 text-slate-700">
               {allUsers.map((item) => (
-                <tr key={item.id} className="hover:bg-white/5 transition-colors">
-                  <td className="py-3.5 px-4 font-medium text-[#F5F5F0] flex items-center gap-2.5">
-                    <div className={`w-7 h-7 rounded-md font-bold flex items-center justify-center text-xs ${
+                <tr key={item.id} className="bg-white hover:bg-amber-50/40 transition-colors">
+                  <td className="py-2 px-3 font-semibold text-slate-900 flex items-center gap-2">
+                    <div className={`w-6.5 h-6.5 rounded-[4px] font-semibold flex items-center justify-center text-[11px] ${
                       item.role === 'admin' 
-                        ? 'bg-gradient-to-br from-[#E0B094] to-[#D4AF37] text-[#0C0D10]' 
-                        : 'bg-white/10 text-gray-300'
+                        ? 'bg-gradient-to-br from-[#D4AF37] to-[#B48811] text-slate-950 shadow-2xs' 
+                        : 'bg-slate-100 text-slate-700 border border-slate-200'
                     }`}>
                       {item.name.charAt(0).toUpperCase()}
                     </div>
                     <span className="truncate max-w-[140px] sm:max-w-xs">{item.name}</span>
                   </td>
-                  <td className="py-3.5 px-4 text-gray-400">{item.email}</td>
-                  <td className="py-3.5 px-4">
-                    <span className={`px-2.5 py-1 rounded-md text-[9px] font-extrabold uppercase inline-flex items-center gap-1 ${
+                  <td className="py-2 px-3 text-slate-600 font-mono text-[11px]">{item.email}</td>
+                  <td className="py-2 px-3">
+                    <span className={`px-2 py-0.5 rounded-[3px] text-[8.5px] font-semibold uppercase inline-flex items-center gap-1 ${
                       item.role === 'admin' 
-                        ? 'bg-[#E0B094]/20 text-[#E0B094] border border-[#E0B094]/40' 
-                        : 'bg-white/5 text-gray-400 border border-white/10'
+                        ? 'bg-amber-100 text-amber-900 border border-amber-300/80' 
+                        : 'bg-slate-100 text-slate-600 border border-slate-200'
                     }`}>
-                      {item.role === 'admin' && <ShieldCheck className="w-3 h-3" />}
+                      {item.role === 'admin' && <ShieldCheck className="w-2.5 h-2.5 text-amber-700" />}
                       {item.role}
                     </span>
                   </td>
-                  <td className="py-3.5 px-4 text-gray-400">{item.joined}</td>
-                  <td className="py-3.5 px-4">
-                    <span className="text-emerald-400 flex items-center gap-1 font-medium text-[11px]">
+                  <td className="py-2 px-3 text-slate-600 text-[11px]">{item.joined}</td>
+                  <td className="py-2 px-3">
+                    <span className="text-emerald-600 flex items-center gap-1 font-medium text-[10.5px]">
                       <CheckCircle2 className="w-3 h-3" /> {item.status}
                     </span>
                   </td>
-                  <td className="py-3.5 px-4 text-right">
+                  <td className="py-2 px-3 text-right">
                     <Link 
                       to={item.role === 'admin' ? '/admin/users' : '/admin/customers'}
-                      className="text-[#E0B094] hover:underline font-semibold text-[11px]"
+                      className="text-amber-800 hover:text-amber-900 hover:underline font-semibold text-[10.5px]"
                     >
                       {item.role === 'admin' ? 'Manage Role' : 'View Profile'}
                     </Link>
@@ -149,6 +149,6 @@ export default function AdminOverviewPage() {
           </table>
         </div>
       </div>
-    </>
+    </div>
   );
 }

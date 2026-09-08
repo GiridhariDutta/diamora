@@ -16,16 +16,16 @@ import {
 import Swal from 'sweetalert2';
 import api from '../../api/axios';
 
-// Dark Gold styled SweetAlert2 configuration
-const darkSwal = Swal.mixin({
-  background: '#0C0D10',
-  color: '#F5F5F0',
-  confirmButtonColor: '#E0B094',
-  cancelButtonColor: '#374151',
+// Executive Light styled SweetAlert2 configuration with ~4-5px border radius
+const lightSwal = Swal.mixin({
+  background: '#FFFFFF',
+  color: '#0F172A',
+  confirmButtonColor: '#D4AF37',
+  cancelButtonColor: '#94A3B8',
   customClass: {
-    popup: 'border border-white/15 rounded-lg font-poppins shadow-2xl',
-    confirmButton: 'text-[#0C0D10] font-semibold text-xs tracking-wider uppercase px-4 py-2 rounded-md',
-    cancelButton: 'text-gray-300 font-semibold text-xs tracking-wider uppercase px-4 py-2 rounded-md'
+    popup: 'border border-slate-200 rounded-[4px] font-open-sans shadow-xl',
+    confirmButton: 'text-slate-900 font-semibold text-xs tracking-wider uppercase px-3.5 py-1.5 rounded-[4px]',
+    cancelButton: 'text-slate-700 font-semibold text-xs tracking-wider uppercase px-3.5 py-1.5 rounded-[4px]'
   }
 });
 
@@ -103,13 +103,13 @@ export default function AdminUsersPage() {
     try { loggedInUser = JSON.parse(storedUserJson); } catch (e) {}
   }
 
-  // Display list prioritizing API results, falling back to context admin list or active session admin user
+  // Display list prioritizing API results, falling back to context/session only when not loading
   let displayAdminUsers = [];
   if (apiAdminUsers.length > 0) {
     displayAdminUsers = apiAdminUsers;
-  } else if (contextAdminUsers.length > 0) {
+  } else if (!loading && contextAdminUsers.length > 0) {
     displayAdminUsers = contextAdminUsers;
-  } else if (loggedInUser && (loggedInUser.role === 'admin' || loggedInUser.role === 'ADMIN')) {
+  } else if (!loading && loggedInUser && (loggedInUser.role === 'admin' || loggedInUser.role === 'ADMIN')) {
     displayAdminUsers = [{
       uid: loggedInUser.uid || 'admin-1',
       name: loggedInUser.name || 'Goutam Jana',
@@ -143,7 +143,7 @@ export default function AdminUsersPage() {
         setAddFormData({ name: '', email: '' });
         fetchAdminUsers();
 
-        darkSwal.fire({
+        lightSwal.fire({
           icon: 'success',
           title: 'Admin Created Successfully!',
           text: `8-digit random password generated for ${newAdmin.name}`,
@@ -175,7 +175,7 @@ export default function AdminUsersPage() {
         setEditAdmin(null);
         fetchAdminUsers();
 
-        darkSwal.fire({
+        lightSwal.fire({
           icon: 'success',
           title: 'Updated!',
           text: 'Admin details updated successfully.',
@@ -184,7 +184,7 @@ export default function AdminUsersPage() {
         });
       }
     } catch (err) {
-      darkSwal.fire({
+      lightSwal.fire({
         icon: 'error',
         title: 'Update Failed',
         text: err.message || 'Could not update admin user.'
@@ -196,7 +196,7 @@ export default function AdminUsersPage() {
 
   // Handle Delete Admin User with SweetAlert2 Confirmation
   const handleDeleteAdmin = (admin) => {
-    darkSwal.fire({
+    lightSwal.fire({
       title: 'Delete Admin User?',
       text: `Are you sure you want to remove ${admin.name} (${admin.email}) from Administrator accounts?`,
       icon: 'warning',
@@ -211,7 +211,7 @@ export default function AdminUsersPage() {
           const res = await api.delete(`/api/auth/admin-users/${targetId}`);
           if (res.data?.success) {
             setApiAdminUsers(prev => prev.filter(u => (u.uid || u.id) !== targetId));
-            darkSwal.fire({
+            lightSwal.fire({
               icon: 'success',
               title: 'Deleted!',
               text: 'Admin account has been removed.',
@@ -220,7 +220,7 @@ export default function AdminUsersPage() {
             });
           }
         } catch (err) {
-          darkSwal.fire({
+          lightSwal.fire({
             icon: 'error',
             title: 'Delete Failed',
             text: err.message || 'Failed to delete admin user.'
@@ -238,7 +238,7 @@ export default function AdminUsersPage() {
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
 
-    darkSwal.fire({
+    lightSwal.fire({
       toast: true,
       position: 'top-end',
       icon: 'success',
@@ -249,40 +249,40 @@ export default function AdminUsersPage() {
   };
 
   return (
-    <div className="space-y-6 font-poppins">
+    <div className="space-y-3 font-open-sans">
 
       {/* GENERATED CREDENTIALS CARD ALERT (SHOWN AFTER ADDING USER) */}
       {createdCredentials && (
-        <div className="bg-[#0C0D10] border border-[#E0B094]/40 rounded-lg p-5 shadow-2xl relative overflow-hidden animate-fadeIn">
-          <div className="absolute top-0 right-0 p-3">
+        <div className="bg-amber-50/80 border border-amber-300/80 rounded-[4px] p-3 shadow-2xs relative overflow-hidden animate-fadeIn text-slate-800">
+          <div className="absolute top-0 right-0 p-2">
             <button
               onClick={() => setCreatedCredentials(null)}
-              className="text-gray-400 hover:text-[#E0B094]"
+              className="text-slate-400 hover:text-amber-800"
             >
-              <X className="w-5 h-5" />
+              <X className="w-3.5 h-3.5" />
             </button>
           </div>
 
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
             <div>
-              <span className="inline-block px-2.5 py-0.5 bg-[#E0B094]/20 text-[#E0B094] border border-[#E0B094]/40 rounded text-[9px] font-extrabold uppercase mb-2">
+              <span className="inline-block px-2 py-0.5 bg-amber-200/80 text-amber-900 border border-amber-300 rounded-[3px] text-[8.5px] font-semibold uppercase mb-1">
                 NEW ADMIN CREDENTIALS GENERATED
               </span>
-              <h4 className="text-sm font-semibold text-[#F5F5F0]">
-                Admin Account for <span className="text-[#E0B094]">{createdCredentials.name}</span>
+              <h4 className="text-xs font-semibold text-slate-900">
+                Admin Account for <span className="text-amber-800">{createdCredentials.name}</span>
               </h4>
-              <div className="mt-2 text-xs text-gray-300 font-mono space-y-1 bg-black/50 p-3 rounded border border-white/10 inline-block">
-                <p><span className="text-gray-500">Email:</span> {createdCredentials.email}</p>
-                <p><span className="text-gray-500">Random 8-Digit Password:</span> <span className="text-[#E0B094] font-bold">{createdCredentials.password}</span></p>
+              <div className="mt-1 text-[11px] text-slate-700 font-mono space-y-0.5 bg-white p-2 rounded-[3px] border border-amber-200 inline-block shadow-2xs">
+                <p><span className="text-slate-500">Email:</span> {createdCredentials.email}</p>
+                <p><span className="text-slate-500">Random 8-Digit Password:</span> <span className="text-amber-800 font-semibold">{createdCredentials.password}</span></p>
               </div>
             </div>
 
             {/* COPY BUTTON */}
             <button
               onClick={handleCopyCredentials}
-              className="flex items-center justify-center gap-2 px-4 py-2.5 bg-[#E0B094] hover:bg-[#d19c7f] text-[#0C0D10] font-semibold text-xs tracking-wider rounded-md uppercase transition-all shrink-0"
+              className="flex items-center justify-center gap-1 px-3 py-1.5 bg-gradient-to-r from-[#D4AF37] to-[#B48811] hover:from-[#c5a12d] hover:to-[#a27a0e] text-slate-950 font-semibold text-[11px] tracking-wider rounded-[4px] uppercase shadow-2xs transition-all shrink-0"
             >
-              {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+              {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
               <span>{copied ? 'COPIED!' : 'COPY CREDENTIALS'}</span>
             </button>
           </div>
@@ -290,101 +290,128 @@ export default function AdminUsersPage() {
       )}
 
       {/* ADMIN USERS DIRECTORY TABLE & TOP ACTION BAR */}
-      <div className="bg-[#12141A] border border-white/10 rounded-lg p-5 sm:p-6 shadow-xl">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5 pb-4 border-b border-white/10">
-          <p className="text-xs text-gray-400">
-            Real-time list of accounts with <span className="text-[#E0B094] font-semibold">ADMIN</span> privileges
+      <div className="bg-white border border-slate-200 rounded-[4px] p-3 sm:p-3.5 shadow-2xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 mb-3 pb-2 border-b border-slate-200">
+          <p className="text-[11px] text-slate-500">
+            Real-time list of accounts with <span className="text-amber-800 font-semibold">ADMIN</span> privileges
           </p>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <button
               onClick={fetchAdminUsers}
-              className="p-2.5 bg-white/5 hover:bg-white/10 border border-white/15 rounded-md text-gray-300 hover:text-[#E0B094] transition-colors"
+              className="p-1.5 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-[4px] text-slate-700 hover:text-amber-800 transition-colors shadow-2xs"
               title="Refresh List"
             >
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-[#E0B094]' : ''}`} />
+              <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-amber-700' : ''}`} />
             </button>
 
             <button
               onClick={() => { setErrorMessage(''); setIsAddModalOpen(true); }}
-              className="flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-[#E0B094] to-[#D4AF37] hover:from-[#d19c7f] hover:to-[#c29f2e] text-[#0C0D10] font-semibold text-xs tracking-wider rounded-md uppercase shadow-lg shadow-[#E0B094]/15 transition-all shrink-0"
+              className="flex items-center justify-center gap-1 px-3 py-1.5 bg-gradient-to-r from-[#D4AF37] to-[#B48811] hover:from-[#c5a12d] hover:to-[#a27a0e] text-slate-950 font-semibold text-[11px] tracking-wider rounded-[4px] uppercase shadow-2xs transition-all shrink-0"
             >
-              <UserPlus className="w-4 h-4" />
+              <UserPlus className="w-3.5 h-3.5" />
               <span>Add Admin User</span>
             </button>
           </div>
         </div>
+
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs min-w-[650px]">
             <thead>
-              <tr className="border-b border-white/10 text-[10px] font-bold tracking-widest text-[#E0B094] uppercase">
-                <th className="py-3 px-4">Admin Name</th>
-                <th className="py-3 px-4">Email Address</th>
-                <th className="py-3 px-4">Role Badge</th>
-                <th className="py-3 px-4">Last Signed In</th>
-                <th className="py-3 px-4 text-right">Actions</th>
+              <tr className="border-b border-slate-200 text-[9.5px] font-semibold tracking-widest text-amber-900 uppercase bg-slate-50">
+                <th className="py-2 px-3">Admin Name</th>
+                <th className="py-2 px-3">Email Address</th>
+                <th className="py-2 px-3">Role Badge</th>
+                <th className="py-2 px-3">Last Signed In</th>
+                <th className="py-2 px-3 text-right">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/5 text-gray-300">
-              {displayAdminUsers.length === 0 ? (
+            <tbody className="divide-y divide-slate-100 text-slate-700">
+              {loading ? (
+                [1, 2, 3].map((n) => (
+                  <tr key={`skeleton-${n}`} className="animate-pulse bg-white">
+                    <td className="py-2 px-3">
+                      <div className="flex items-center gap-2">
+                        <div className="w-6.5 h-6.5 rounded-[4px] bg-slate-200" />
+                        <div className="h-3 w-24 bg-slate-200 rounded-[3px]" />
+                      </div>
+                    </td>
+                    <td className="py-2 px-3">
+                      <div className="h-3 w-36 bg-slate-200 rounded-[3px]" />
+                    </td>
+                    <td className="py-2 px-3">
+                      <div className="h-4 w-16 bg-slate-200 rounded-[3px]" />
+                    </td>
+                    <td className="py-2 px-3">
+                      <div className="h-3 w-28 bg-slate-200 rounded-[3px]" />
+                    </td>
+                    <td className="py-2 px-3 text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <div className="w-6 h-6 bg-slate-200 rounded-[4px]" />
+                        <div className="w-6 h-6 bg-slate-200 rounded-[4px]" />
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ) : displayAdminUsers.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="py-8 text-center text-gray-500 text-xs">
-                    {loading ? 'Loading Admin Users from Firebase...' : 'No admin users found.'}
+                  <td colSpan={5} className="py-5 text-center text-slate-500 text-xs">
+                    No admin users found.
                   </td>
                 </tr>
               ) : (
                 displayAdminUsers.map((admin) => (
-                  <tr key={admin.uid || admin.id} className="bg-[#E0B094]/5 hover:bg-[#E0B094]/10 transition-colors">
+                  <tr key={admin.uid || admin.id} className="bg-white hover:bg-amber-50/40 transition-colors">
                     
                     {/* Admin Name */}
-                    <td className="py-3.5 px-4 font-semibold text-[#F5F5F0] flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-md bg-gradient-to-br from-[#E0B094] to-[#D4AF37] text-[#0C0D10] font-bold flex items-center justify-center text-xs shadow">
+                    <td className="py-2 px-3 font-semibold text-slate-900 flex items-center gap-2">
+                      <div className="w-6.5 h-6.5 rounded-[4px] bg-gradient-to-br from-[#D4AF37] to-[#B48811] text-slate-950 font-semibold flex items-center justify-center text-[11px] shadow-2xs">
                         {admin.name?.charAt(0)?.toUpperCase() || 'A'}
                       </div>
                       <div>
-                        <p className="font-semibold text-xs text-[#F5F5F0]">{admin.name || 'Admin'}</p>
+                        <p className="font-semibold text-xs text-slate-900">{admin.name || 'Admin'}</p>
                       </div>
                     </td>
 
                     {/* Email */}
-                    <td className="py-3.5 px-4 text-gray-300 font-mono text-xs">{admin.email}</td>
+                    <td className="py-2 px-3 text-slate-600 font-mono text-[11px]">{admin.email}</td>
 
                     {/* Role Badge */}
-                    <td className="py-3.5 px-4">
-                      <span className="px-2.5 py-1 rounded-md bg-[#E0B094]/20 text-[#E0B094] border border-[#E0B094]/40 text-[9px] font-extrabold uppercase inline-flex items-center gap-1">
-                        <ShieldCheck className="w-3.5 h-3.5 text-[#E0B094]" />
+                    <td className="py-2 px-3">
+                      <span className="px-2 py-0.5 rounded-[3px] bg-amber-100 text-amber-900 border border-amber-300/80 text-[8.5px] font-semibold uppercase inline-flex items-center gap-1">
+                        <ShieldCheck className="w-2.5 h-2.5 text-amber-700" />
                         {admin.role || 'ADMIN'}
                       </span>
                     </td>
 
                     {/* Last Signed In Timestamp from Firebase Auth (IST Timezone) */}
-                    <td className="py-3.5 px-4 text-gray-300">
-                      <div className="flex items-center gap-1.5 text-xs">
-                        <Clock className="w-3.5 h-3.5 text-[#E0B094]" />
+                    <td className="py-2 px-3 text-slate-600">
+                      <div className="flex items-center gap-1 text-[11px]">
+                        <Clock className="w-3 h-3 text-amber-700" />
                         <span>{formatTimestampToIST(admin.lastSignInTime)}</span>
                       </div>
                     </td>
 
                     {/* Actions Column: Edit and Delete Buttons */}
-                    <td className="py-3.5 px-4 text-right">
-                      <div className="flex items-center justify-end gap-2">
+                    <td className="py-2 px-3 text-right">
+                      <div className="flex items-center justify-end gap-1">
                         
                         {/* EDIT BUTTON */}
                         <button
                           onClick={() => { setEditAdmin(admin); setIsEditModalOpen(true); }}
-                          className="p-1.5 bg-white/5 hover:bg-white/10 border border-white/15 hover:border-[#E0B094]/50 text-gray-300 hover:text-[#E0B094] rounded-md transition-all"
+                          className="p-1 bg-slate-100 hover:bg-slate-200 border border-slate-300 hover:border-amber-500 text-slate-700 hover:text-amber-800 rounded-[4px] transition-all"
                           title="Edit Admin User"
                         >
-                          <Pencil className="w-4 h-4" />
+                          <Pencil className="w-3.5 h-3.5" />
                         </button>
 
                         {/* DELETE BUTTON */}
                         <button
                           onClick={() => handleDeleteAdmin(admin)}
-                          className="p-1.5 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 hover:text-red-300 rounded-md transition-all"
+                          className="p-1 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-600 hover:text-rose-700 rounded-[4px] transition-all"
                           title="Delete Admin User"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 className="w-3.5 h-3.5" />
                         </button>
 
                       </div>
@@ -400,77 +427,77 @@ export default function AdminUsersPage() {
 
       {/* MODAL 1: ADD ADMIN USER MODAL */}
       {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn font-poppins">
-          <div className="relative w-full max-w-md bg-[#0C0D10] border border-white/15 rounded-lg shadow-2xl p-6 sm:p-8">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-slate-900/60 backdrop-blur-xs animate-fadeIn font-open-sans">
+          <div className="relative w-full max-w-md bg-white border border-slate-300 rounded-[4px] shadow-2xl p-5 sm:p-6">
             <button
               onClick={() => setIsAddModalOpen(false)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-[#E0B094] p-1"
+              className="absolute top-4 right-4 text-slate-500 hover:text-slate-950 p-1"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4" />
             </button>
 
-            <div className="mb-6">
-              <span className="font-cinzel text-lg font-bold text-[#D4AF37] uppercase tracking-wider block">
+            <div className="mb-4">
+              <span className="font-open-sans text-base font-semibold text-slate-950 uppercase tracking-wide block">
                 ADD NEW ADMIN USER
               </span>
-              <p className="text-xs text-gray-400 mt-1">
-                Creates a new user with <span className="text-[#E0B094]">ADMIN</span> role. An 8-digit random password will be auto-generated.
+              <p className="text-xs font-medium text-slate-800 mt-0.5">
+                Creates a new user with <span className="text-amber-900 font-semibold">ADMIN</span> role. An 8-digit random password will be auto-generated.
               </p>
             </div>
 
             {errorMessage && (
-              <div className="mb-4 p-3 bg-red-500/10 border border-red-500/30 text-red-300 text-xs rounded-md">
+              <div className="mb-3 p-2.5 bg-rose-50 border border-rose-200 text-rose-800 text-xs rounded-[4px] font-semibold">
                 {errorMessage}
               </div>
             )}
 
             <form onSubmit={handleAddAdminSubmit} className="space-y-4">
               <div>
-                <label className="block text-[10px] font-medium tracking-widest text-gray-300 uppercase mb-1.5">
-                  Full Name
+                <label className="block text-[11px] font-semibold tracking-wider text-slate-900 uppercase mb-1.5">
+                  Full Name <span className="text-rose-600 font-semibold">*</span>
                 </label>
                 <div className="relative">
-                  <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <UserIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
                   <input
                     type="text"
                     required
                     placeholder="e.g. Alexander Vance"
                     value={addFormData.name}
                     onChange={(e) => setAddFormData({ ...addFormData, name: e.target.value })}
-                    className="w-full pl-9 pr-3 py-2 bg-black/40 border border-white/15 rounded-md text-xs text-[#F5F5F0] placeholder-gray-500 focus:outline-none focus:border-[#E0B094]"
+                    className="w-full pl-9 pr-3 py-2.5 bg-white border border-slate-400 rounded-[4px] text-xs font-semibold text-slate-950 placeholder-slate-500 focus:outline-none focus:border-amber-600 shadow-2xs"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-[10px] font-medium tracking-widest text-gray-300 uppercase mb-1.5">
-                  Email Address
+                <label className="block text-[11px] font-semibold tracking-wider text-slate-900 uppercase mb-1.5">
+                  Email Address <span className="text-rose-600 font-semibold">*</span>
                 </label>
                 <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
                   <input
                     type="email"
                     required
                     placeholder="admin@example.com"
                     value={addFormData.email}
                     onChange={(e) => setAddFormData({ ...addFormData, email: e.target.value })}
-                    className="w-full pl-9 pr-3 py-2 bg-black/40 border border-white/15 rounded-md text-xs text-[#F5F5F0] placeholder-gray-500 focus:outline-none focus:border-[#E0B094]"
+                    className="w-full pl-9 pr-3 py-2.5 bg-white border border-slate-400 rounded-[4px] text-xs font-semibold text-slate-950 placeholder-slate-500 focus:outline-none focus:border-amber-600 shadow-2xs"
                   />
                 </div>
               </div>
 
-              <div className="pt-2 flex items-center justify-end gap-3">
+              <div className="pt-2 flex items-center justify-end gap-2.5">
                 <button
                   type="button"
                   onClick={() => setIsAddModalOpen(false)}
-                  className="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/15 rounded-md text-xs text-gray-300 uppercase tracking-wider"
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 border border-slate-400 rounded-[4px] text-xs text-slate-900 uppercase tracking-wider font-semibold shadow-2xs"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="px-5 py-2 bg-gradient-to-r from-[#E0B094] to-[#D4AF37] text-[#0C0D10] font-semibold text-xs tracking-wider rounded-md uppercase disabled:opacity-50"
+                  className="px-4 py-2 bg-gradient-to-r from-[#D4AF37] to-[#B48811] text-slate-950 font-semibold text-xs tracking-wider rounded-[4px] uppercase disabled:opacity-50 shadow-2xs"
                 >
                   {submitting ? 'Creating...' : 'Create Admin'}
                 </button>
@@ -482,63 +509,63 @@ export default function AdminUsersPage() {
 
       {/* MODAL 2: EDIT ADMIN USER MODAL */}
       {isEditModalOpen && editAdmin && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn font-poppins">
-          <div className="relative w-full max-w-md bg-[#0C0D10] border border-white/15 rounded-lg shadow-2xl p-6 sm:p-8">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-slate-900/60 backdrop-blur-xs animate-fadeIn font-open-sans">
+          <div className="relative w-full max-w-md bg-white border border-slate-300 rounded-[4px] shadow-2xl p-5 sm:p-6">
             <button
               onClick={() => setIsEditModalOpen(false)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-[#E0B094] p-1"
+              className="absolute top-4 right-4 text-slate-500 hover:text-slate-950 p-1"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4" />
             </button>
 
-            <div className="mb-6">
-              <span className="font-cinzel text-lg font-bold text-[#D4AF37] uppercase tracking-wider block">
+            <div className="mb-4">
+              <span className="font-open-sans text-base font-semibold text-slate-950 uppercase tracking-wide block">
                 EDIT ADMIN USER
               </span>
-              <p className="text-xs text-gray-400 mt-1">
-                Update account information for <span className="text-[#E0B094]">{editAdmin.name}</span>
+              <p className="text-xs font-medium text-slate-800 mt-0.5">
+                Update account information for <span className="text-amber-900 font-semibold">{editAdmin.name}</span>
               </p>
             </div>
 
             <form onSubmit={handleEditAdminSubmit} className="space-y-4">
               <div>
-                <label className="block text-[10px] font-medium tracking-widest text-gray-300 uppercase mb-1.5">
-                  Full Name
+                <label className="block text-[11px] font-semibold tracking-wider text-slate-900 uppercase mb-1.5">
+                  Full Name <span className="text-rose-600 font-semibold">*</span>
                 </label>
                 <input
                   type="text"
                   required
                   value={editAdmin.name}
                   onChange={(e) => setEditAdmin({ ...editAdmin, name: e.target.value })}
-                  className="w-full px-3 py-2 bg-black/40 border border-white/15 rounded-md text-xs text-[#F5F5F0] focus:outline-none focus:border-[#E0B094]"
+                  className="w-full px-3 py-2.5 bg-white border border-slate-400 rounded-[4px] text-xs font-semibold text-slate-950 focus:outline-none focus:border-amber-600 shadow-2xs"
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] font-medium tracking-widest text-gray-300 uppercase mb-1.5">
-                  Email Address
+                <label className="block text-[11px] font-semibold tracking-wider text-slate-900 uppercase mb-1.5">
+                  Email Address <span className="text-rose-600 font-semibold">*</span>
                 </label>
                 <input
                   type="email"
                   required
                   value={editAdmin.email}
                   onChange={(e) => setEditAdmin({ ...editAdmin, email: e.target.value })}
-                  className="w-full px-3 py-2 bg-black/40 border border-white/15 rounded-md text-xs text-[#F5F5F0] focus:outline-none focus:border-[#E0B094]"
+                  className="w-full px-3 py-2.5 bg-white border border-slate-400 rounded-[4px] text-xs font-semibold text-slate-950 focus:outline-none focus:border-amber-600 shadow-2xs"
                 />
               </div>
 
-              <div className="pt-2 flex items-center justify-end gap-3">
+              <div className="pt-2 flex items-center justify-end gap-2.5">
                 <button
                   type="button"
                   onClick={() => setIsEditModalOpen(false)}
-                  className="px-4 py-2 bg-white/5 border border-white/15 rounded-md text-xs text-gray-300 uppercase"
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 border border-slate-400 rounded-[4px] text-xs text-slate-900 uppercase tracking-wider font-semibold shadow-2xs"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="px-5 py-2 bg-gradient-to-r from-[#E0B094] to-[#D4AF37] text-[#0C0D10] font-semibold text-xs rounded-md uppercase disabled:opacity-50"
+                  className="px-4 py-2 bg-gradient-to-r from-[#D4AF37] to-[#B48811] text-slate-950 font-semibold text-xs tracking-wider rounded-[4px] uppercase disabled:opacity-50 shadow-2xs"
                 >
                   {submitting ? 'Saving...' : 'Save Changes'}
                 </button>

@@ -1,6 +1,7 @@
 import { initializeApp, cert, getApps } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
+import { getStorage } from 'firebase-admin/storage';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
@@ -19,12 +20,15 @@ try {
     const serviceAccount = JSON.parse(fs.readFileSync(credentialPath, 'utf8'));
     
     app = initializeApp({
-      credential: cert(serviceAccount)
+      credential: cert(serviceAccount),
+      storageBucket: 'diamora-e3448.firebasestorage.app'
     });
 
     console.log('✅ Firebase Admin SDK initialized successfully');
   } else if (!getApps().length) {
-    app = initializeApp();
+    app = initializeApp({
+      storageBucket: 'diamora-e3448.firebasestorage.app'
+    });
   }
 } catch (error) {
   console.error('❌ Failed to initialize Firebase Admin SDK:', error.message);
@@ -32,4 +36,5 @@ try {
 
 export const db = getApps().length ? getFirestore() : null;
 export const adminAuth = getApps().length ? getAuth() : null;
+export const bucket = getApps().length ? getStorage().bucket('diamora-e3448.firebasestorage.app') : null;
 export default app;

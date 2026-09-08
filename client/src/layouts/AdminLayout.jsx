@@ -6,7 +6,16 @@ import {
   ShoppingBag, 
   Users, 
   UserCheck,
+  FolderTree,
+  Boxes,
+  Palette,
+  Award,
+  Gem,
   Settings, 
+  ChevronDown,
+  ChevronRight,
+  FileText,
+  BookOpen,
   LogOut, 
   Eye, 
   ShieldCheck, 
@@ -97,16 +106,28 @@ export default function AdminLayout() {
   };
 
   const navItems = [
-    { id: 'overview', label: 'OVERVIEW', icon: LayoutDashboard, path: '/admin' },
+    { id: 'overview', label: 'DASHBOARD', icon: LayoutDashboard, path: '/admin' },
     { id: 'admin_users', label: 'ADMIN USERS', icon: UserCheck, path: '/admin/users' },
-    { id: 'inventory', label: 'INVENTORY & 3D MODELS', icon: Package, path: '/admin/inventory' },
+    { id: 'categories', label: 'CATEGORIES', icon: FolderTree, path: '/admin/categories' },
+    { id: 'collections', label: 'COLLECTIONS', icon: Boxes, path: '/admin/collections' },
+    { id: 'colors', label: 'COLORS', icon: Palette, path: '/admin/colors' },
+    { id: 'purities', label: 'PURITY', icon: Award, path: '/admin/purities' },
+    { id: 'diamond_qualities', label: 'DIAMOND QUALITY', icon: Gem, path: '/admin/diamond-qualities' },
+    { id: 'inventory', label: 'INVENTORY', icon: Package, path: '/admin/inventory' },
     { id: 'orders', label: 'VAULT ORDERS', icon: ShoppingBag, path: '/admin/orders' },
     { id: 'customers', label: 'CLIENT DIRECTORY', icon: Users, path: '/admin/customers' },
     { id: 'settings', label: 'SETTINGS', icon: Settings, path: '/admin/settings' },
   ];
 
-  // Resolve active tab from current URL path
   const currentPath = location.pathname;
+  const [settingsOpen, setSettingsOpen] = useState(currentPath.startsWith('/admin/settings'));
+
+  useEffect(() => {
+    if (currentPath.startsWith('/admin/settings')) {
+      setSettingsOpen(true);
+    }
+  }, [currentPath]);
+
   const activeTabItem = navItems.find(item => item.path === currentPath) || navItems[0];
 
   const handleNavigate = (path) => {
@@ -115,31 +136,31 @@ export default function AdminLayout() {
   };
 
   return (
-    <div className="min-h-screen bg-[#090A0D] text-[#F5F5F0] font-poppins flex flex-col md:flex-row overflow-x-hidden">
+    <div className="admin-panel-root min-h-screen bg-[#F8FAFC] text-slate-800 font-open-sans flex flex-col md:flex-row overflow-x-hidden">
       
       {/* MOBILE TOP NAVBAR */}
-      <div className="md:hidden flex items-center justify-between bg-[#0C0D10] border-b border-white/10 px-4 py-3 z-40">
+      <div className="md:hidden flex items-center justify-between bg-white border-b border-slate-200 px-4 py-2.5 z-40 shadow-xs">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded bg-gradient-to-br from-[#E0B094] to-[#D4AF37] p-0.5 flex items-center justify-center">
-            <div className="w-full h-full bg-[#0C0D10] rounded-[3px] flex items-center justify-center">
-              <Sparkles className="w-4 h-4 text-[#E0B094]" />
+          <div className="w-7 h-7 rounded-[4px] bg-gradient-to-br from-[#D4AF37] to-[#B48811] p-0.5 flex items-center justify-center">
+            <div className="w-full h-full bg-white rounded-[3px] flex items-center justify-center">
+              <Sparkles className="w-3.5 h-3.5 text-amber-700" />
             </div>
           </div>
-          <span className="font-cinzel text-base font-bold tracking-widest text-[#D4AF37]">DIAMORA ADMIN</span>
+          <span className="font-open-sans text-xs font-semibold tracking-widest text-slate-900">DIAMORA ADMIN</span>
         </div>
 
         <button
           onClick={() => setMobileSidebarOpen(!mobileSidebarOpen)}
-          className="p-2 rounded-md text-gray-300 hover:text-[#E0B094] hover:bg-white/5 transition-colors"
+          className="p-1.5 rounded-[5px] text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors"
         >
-          {mobileSidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          {mobileSidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
         </button>
       </div>
 
       {/* MOBILE OVERLAY BACKDROP */}
       {mobileSidebarOpen && (
         <div 
-          className="fixed inset-0 bg-black/70 backdrop-blur-sm z-40 md:hidden"
+          className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-40 md:hidden"
           onClick={() => setMobileSidebarOpen(false)}
         />
       )}
@@ -147,52 +168,118 @@ export default function AdminLayout() {
       {/* SIDEBAR NAVIGATION */}
       <aside className={`
         fixed md:static top-0 left-0 bottom-0 z-50 md:z-30
-        w-64 bg-[#0C0D10] border-r border-white/10 p-5 flex flex-col justify-between shrink-0 shadow-2xl transition-transform duration-300 ease-in-out
+        w-56 bg-white border-r border-slate-200 p-3 flex flex-col justify-between shrink-0 shadow-xs transition-transform duration-300 ease-in-out
         ${mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
       `}>
         <div>
           {/* Brand Logo Header */}
-          <div className="flex items-center justify-between mb-8 pb-5 border-b border-white/10">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-md bg-gradient-to-br from-[#E0B094] to-[#D4AF37] p-0.5 shadow-md shadow-[#E0B094]/10 flex items-center justify-center">
-                <div className="w-full h-full bg-[#0C0D10] rounded-[4px] flex items-center justify-center">
-                  <Sparkles className="w-4 h-4 text-[#E0B094]" />
+          <div className="flex items-center justify-between mb-3 pb-2.5 border-b border-slate-200">
+            <div className="flex items-center gap-2.5">
+              <div className="w-7 h-7 rounded-[4px] bg-gradient-to-br from-[#D4AF37] to-[#B48811] p-0.5 shadow-xs flex items-center justify-center">
+                <div className="w-full h-full bg-slate-900 rounded-[3px] flex items-center justify-center">
+                  <Sparkles className="w-3.5 h-3.5 text-[#D4AF37]" />
                 </div>
               </div>
               <div>
-                <h1 className="font-cinzel text-base font-bold tracking-[0.2em] text-[#D4AF37]">
+                <h1 className="font-open-sans text-sm font-semibold tracking-[0.14em] text-slate-900 leading-tight uppercase">
                   DIAMORA
                 </h1>
-                <span className="text-[9px] tracking-widest text-[#E0B094] font-semibold uppercase flex items-center gap-1">
-                  <ShieldCheck className="w-3 h-3" /> ADMIN PORTAL
+                <span className="text-[8.5px] tracking-widest text-amber-700 font-semibold uppercase flex items-center gap-1">
+                  <ShieldCheck className="w-2.5 h-2.5" /> ADMIN PORTAL
                 </span>
               </div>
             </div>
 
             <button 
               onClick={() => setMobileSidebarOpen(false)} 
-              className="md:hidden text-gray-400 hover:text-white p-1"
+              className="md:hidden text-slate-400 hover:text-slate-700 p-1"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
 
           {/* Navigation Links */}
-          <nav className="space-y-1.5">
+          <nav className="space-y-1">
             {navItems.map((item) => {
               const Icon = item.icon;
+              const isSettings = item.id === 'settings';
+              const isSettingsActive = currentPath.startsWith('/admin/settings');
+
+              // SETTINGS DROPDOWN
+              if (isSettings) {
+                return (
+                  <div key={item.id} className="space-y-1">
+                    <button
+                      onClick={() => setSettingsOpen(!settingsOpen)}
+                      className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-[4px] text-[11px] font-semibold tracking-wider transition-all uppercase ${
+                        isSettingsActive 
+                          ? 'bg-amber-50 text-amber-900 border border-amber-300/80 shadow-2xs' 
+                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-transparent'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 truncate">
+                        <Icon className={`w-3.5 h-3.5 shrink-0 ${isSettingsActive ? 'text-amber-700' : 'text-slate-400'}`} />
+                        <span className="truncate">{item.label}</span>
+                      </div>
+                      {settingsOpen ? <ChevronDown className="w-3.5 h-3.5 text-slate-600" /> : <ChevronRight className="w-3.5 h-3.5 text-slate-400" />}
+                    </button>
+
+                    {settingsOpen && (
+                      <div className="pl-4 space-y-1 border-l border-amber-200 ml-3.5 my-1">
+                        <button
+                          onClick={() => handleNavigate('/admin/settings/about-us')}
+                          className={`w-full text-left px-2.5 py-1.5 rounded-[4px] text-[10.5px] font-semibold tracking-wider uppercase transition-all flex items-center gap-1.5 ${
+                            currentPath === '/admin/settings/about-us' || currentPath === '/admin/pages/about-us'
+                              ? 'bg-amber-100/90 text-amber-950 border border-amber-300/90'
+                              : 'text-slate-600 hover:text-slate-950 hover:bg-slate-100'
+                          }`}
+                        >
+                          <FileText className="w-3 h-3 text-amber-700 shrink-0" />
+                          <span className="truncate">ABOUT US</span>
+                        </button>
+
+                        <button
+                          onClick={() => handleNavigate('/admin/settings/privacy-policy')}
+                          className={`w-full text-left px-2.5 py-1.5 rounded-[4px] text-[10.5px] font-semibold tracking-wider uppercase transition-all flex items-center gap-1.5 ${
+                            currentPath === '/admin/settings/privacy-policy'
+                              ? 'bg-amber-100/90 text-amber-950 border border-amber-300/90'
+                              : 'text-slate-600 hover:text-slate-950 hover:bg-slate-100'
+                          }`}
+                        >
+                          <FileText className="w-3 h-3 text-amber-700 shrink-0" />
+                          <span className="truncate">PRIVACY POLICY</span>
+                        </button>
+
+                        <button
+                          onClick={() => handleNavigate('/admin/settings/terms-conditions')}
+                          className={`w-full text-left px-2.5 py-1.5 rounded-[4px] text-[10.5px] font-semibold tracking-wider uppercase transition-all flex items-center gap-1.5 ${
+                            currentPath === '/admin/settings/terms-conditions'
+                              ? 'bg-amber-100/90 text-amber-950 border border-amber-300/90'
+                              : 'text-slate-600 hover:text-slate-950 hover:bg-slate-100'
+                          }`}
+                        >
+                          <FileText className="w-3 h-3 text-amber-700 shrink-0" />
+                          <span className="truncate">TERMS & CONDITIONS</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+
               const isActive = currentPath === item.path || (item.path === '/admin' && (currentPath === '/admin' || currentPath === '/admin/'));
+
               return (
                 <button
                   key={item.id}
                   onClick={() => handleNavigate(item.path)}
-                  className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-md text-xs font-semibold tracking-wider transition-all uppercase ${
+                  className={`w-full flex items-center gap-2 px-2.5 py-1.5 rounded-[4px] text-[11px] font-semibold tracking-wider transition-all uppercase ${
                     isActive 
-                      ? 'bg-[#E0B094]/15 text-[#E0B094] border border-[#E0B094]/40 shadow-sm' 
-                      : 'text-gray-400 hover:text-gray-200 hover:bg-white/5 border border-transparent'
+                      ? 'bg-amber-50 text-amber-900 border border-amber-300/80 shadow-2xs' 
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-transparent'
                   }`}
                 >
-                  <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-[#E0B094]' : 'text-gray-400'}`} />
+                  <Icon className={`w-3.5 h-3.5 shrink-0 ${isActive ? 'text-amber-700' : 'text-slate-400'}`} />
                   <span className="truncate">{item.label}</span>
                 </button>
               );
@@ -201,71 +288,78 @@ export default function AdminLayout() {
         </div>
 
         {/* View Storefront & Logout */}
-        <div className="pt-5 border-t border-white/10 space-y-2 mt-6">
+        <div className="pt-2.5 border-t border-slate-200 space-y-1 mt-3">
           <button
             onClick={() => { setMobileSidebarOpen(false); navigate('/'); }}
-            className="w-full flex items-center justify-center gap-2 px-3.5 py-2 bg-white/5 hover:bg-white/10 border border-white/15 rounded-md text-xs font-medium tracking-wider text-[#F5F5F0] transition-all"
+            className="w-full flex items-center justify-center gap-1.5 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-[4px] text-[11px] font-medium tracking-wider text-slate-800 transition-all"
           >
-            <Eye className="w-4 h-4 text-[#E0B094]" />
+            <Eye className="w-3.5 h-3.5 text-amber-700" />
             <span>VIEW STOREFRONT</span>
           </button>
 
           <button
             onClick={handleLogout}
-            className="w-full flex items-center justify-center gap-2 px-3.5 py-2 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 rounded-md text-xs font-medium tracking-wider text-red-400 transition-all"
+            className="w-full flex items-center justify-center gap-1.5 px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-[4px] text-[11px] font-medium tracking-wider text-rose-700 transition-all"
           >
-            <LogOut className="w-4 h-4" />
+            <LogOut className="w-3.5 h-3.5" />
             <span>LOG OUT</span>
           </button>
         </div>
       </aside>
 
       {/* MAIN CONTENT AREA */}
-      <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto">
+      <main className="flex-1 p-2.5 sm:p-3.5 lg:p-4 overflow-y-auto bg-[#F8FAFC]">
         
         {/* TOP BAR HEADER */}
-        <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 pb-5 border-b border-white/10">
+        <header className="flex flex-col md:flex-row md:items-center justify-between gap-2.5 mb-3 pb-2.5 border-b border-slate-200">
           <div>
-            <h2 className="font-cinzel text-xl sm:text-2xl font-bold tracking-wider text-[#F5F5F0] uppercase">
-              {activeTabItem.id === 'overview' && 'Executive Summary'}
-              {activeTabItem.id === 'admin_users' && 'Admin Users'}
-              {activeTabItem.id === 'inventory' && 'Jewelry Catalog & Models'}
-              {activeTabItem.id === 'orders' && 'Client Orders & Reservations'}
-              {activeTabItem.id === 'customers' && 'Client Directory'}
-              {activeTabItem.id === 'settings' && 'System Configuration'}
+            <h2 className="font-open-sans text-base sm:text-lg font-semibold tracking-wide text-slate-900 uppercase">
+              {currentPath === '/admin/settings/about-us' || currentPath === '/admin/pages/about-us' ? 'About Us Management' :
+               currentPath === '/admin/settings/privacy-policy' ? 'Privacy Policy Management' :
+               currentPath === '/admin/settings/terms-conditions' ? 'Terms & Conditions Management' :
+               currentPath === '/admin/users' ? 'Admin Users' :
+               currentPath === '/admin/categories' ? 'Category Management' :
+               currentPath === '/admin/collections' ? 'Collection Management' :
+               currentPath === '/admin/colors' ? 'Color Management' :
+               currentPath === '/admin/purities' ? 'Purity Management' :
+               currentPath === '/admin/diamond-qualities' ? 'Diamond Quality Management' :
+               currentPath === '/admin/inventory' ? 'Inventory Management' :
+               currentPath === '/admin/orders' ? 'Client Orders & Reservations' :
+               currentPath === '/admin/customers' ? 'Client Directory' :
+               'Dashboard'}
             </h2>
-            <p className="text-xs text-gray-400 mt-1">
-              Welcome back, <span className="text-[#E0B094] font-semibold">{user?.name || 'Administrator'}</span>
+            <p className="text-[11px] text-slate-500 mt-0.5">
+              Welcome back, <span className="text-amber-800 font-semibold">{user?.name || 'Administrator'}</span>
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             {/* Search Bar */}
-            <div className="relative flex-1 sm:w-64">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <div className="relative flex-1 sm:w-60">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
               <input
                 type="text"
                 placeholder="Search catalog or users..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-3 py-1.5 bg-[#12141A] border border-white/15 rounded-md text-xs text-[#F5F5F0] placeholder-gray-500 focus:outline-none focus:border-[#E0B094] transition-all"
+                className="w-full pl-8 pr-3 py-2 bg-white border border-slate-300 rounded-[4px] text-xs text-slate-900 placeholder-slate-400 focus:outline-none focus:border-amber-600 focus:ring-1 focus:ring-amber-600 transition-all shadow-2xs"
               />
             </div>
 
             {/* Refresh Button */}
             <button
               onClick={fetchProfile}
-              className="p-2 bg-[#12141A] border border-white/15 rounded-md text-gray-300 hover:text-[#E0B094] transition-colors"
+              className="p-1.5 bg-white border border-slate-300 rounded-[4px] text-slate-700 hover:text-amber-800 hover:bg-slate-50 transition-colors shadow-2xs"
               title="Refresh Data"
             >
-              <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-[#E0B094]' : ''}`} />
+              <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-amber-700' : ''}`} />
             </button>
 
             {/* Notifications */}
             <div className="relative">
-              <button className="p-2 bg-[#12141A] border border-white/15 rounded-md text-gray-300 hover:text-[#E0B094] transition-colors relative">
-                <Bell className="w-4 h-4" />
-                <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-[#E0B094]" />
+              <button className="p-1.5 bg-white border border-slate-300 rounded-[4px] text-slate-700 hover:text-amber-800 hover:bg-slate-50 transition-colors relative shadow-2xs">
+                <Bell className="w-3.5 h-3.5" />
+                <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-amber-600" />
               </button>
             </div>
           </div>
