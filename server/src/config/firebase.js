@@ -9,32 +9,39 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Path to Firebase Admin SDK credentials file
+// Optional local credential path for local development fallback
 const credentialPath = process.env.FIREBASE_CREDENTIALS_PATH ||
   path.resolve(__dirname, '../../../cradencial/diamora-e3448-firebase-adminsdk-fbsvc-0dbbe99b14.json');
 
-let app;
+const storageBucket = process.env.STORAGE_BUCKET || 'diamora-e3448.firebasestorage.app';
 
-try {
-  if (fs.existsSync(credentialPath)) {
-    const serviceAccount = JSON.parse(fs.readFileSync(credentialPath, 'utf8'));
-    
-    app = initializeApp({
-      credential: cert(serviceAccount),
-      storageBucket: 'diamora-e3448.firebasestorage.app'
-    });
-
-    console.log('✅ Firebase Admin SDK initialized successfully');
-  } else if (!getApps().length) {
-    app = initializeApp({
-      storageBucket: 'diamora-e3448.firebasestorage.app'
-    });
+if (!getApps().length) {
+  try {
+    if (fs.existsSync(credentialPath)) {
+      const serviceAccount = JSON.parse(fs.readFileSync(credentialPath, 'utf8'));
+      initializeApp({
+        credential: cert(serviceAccount),
+        storageBucket
+      });
+      console.log('✅ Firebase Admin SDK initialized using local Service Account key');
+    } else {
+      // Cloud Run / Google Application Default Credentials (ADC) approach (No JSON file required)
+      initializeApp({
+        storageBucket
+      });
+      console.log('✅ Firebase Admin SDK initialized using Application Default Credentials (Cloud Run Mode)');
+    }
+  } catch (error) {
+    console.warn('⚠️ Service account load error, falling back to default credentials:', error.message);
+    try {
+      initializeApp({ storageBucket });
+    } catch (e) {
+      console.error('❌ Failed to initialize Firebase Admin SDK:', e.message);
+    }
   }
-} catch (error) {
-  console.error('❌ Failed to initialize Firebase Admin SDK:', error.message);
 }
 
 export const db = getApps().length ? getFirestore() : null;
 export const adminAuth = getApps().length ? getAuth() : null;
-export const bucket = getApps().length ? getStorage().bucket('diamora-e3448.firebasestorage.app') : null;
-export default app;
+export const bucket = getApps().length ? getStorage().bucket(storageBucket) : null;
+export default getApps()[0];

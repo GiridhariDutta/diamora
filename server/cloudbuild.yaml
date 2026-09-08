@@ -1,0 +1,36 @@
+steps:
+  # 1. Build the image using Google Cloud Buildpacks (No Dockerfile needed)
+  - name: 'gcr.io/k8s-skaffold/pack'
+    entrypoint: 'pack'
+    args:
+      - 'build'
+      - '$_DEPLOY_REGION-docker.pkg.dev/$PROJECT_ID/$_AR_REPOSITORY/$_SERVICE_NAME'
+      - '--builder'
+      - 'gcr.io/buildpacks/builder:v1'
+      - '--publish'
+    env:
+      - 'DOCKER_API_VERSION=1.41'
+
+  # 2. Deploy to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: 'gcloud'
+    args:
+      - 'run'
+      - 'deploy'
+      - '$_SERVICE_NAME'
+      - '--image'
+      - '$_DEPLOY_REGION-docker.pkg.dev/$PROJECT_ID/$_AR_REPOSITORY/$_SERVICE_NAME'
+      - '--region'
+      - '$_DEPLOY_REGION'
+      - '--platform'
+      - 'managed'
+      - '--allow-unauthenticated'
+
+timeout: '1200s'
+options:
+  logging: CLOUD_LOGGING_ONLY
+
+substitutions:
+  _AR_REPOSITORY: 'diamora'
+  _SERVICE_NAME: 'diamora-web'
+  _DEPLOY_REGION: 'asia-south1'

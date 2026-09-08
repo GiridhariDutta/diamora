@@ -1,0 +1,16 @@
+# Exclude local dependencies
+node_modules/
+
+# Exclude local credentials and secrets
+.env
+
+# Exclude developer environment, git configs and Cloud Build manifests
+.git
+.github
+.idea
+.vscode
+.gitignore
+.dockerignore
+.gcloudignore
+cloudbuild.yaml
+README.md
