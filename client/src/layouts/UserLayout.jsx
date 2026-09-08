@@ -41,7 +41,7 @@ export default function UserLayout() {
   };
 
   return (
-    <div className="relative min-h-screen bg-[#0C0D10] text-[#F5F5F0] overflow-x-hidden font-poppins">
+    <div className="relative min-h-screen bg-[#0C0D10] text-[#F5F5F0] overflow-x-clip font-poppins">
       
       {/* Ambient Audio Engine */}
       <AmbientAudioPlayer isPlaying={audioPlaying} />

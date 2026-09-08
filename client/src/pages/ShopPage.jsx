@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams, useOutletContext } from 'react-router-dom';
-import { Sparkles, ShoppingBag, SlidersHorizontal, Loader2 } from 'lucide-react';
+import { Sparkles, ShoppingBag, SlidersHorizontal, Loader2, ChevronDown } from 'lucide-react';
 import api from '../api/axios';
 
 export default function ShopPage() {
@@ -12,6 +12,19 @@ export default function ShopPage() {
   const [collections, setCollections] = useState([]);
   const [colors, setColors] = useState([]);
   const [purities, setPurities] = useState([]);
+
+  // Accordion Expand/Collapse States
+  const [openSections, setOpenSections] = useState({
+    category: true,
+    collection: true,
+    color: true,
+    purity: true,
+    price: true
+  });
+
+  const toggleSection = (key) => {
+    setOpenSections(prev => ({ ...prev, [key]: !prev[key] }));
+  };
 
   // Products & Lazy Loading States
   const [products, setProducts] = useState([]);
@@ -223,8 +236,8 @@ export default function ShopPage() {
       <div className="w-[95vw] max-w-[1700px] mx-auto px-4 sm:px-6 pt-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
 
         {/* LEFT FILTER SIDEBAR */}
-        <aside className={`lg:col-span-3 space-y-6 ${mobileFilterOpen ? 'block' : 'hidden lg:block'}`}>
-          <div className="sticky top-28 bg-[#16181F]/80 border border-white/15 rounded-lg p-5 space-y-6 text-[#F5F5F0] backdrop-blur-3xl shadow-2xl">
+        <aside className={`lg:col-span-3 sticky top-24 self-start ${mobileFilterOpen ? 'block' : 'hidden lg:block'}`}>
+          <div className="bg-[#16181F]/90 border border-white/15 rounded-lg p-4 sm:p-5 space-y-4 text-[#F5F5F0] backdrop-blur-3xl shadow-2xl">
             
             <div className="flex items-center justify-between border-b border-white/10 pb-3">
               <span className="text-xs font-semibold tracking-[0.2em] text-[#E0B094] uppercase flex items-center gap-2">
@@ -242,169 +255,219 @@ export default function ShopPage() {
             </div>
 
             {/* DYNAMIC JEWELLERY CATEGORY FILTER */}
-            <div className="space-y-2.5">
-              <span className="text-[11px] font-semibold tracking-[0.18em] text-[#F5F5F0] uppercase block">
-                JEWELLERY TYPE
-              </span>
-              <div className="space-y-1.5 text-xs font-light text-[#C5C8D0]">
-                {masterLoading ? (
-                  <div className="space-y-2 animate-pulse py-1">
-                    <div className="h-3.5 bg-white/10 rounded w-28" />
-                    <div className="h-3.5 bg-white/10 rounded w-36" />
-                    <div className="h-3.5 bg-white/10 rounded w-24" />
-                  </div>
-                ) : categories.length === 0 ? (
-                  <span className="text-xs text-[#C5C8D0]/60 italic block py-1 font-normal">No categories created</span>
-                ) : (
-                  categories.map(cat => (
-                    <button
-                      key={cat.id || cat.title}
-                      onClick={() => updateFilter('category', selectedCategory === cat.title ? '' : cat.title)}
-                      className={`block w-full text-left py-1 tracking-wide transition-colors rounded px-2 ${
-                        selectedCategory.toLowerCase() === cat.title.toLowerCase()
-                          ? 'text-[#E0B094] bg-[#E0B094]/15 font-semibold border-l-2 border-[#E0B094]'
-                          : 'hover:text-white hover:bg-white/5'
-                      }`}
-                    >
-                      {cat.title}
-                    </button>
-                  ))
-                )}
-              </div>
+            <div>
+              <button
+                type="button"
+                onClick={() => toggleSection('category')}
+                className="flex items-center justify-between w-full py-1 text-left group cursor-pointer"
+              >
+                <span className="text-[11px] font-semibold tracking-[0.18em] text-[#F5F5F0] group-hover:text-[#E0B094] transition-colors uppercase">
+                  JEWELLERY TYPE {selectedCategory ? `(${selectedCategory})` : ''}
+                </span>
+                <ChevronDown className={`w-3.5 h-3.5 text-[#E0B094] transition-transform duration-300 ${openSections.category ? 'rotate-180' : ''}`} />
+              </button>
+              
+              {openSections.category && (
+                <div className="space-y-1.5 text-xs font-light text-[#C5C8D0] pt-2 animate-fadeIn">
+                  {masterLoading ? (
+                    <div className="space-y-2 animate-pulse py-1">
+                      <div className="h-3.5 bg-white/10 rounded w-28" />
+                      <div className="h-3.5 bg-white/10 rounded w-36" />
+                      <div className="h-3.5 bg-white/10 rounded w-24" />
+                    </div>
+                  ) : categories.length === 0 ? (
+                    <span className="text-xs text-[#C5C8D0]/60 italic block py-1 font-normal">No categories created</span>
+                  ) : (
+                    categories.map(cat => (
+                      <button
+                        key={cat.id || cat.title}
+                        onClick={() => updateFilter('category', selectedCategory === cat.title ? '' : cat.title)}
+                        className={`block w-full text-left py-1 tracking-wide transition-colors rounded px-2 ${
+                          selectedCategory.toLowerCase() === cat.title.toLowerCase()
+                            ? 'text-[#E0B094] bg-[#E0B094]/15 font-semibold border-l-2 border-[#E0B094]'
+                            : 'hover:text-white hover:bg-white/5'
+                        }`}
+                      >
+                        {cat.title}
+                      </button>
+                    ))
+                  )}
+                </div>
+              )}
             </div>
 
             {/* DYNAMIC COLLECTIONS FILTER */}
-            <div className="space-y-2.5 pt-3 border-t border-white/10">
-              <span className="text-[11px] font-semibold tracking-[0.18em] text-[#F5F5F0] uppercase block">
-                COLLECTIONS
-              </span>
-              <div className="space-y-1.5 text-xs font-light text-[#C5C8D0]">
-                {masterLoading ? (
-                  <div className="space-y-2 animate-pulse py-1">
-                    <div className="h-3.5 bg-white/10 rounded w-32" />
-                    <div className="h-3.5 bg-white/10 rounded w-24" />
-                  </div>
-                ) : collections.length === 0 ? (
-                  <span className="text-xs text-[#C5C8D0]/60 italic block py-1 font-normal">No collections created</span>
-                ) : (
-                  collections.map(col => (
-                    <button
-                      key={col.id || col.title}
-                      onClick={() => updateFilter('collection', selectedCollection === col.title ? '' : col.title)}
-                      className={`block w-full text-left py-1 tracking-wide transition-colors rounded px-2 ${
-                        selectedCollection.toLowerCase() === col.title.toLowerCase()
-                          ? 'text-[#E0B094] bg-[#E0B094]/15 font-semibold border-l-2 border-[#E0B094]'
-                          : 'hover:text-white hover:bg-white/5'
-                      }`}
-                    >
-                      {col.title}
-                    </button>
-                  ))
-                )}
-              </div>
+            <div className="pt-3 border-t border-white/10">
+              <button
+                type="button"
+                onClick={() => toggleSection('collection')}
+                className="flex items-center justify-between w-full py-1 text-left group cursor-pointer"
+              >
+                <span className="text-[11px] font-semibold tracking-[0.18em] text-[#F5F5F0] group-hover:text-[#E0B094] transition-colors uppercase">
+                  COLLECTIONS {selectedCollection ? `(${selectedCollection})` : ''}
+                </span>
+                <ChevronDown className={`w-3.5 h-3.5 text-[#E0B094] transition-transform duration-300 ${openSections.collection ? 'rotate-180' : ''}`} />
+              </button>
+
+              {openSections.collection && (
+                <div className="space-y-1.5 text-xs font-light text-[#C5C8D0] pt-2 animate-fadeIn">
+                  {masterLoading ? (
+                    <div className="space-y-2 animate-pulse py-1">
+                      <div className="h-3.5 bg-white/10 rounded w-32" />
+                      <div className="h-3.5 bg-white/10 rounded w-24" />
+                    </div>
+                  ) : collections.length === 0 ? (
+                    <span className="text-xs text-[#C5C8D0]/60 italic block py-1 font-normal">No collections created</span>
+                  ) : (
+                    collections.map(col => (
+                      <button
+                        key={col.id || col.title}
+                        onClick={() => updateFilter('collection', selectedCollection === col.title ? '' : col.title)}
+                        className={`block w-full text-left py-1 tracking-wide transition-colors rounded px-2 ${
+                          selectedCollection.toLowerCase() === col.title.toLowerCase()
+                            ? 'text-[#E0B094] bg-[#E0B094]/15 font-semibold border-l-2 border-[#E0B094]'
+                            : 'hover:text-white hover:bg-white/5'
+                        }`}
+                      >
+                        {col.title}
+                      </button>
+                    ))
+                  )}
+                </div>
+              )}
             </div>
 
             {/* COLOR FILTER */}
-            <div className="space-y-2.5 pt-3 border-t border-white/10">
-              <span className="text-[11px] font-semibold tracking-[0.18em] text-[#F5F5F0] uppercase block">
-                COLOR
-              </span>
-              <div className="space-y-1.5 text-xs font-light text-[#C5C8D0]">
-                {colors.length > 0 ? (
-                  colors.map(clr => (
-                    <button
-                      key={clr.id || clr.title}
-                      onClick={() => updateFilter('color', selectedColor === clr.title ? '' : clr.title)}
-                      className={`block w-full text-left py-1 tracking-wide transition-colors rounded px-2 ${
-                        selectedColor.toLowerCase() === clr.title.toLowerCase()
-                          ? 'text-[#E0B094] bg-[#E0B094]/15 font-semibold border-l-2 border-[#E0B094]'
-                          : 'hover:text-white hover:bg-white/5'
-                      }`}
-                    >
-                      {clr.title}
-                    </button>
-                  ))
-                ) : (
-                  ['Rose Gold', 'White Gold', 'Yellow Gold'].map(clr => (
-                    <button
-                      key={clr}
-                      onClick={() => updateFilter('color', selectedColor === clr ? '' : clr)}
-                      className={`block w-full text-left py-1 tracking-wide transition-colors rounded px-2 ${
-                        selectedColor.toLowerCase() === clr.toLowerCase()
-                          ? 'text-[#E0B094] bg-[#E0B094]/15 font-semibold border-l-2 border-[#E0B094]'
-                          : 'hover:text-white hover:bg-white/5'
-                      }`}
-                    >
-                      {clr}
-                    </button>
-                  ))
-                )}
-              </div>
+            <div className="pt-3 border-t border-white/10">
+              <button
+                type="button"
+                onClick={() => toggleSection('color')}
+                className="flex items-center justify-between w-full py-1 text-left group cursor-pointer"
+              >
+                <span className="text-[11px] font-semibold tracking-[0.18em] text-[#F5F5F0] group-hover:text-[#E0B094] transition-colors uppercase">
+                  COLOR {selectedColor ? `(${selectedColor})` : ''}
+                </span>
+                <ChevronDown className={`w-3.5 h-3.5 text-[#E0B094] transition-transform duration-300 ${openSections.color ? 'rotate-180' : ''}`} />
+              </button>
+
+              {openSections.color && (
+                <div className="space-y-1.5 text-xs font-light text-[#C5C8D0] pt-2 animate-fadeIn">
+                  {colors.length > 0 ? (
+                    colors.map(clr => (
+                      <button
+                        key={clr.id || clr.title}
+                        onClick={() => updateFilter('color', selectedColor === clr.title ? '' : clr.title)}
+                        className={`block w-full text-left py-1 tracking-wide transition-colors rounded px-2 ${
+                          selectedColor.toLowerCase() === clr.title.toLowerCase()
+                            ? 'text-[#E0B094] bg-[#E0B094]/15 font-semibold border-l-2 border-[#E0B094]'
+                            : 'hover:text-white hover:bg-white/5'
+                        }`}
+                      >
+                        {clr.title}
+                      </button>
+                    ))
+                  ) : (
+                    ['Rose Gold', 'White Gold', 'Yellow Gold'].map(clr => (
+                      <button
+                        key={clr}
+                        onClick={() => updateFilter('color', selectedColor === clr ? '' : clr)}
+                        className={`block w-full text-left py-1 tracking-wide transition-colors rounded px-2 ${
+                          selectedColor.toLowerCase() === clr.toLowerCase()
+                            ? 'text-[#E0B094] bg-[#E0B094]/15 font-semibold border-l-2 border-[#E0B094]'
+                            : 'hover:text-white hover:bg-white/5'
+                        }`}
+                      >
+                        {clr}
+                      </button>
+                    ))
+                  )}
+                </div>
+              )}
             </div>
 
             {/* PURITY FILTER */}
-            <div className="space-y-2.5 pt-3 border-t border-white/10">
-              <span className="text-[11px] font-semibold tracking-[0.18em] text-[#F5F5F0] uppercase block">
-                PURITY
-              </span>
-              <div className="space-y-1.5 text-xs font-light text-[#C5C8D0]">
-                {purities.length > 0 ? (
-                  purities.map(pur => (
-                    <button
-                      key={pur.id || pur.title}
-                      onClick={() => updateFilter('purity', selectedPurity === pur.title ? '' : pur.title)}
-                      className={`block w-full text-left py-1 tracking-wide transition-colors rounded px-2 ${
-                        selectedPurity.toLowerCase() === pur.title.toLowerCase()
-                          ? 'text-[#E0B094] bg-[#E0B094]/15 font-semibold border-l-2 border-[#E0B094]'
-                          : 'hover:text-white hover:bg-white/5'
-                      }`}
-                    >
-                      {pur.title}
-                    </button>
-                  ))
-                ) : (
-                  ['14kt', '18kt', '22kt', '24kt'].map(pur => (
-                    <button
-                      key={pur}
-                      onClick={() => updateFilter('purity', selectedPurity === pur ? '' : pur)}
-                      className={`block w-full text-left py-1 tracking-wide transition-colors rounded px-2 ${
-                        selectedPurity.toLowerCase() === pur.toLowerCase()
-                          ? 'text-[#E0B094] bg-[#E0B094]/15 font-semibold border-l-2 border-[#E0B094]'
-                          : 'hover:text-white hover:bg-white/5'
-                      }`}
-                    >
-                      {pur}
-                    </button>
-                  ))
-                )}
-              </div>
+            <div className="pt-3 border-t border-white/10">
+              <button
+                type="button"
+                onClick={() => toggleSection('purity')}
+                className="flex items-center justify-between w-full py-1 text-left group cursor-pointer"
+              >
+                <span className="text-[11px] font-semibold tracking-[0.18em] text-[#F5F5F0] group-hover:text-[#E0B094] transition-colors uppercase">
+                  PURITY {selectedPurity ? `(${selectedPurity})` : ''}
+                </span>
+                <ChevronDown className={`w-3.5 h-3.5 text-[#E0B094] transition-transform duration-300 ${openSections.purity ? 'rotate-180' : ''}`} />
+              </button>
+
+              {openSections.purity && (
+                <div className="space-y-1.5 text-xs font-light text-[#C5C8D0] pt-2 animate-fadeIn">
+                  {purities.length > 0 ? (
+                    purities.map(pur => (
+                      <button
+                        key={pur.id || pur.title}
+                        onClick={() => updateFilter('purity', selectedPurity === pur.title ? '' : pur.title)}
+                        className={`block w-full text-left py-1 tracking-wide transition-colors rounded px-2 ${
+                          selectedPurity.toLowerCase() === pur.title.toLowerCase()
+                            ? 'text-[#E0B094] bg-[#E0B094]/15 font-semibold border-l-2 border-[#E0B094]'
+                            : 'hover:text-white hover:bg-white/5'
+                        }`}
+                      >
+                        {pur.title}
+                      </button>
+                    ))
+                  ) : (
+                    ['14kt', '18kt', '22kt', '24kt'].map(pur => (
+                      <button
+                        key={pur}
+                        onClick={() => updateFilter('purity', selectedPurity === pur ? '' : pur)}
+                        className={`block w-full text-left py-1 tracking-wide transition-colors rounded px-2 ${
+                          selectedPurity.toLowerCase() === pur.toLowerCase()
+                            ? 'text-[#E0B094] bg-[#E0B094]/15 font-semibold border-l-2 border-[#E0B094]'
+                            : 'hover:text-white hover:bg-white/5'
+                        }`}
+                      >
+                        {pur}
+                      </button>
+                    ))
+                  )}
+                </div>
+              )}
             </div>
 
             {/* EXACT PRICE RANGE FILTER */}
-            <div className="space-y-2.5 pt-3 border-t border-white/10">
-              <span className="text-[11px] font-semibold tracking-[0.18em] text-[#F5F5F0] uppercase block">
-                PRICE RANGE
-              </span>
-              <div className="space-y-1.5 text-xs font-light text-[#C5C8D0]">
-                {[
-                  { label: 'Under ₹50,000', value: 'under-50k' },
-                  { label: '₹50,000 - ₹75,000', value: '50k-75k' },
-                  { label: '₹75,000 - ₹100,000', value: '75k-100k' },
-                  { label: 'Above ₹100,000', value: 'above-100k' }
-                ].map(pItem => (
-                  <button
-                    key={pItem.value}
-                    onClick={() => updateFilter('price', selectedPriceRange === pItem.value ? '' : pItem.value)}
-                    className={`block w-full text-left py-1 tracking-wide transition-colors rounded px-2 ${
-                      selectedPriceRange === pItem.value
-                        ? 'text-[#E0B094] bg-[#E0B094]/15 font-semibold border-l-2 border-[#E0B094]'
-                        : 'hover:text-white hover:bg-white/5'
-                    }`}
-                  >
-                    {pItem.label}
-                  </button>
-                ))}
-              </div>
+            <div className="pt-3 border-t border-white/10">
+              <button
+                type="button"
+                onClick={() => toggleSection('price')}
+                className="flex items-center justify-between w-full py-1 text-left group cursor-pointer"
+              >
+                <span className="text-[11px] font-semibold tracking-[0.18em] text-[#F5F5F0] group-hover:text-[#E0B094] transition-colors uppercase">
+                  PRICE RANGE
+                </span>
+                <ChevronDown className={`w-3.5 h-3.5 text-[#E0B094] transition-transform duration-300 ${openSections.price ? 'rotate-180' : ''}`} />
+              </button>
+
+              {openSections.price && (
+                <div className="space-y-1.5 text-xs font-light text-[#C5C8D0] pt-2 animate-fadeIn">
+                  {[
+                    { label: 'Under ₹50,000', value: 'under-50k' },
+                    { label: '₹50,000 - ₹75,000', value: '50k-75k' },
+                    { label: '₹75,000 - ₹100,000', value: '75k-100k' },
+                    { label: 'Above ₹100,000', value: 'above-100k' }
+                  ].map(pItem => (
+                    <button
+                      key={pItem.value}
+                      onClick={() => updateFilter('price', selectedPriceRange === pItem.value ? '' : pItem.value)}
+                      className={`block w-full text-left py-1 tracking-wide transition-colors rounded px-2 ${
+                        selectedPriceRange === pItem.value
+                          ? 'text-[#E0B094] bg-[#E0B094]/15 font-semibold border-l-2 border-[#E0B094]'
+                          : 'hover:text-white hover:bg-white/5'
+                      }`}
+                    >
+                      {pItem.label}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
           </div>
@@ -508,16 +571,6 @@ export default function ShopPage() {
                   </div>
                 )}
               </div>
-
-              {/* END OF CATALOG BADGE */}
-              {!hasNextPage && products.length > 0 && (
-                <div className="text-center py-6 border-t border-white/10">
-                  <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#16181F]/90 border border-[#E0B094]/30 text-[11px] text-[#C5C8D0] font-light tracking-widest uppercase">
-                    <Sparkles className="w-3 h-3 text-[#E0B094]" />
-                    You've explored all {totalItems} available masterpieces
-                  </span>
-                </div>
-              )}
             </>
           )}
         </main>
