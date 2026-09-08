@@ -12,6 +12,7 @@ steps:
       - '--publish'
     env:
       - 'DOCKER_API_VERSION=1.41'
+      - 'GOOGLE_NODEJS_VERSION=20.x'
 
   # 2. Deploy to Cloud Run
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
