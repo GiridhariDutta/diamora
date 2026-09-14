@@ -94,3 +94,22 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #D4AF37;
 }
+
+/* Smooth Pop Zoom In Animation */
+@keyframes popZoomIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.75) translateY(8px);
+  }
+  70% {
+    transform: scale(1.02) translateY(-2px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.animate-pop-zoom {
+  animation: popZoomIn 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}

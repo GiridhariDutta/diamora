@@ -14,6 +14,7 @@ import AdminCollectionsPage from '../pages/admin/AdminCollectionsPage';
 import AdminColorsPage from '../pages/admin/AdminColorsPage';
 import AdminPurityPage from '../pages/admin/AdminPurityPage';
 import AdminDiamondQualityPage from '../pages/admin/AdminDiamondQualityPage';
+import AdminStonesPage from '../pages/admin/AdminStonesPage';
 import AdminInventoryPage from '../pages/admin/AdminInventoryPage';
 import AdminOrdersPage from '../pages/admin/AdminOrdersPage';
 import AdminSettingsPage from '../pages/admin/AdminSettingsPage';
@@ -51,6 +52,7 @@ export const router = createBrowserRouter([
       { path: 'colors', element: <AdminColorsPage /> },
       { path: 'purities', element: <AdminPurityPage /> },
       { path: 'diamond-qualities', element: <AdminDiamondQualityPage /> },
+      { path: 'stones', element: <AdminStonesPage /> },
       { path: 'customers', element: <AdminCustomersPage /> },
       { path: 'inventory', element: <AdminInventoryPage /> },
       { path: 'orders', element: <AdminOrdersPage /> },

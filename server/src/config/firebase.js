@@ -11,10 +11,10 @@ const __dirname = path.dirname(__filename);
 
 // Optional local credential path for local development fallback
 const credentialPath = process.env.FIREBASE_CREDENTIALS_PATH ||
-  path.resolve(__dirname, '../../../cradencial/diamora-e3448-firebase-adminsdk-fbsvc-0dbbe99b14.json');
+  path.resolve(__dirname, '../../../cradencial/diamora-508307-firebase-adminsdk-fbsvc-a66c2cd8f1.json');
 
-const projectId = process.env.FIREBASE_PROJECT_ID || 'diamora-e3448';
-const storageBucket = process.env.STORAGE_BUCKET || 'diamora-e3448.firebasestorage.app';
+const projectId = process.env.FIREBASE_PROJECT_ID || 'diamora-508307';
+const storageBucket = process.env.STORAGE_BUCKET || 'diamora-508307.firebasestorage.app';
 
 if (!getApps().length) {
   try {

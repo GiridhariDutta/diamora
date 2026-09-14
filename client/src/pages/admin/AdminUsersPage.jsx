@@ -196,6 +196,20 @@ export default function AdminUsersPage() {
 
   // Handle Delete Admin User with SweetAlert2 Confirmation
   const handleDeleteAdmin = (admin) => {
+    const targetId = admin.uid || admin.id;
+    const currentId = loggedInUser?.uid || loggedInUser?.id;
+    const isSelf = (currentId && targetId === currentId) ||
+                   (loggedInUser?.email && admin.email && admin.email.toLowerCase() === loggedInUser.email.toLowerCase());
+
+    if (isSelf) {
+      lightSwal.fire({
+        icon: 'warning',
+        title: 'Action Not Allowed',
+        text: 'You cannot delete your own logged-in admin account.'
+      });
+      return;
+    }
+
     lightSwal.fire({
       title: 'Delete Admin User?',
       text: `Are you sure you want to remove ${admin.name} (${admin.email}) from Administrator accounts?`,
@@ -207,7 +221,6 @@ export default function AdminUsersPage() {
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
-          const targetId = admin.uid || admin.id;
           const res = await api.delete(`/api/auth/admin-users/${targetId}`);
           if (res.data?.success) {
             setApiAdminUsers(prev => prev.filter(u => (u.uid || u.id) !== targetId));
@@ -223,7 +236,7 @@ export default function AdminUsersPage() {
           lightSwal.fire({
             icon: 'error',
             title: 'Delete Failed',
-            text: err.message || 'Failed to delete admin user.'
+            text: err.response?.data?.message || err.message || 'Failed to delete admin user.'
           });
         }
       }
@@ -360,65 +373,84 @@ export default function AdminUsersPage() {
                   </td>
                 </tr>
               ) : (
-                displayAdminUsers.map((admin) => (
-                  <tr key={admin.uid || admin.id} className="bg-white hover:bg-amber-50/40 transition-colors">
-                    
-                    {/* Admin Name */}
-                    <td className="py-2 px-3 font-semibold text-slate-900 flex items-center gap-2">
-                      <div className="w-6.5 h-6.5 rounded-[4px] bg-gradient-to-br from-[#D4AF37] to-[#B48811] text-slate-950 font-semibold flex items-center justify-center text-[11px] shadow-2xs">
-                        {admin.name?.charAt(0)?.toUpperCase() || 'A'}
-                      </div>
-                      <div>
-                        <p className="font-semibold text-xs text-slate-900">{admin.name || 'Admin'}</p>
-                      </div>
-                    </td>
+                displayAdminUsers.map((admin) => {
+                  const targetId = admin.uid || admin.id;
+                  const currentId = loggedInUser?.uid || loggedInUser?.id;
+                  const isSelf = Boolean(
+                    (currentId && targetId === currentId) ||
+                    (loggedInUser?.email && admin.email && admin.email.toLowerCase() === loggedInUser.email.toLowerCase())
+                  );
 
-                    {/* Email */}
-                    <td className="py-2 px-3 text-slate-600 font-mono text-[11px]">{admin.email}</td>
+                  return (
+                    <tr key={targetId} className="bg-white hover:bg-amber-50/40 transition-colors">
+                      
+                      {/* Admin Name */}
+                      <td className="py-2 px-3 font-semibold text-slate-900 flex items-center gap-2">
+                        <div className="w-6.5 h-6.5 rounded-[4px] bg-gradient-to-br from-[#D4AF37] to-[#B48811] text-slate-950 font-semibold flex items-center justify-center text-[11px] shadow-2xs">
+                          {admin.name?.charAt(0)?.toUpperCase() || 'A'}
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <p className="font-semibold text-xs text-slate-900">{admin.name || 'Admin'}</p>
+                          {isSelf && (
+                            <span className="px-1.5 py-0.2 bg-slate-100 text-slate-700 border border-slate-300 rounded-[3px] text-[9px] font-bold uppercase">
+                              You
+                            </span>
+                          )}
+                        </div>
+                      </td>
 
-                    {/* Role Badge */}
-                    <td className="py-2 px-3">
-                      <span className="px-2 py-0.5 rounded-[3px] bg-amber-100 text-amber-900 border border-amber-300/80 text-[8.5px] font-semibold uppercase inline-flex items-center gap-1">
-                        <ShieldCheck className="w-2.5 h-2.5 text-amber-700" />
-                        {admin.role || 'ADMIN'}
-                      </span>
-                    </td>
+                      {/* Email */}
+                      <td className="py-2 px-3 text-slate-600 font-mono text-[11px]">{admin.email}</td>
 
-                    {/* Last Signed In Timestamp from Firebase Auth (IST Timezone) */}
-                    <td className="py-2 px-3 text-slate-600">
-                      <div className="flex items-center gap-1 text-[11px]">
-                        <Clock className="w-3 h-3 text-amber-700" />
-                        <span>{formatTimestampToIST(admin.lastSignInTime)}</span>
-                      </div>
-                    </td>
+                      {/* Role Badge */}
+                      <td className="py-2 px-3">
+                        <span className="px-2 py-0.5 rounded-[3px] bg-amber-100 text-amber-900 border border-amber-300/80 text-[8.5px] font-semibold uppercase inline-flex items-center gap-1">
+                          <ShieldCheck className="w-2.5 h-2.5 text-amber-700" />
+                          {admin.role || 'ADMIN'}
+                        </span>
+                      </td>
 
-                    {/* Actions Column: Edit and Delete Buttons */}
-                    <td className="py-2 px-3 text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        
-                        {/* EDIT BUTTON */}
-                        <button
-                          onClick={() => { setEditAdmin(admin); setIsEditModalOpen(true); }}
-                          className="p-1 bg-slate-100 hover:bg-slate-200 border border-slate-300 hover:border-amber-500 text-slate-700 hover:text-amber-800 rounded-[4px] transition-all"
-                          title="Edit Admin User"
-                        >
-                          <Pencil className="w-3.5 h-3.5" />
-                        </button>
+                      {/* Last Signed In Timestamp from Firebase Auth (IST Timezone) */}
+                      <td className="py-2 px-3 text-slate-600">
+                        <div className="flex items-center gap-1 text-[11px]">
+                          <Clock className="w-3 h-3 text-amber-700" />
+                          <span>{formatTimestampToIST(admin.lastSignInTime)}</span>
+                        </div>
+                      </td>
 
-                        {/* DELETE BUTTON */}
-                        <button
-                          onClick={() => handleDeleteAdmin(admin)}
-                          className="p-1 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-600 hover:text-rose-700 rounded-[4px] transition-all"
-                          title="Delete Admin User"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                      {/* Actions Column: Edit and Delete Buttons */}
+                      <td className="py-2 px-3 text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          
+                          {/* EDIT BUTTON */}
+                          <button
+                            onClick={() => { setEditAdmin(admin); setIsEditModalOpen(true); }}
+                            className="p-1 bg-slate-100 hover:bg-slate-200 border border-slate-300 hover:border-amber-500 text-slate-700 hover:text-amber-800 rounded-[4px] transition-all"
+                            title="Edit Admin User"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
 
-                      </div>
-                    </td>
+                          {/* DELETE BUTTON */}
+                          <button
+                            onClick={() => handleDeleteAdmin(admin)}
+                            disabled={isSelf}
+                            className={`p-1 rounded-[4px] transition-all border ${
+                              isSelf
+                                ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed opacity-50'
+                                : 'bg-rose-50 hover:bg-rose-100 border-rose-200 text-rose-600 hover:text-rose-700'
+                            }`}
+                            title={isSelf ? 'You cannot delete your own admin account' : 'Delete Admin User'}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
 
-                  </tr>
-                ))
+                        </div>
+                      </td>
+
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>

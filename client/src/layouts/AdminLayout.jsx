@@ -110,9 +110,10 @@ export default function AdminLayout() {
     { id: 'admin_users', label: 'ADMIN USERS', icon: UserCheck, path: '/admin/users' },
     { id: 'categories', label: 'CATEGORIES', icon: FolderTree, path: '/admin/categories' },
     { id: 'collections', label: 'COLLECTIONS', icon: Boxes, path: '/admin/collections' },
-    { id: 'colors', label: 'COLORS', icon: Palette, path: '/admin/colors' },
+    { id: 'colors', label: 'GOLD COLOR', icon: Palette, path: '/admin/colors' },
     { id: 'purities', label: 'PURITY', icon: Award, path: '/admin/purities' },
     { id: 'diamond_qualities', label: 'DIAMOND QUALITY', icon: Gem, path: '/admin/diamond-qualities' },
+    { id: 'stones', label: 'GEMSTONES', icon: Sparkles, path: '/admin/stones' },
     { id: 'inventory', label: 'INVENTORY', icon: Package, path: '/admin/inventory' },
     { id: 'orders', label: 'ORDERS / ENQUIRIES', icon: ShoppingBag, path: '/admin/orders' },
     { id: 'customers', label: 'CLIENT DIRECTORY', icon: Users, path: '/admin/customers' },
@@ -320,9 +321,10 @@ export default function AdminLayout() {
                currentPath === '/admin/users' ? 'Admin Users' :
                currentPath === '/admin/categories' ? 'Category Management' :
                currentPath === '/admin/collections' ? 'Collection Management' :
-               currentPath === '/admin/colors' ? 'Color Management' :
+               currentPath === '/admin/colors' ? 'Gold Color Management' :
                currentPath === '/admin/purities' ? 'Purity Management' :
                currentPath === '/admin/diamond-qualities' ? 'Diamond Quality Management' :
+               currentPath === '/admin/stones' ? 'Gemstone Management' :
                currentPath === '/admin/inventory' ? 'Inventory Management' :
                currentPath === '/admin/orders' ? 'Orders & Customer Enquiries' :
                currentPath === '/admin/customers' ? 'Client Directory' :

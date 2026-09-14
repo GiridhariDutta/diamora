@@ -7,12 +7,16 @@ import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment
 import ring1Url from '../assets/models/ring_ornament_1.glb?url';
 import ring2Url from '../assets/models/dymond-model2.glb?url';
 import ring3Url from '../assets/models/ring_ornament_3.glb?url';
+import { GLBCacheManager } from '../utils/glbCacheManager.js';
+
+// Module-level GLTF raw scene cache (persists in RAM across page navigation)
+const globalGltfCache = {};
 
 export default function Ring3DCanvas() {
   const mountRef = useRef(null);
   const ringGroupRef = useRef(null);
   const controlsRef = useRef(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!globalGltfCache[0]);
   const [activeModelIndex, setActiveModelIndex] = useState(0);
   const [zoomStyle, setZoomStyle] = useState({
     scale: 1,
@@ -20,33 +24,36 @@ export default function Ring3DCanvas() {
     transition: 'none'
   });
 
-  // Model files list from 66-ring ornament: Calibrated model scales & rotations
+  // Model files list: Firebase Storage hosted URLs with local fallbacks
   const modelConfigs = [
     {
       id: 'ring_shader_pos1',
       name: 'ORNAMENT POS 1',
       url: ring1Url,
-      explicitScale: 0.38, // Model 1: Completely UNCHANGED
+      fallbackUrl: ring1Url,
+      explicitScale: 0.38,
       positionY: -0.18,
       rawRotation: [0, Math.PI / 2, 0]
     },
     {
       id: 'vers4_men_design',
       name: 'ETERNITY DESIGN 2',
-      url: ring2Url,
+      url: 'https://firebasestorage.googleapis.com/v0/b/diamora-508307.firebasestorage.app/o/models%2Fdymond-model2.glb?alt=media&token=806a5775-d941-4ea8-97b6-79c4162039aa',
+      fallbackUrl: ring2Url,
       explicitScale: 0.10,
       positionY: -0.18,
-      rawRotation: [0, 0, 0], // Flat base horizontal plane
-      tiltRotation: [0.52, 0, 0.28], // Earth-like 28° diagonal axial tilt as shown in screenshot
+      rawRotation: [0, 0, 0],
+      tiltRotation: [0.52, 0, 0.28],
       isEarthSpin: true
     },
     {
       id: 'ring3_design',
       name: 'RING 3 DESIGN',
-      url: ring3Url,
-      explicitScale: 0.09, // Model 3: Calibrated scale to match Model 1 & 2 proportion
+      url: 'https://firebasestorage.googleapis.com/v0/b/diamora-508307.firebasestorage.app/o/models%2Fring_ornament_3.glb?alt=media&token=3fc2b221-3654-48c3-8f1c-4b89aac57d50',
+      fallbackUrl: ring3Url,
+      explicitScale: 0.09,
       positionY: -0.18,
-      rawRotation: [-Math.PI / 2, 0, Math.PI / 2] // Standing vertically upright facing camera with crown stone at top
+      rawRotation: [-Math.PI / 2, 0, Math.PI / 2]
     }
   ];
 
@@ -647,8 +654,68 @@ export default function Ring3DCanvas() {
       setActiveModelIndex(index);
     };
 
+    // Helper to load a single model using CacheStorage manager
+    let isDisposed = false;
+
+    const loadSingleModel = async (idx) => {
+      if (isDisposed) return null;
+      if (loadedPivots[idx]) return loadedPivots[idx];
+
+      const cfg = modelConfigs[idx];
+
+      // If GLTF is already parsed in RAM cache, process pivot instantly (0ms!)
+      if (globalGltfCache[idx]) {
+        const pivot = processGltfModel(globalGltfCache[idx], cfg);
+        loadedPivots[idx] = pivot;
+        return pivot;
+      }
+
+      let targetUrl = cfg.url;
+
+      try {
+        targetUrl = await GLBCacheManager.getCachedGlbUrl(cfg.url);
+      } catch (e) {
+        targetUrl = cfg.fallbackUrl || cfg.url;
+      }
+
+      if (isDisposed) return null;
+
+      return new Promise((resolve) => {
+        loader.load(
+          targetUrl,
+          (gltf) => {
+            if (isDisposed) return resolve(null);
+            globalGltfCache[idx] = gltf;
+            const pivot = processGltfModel(gltf, cfg);
+            loadedPivots[idx] = pivot;
+            resolve(pivot);
+          },
+          undefined,
+          (err) => {
+            console.warn(`Error loading primary URL for model ${idx}, trying fallback:`, err.message);
+            if (cfg.fallbackUrl && targetUrl !== cfg.fallbackUrl) {
+              loader.load(
+                cfg.fallbackUrl,
+                (gltf) => {
+                  if (isDisposed) return resolve(null);
+                  globalGltfCache[idx] = gltf;
+                  const pivot = processGltfModel(gltf, cfg);
+                  loadedPivots[idx] = pivot;
+                  resolve(pivot);
+                },
+                undefined,
+                () => resolve(null)
+              );
+            } else {
+              resolve(null);
+            }
+          }
+        );
+      });
+    };
+
     // Cycle to next model in sequence with smooth, luxurious Zoom / Scale Transition (~1.0s total)
-    const switchToNextModel = () => {
+    const switchToNextModel = async () => {
       if (isHoveredRef.current || isDraggingRef.current || isTransitioningRef.current) return;
       isTransitioningRef.current = true;
       const nextIndex = (currentIndex + 1) % modelConfigs.length;
@@ -660,24 +727,17 @@ export default function Ring3DCanvas() {
         transition: 'transform 0.5s ease-in-out, opacity 0.5s ease-in-out'
       });
 
-      transitionTimer = setTimeout(() => {
+      transitionTimer = setTimeout(async () => {
         // Phase 2: Swap 3D model at midpoint while invisible & scaled down
         if (loadedPivots[nextIndex]) {
           displayPivot(nextIndex);
         } else {
-          loader.load(
-            modelConfigs[nextIndex].url,
-            (gltf) => {
-              const pivot = processGltfModel(gltf, modelConfigs[nextIndex]);
-              loadedPivots[nextIndex] = pivot;
-              displayPivot(nextIndex);
-            },
-            undefined,
-            (err) => {
-              console.warn(`Error loading model ${nextIndex}, skipping:`, err);
-              displayPivot((nextIndex + 1) % modelConfigs.length);
-            }
-          );
+          await loadSingleModel(nextIndex);
+          if (loadedPivots[nextIndex]) {
+            displayPivot(nextIndex);
+          } else {
+            displayPivot(0);
+          }
         }
 
         // Instantly position incoming model at small scale (without animation)
@@ -729,25 +789,37 @@ export default function Ring3DCanvas() {
       }
     };
 
-    // Preload ALL models simultaneously on mount
-    modelConfigs.forEach((cfg, idx) => {
-      loader.load(
-        cfg.url,
-        (gltf) => {
-          const pivot = processGltfModel(gltf, cfg);
-          loadedPivots[idx] = pivot;
-          if (idx === 0) {
-            displayPivot(0);
-            setLoading(false);
-          }
-        },
-        undefined,
-        (err) => console.warn(`Error loading model ${idx}:`, err)
-      );
-    });
+    // Sequential Staggered Loading:
+    // 1. Model 1 (50KB) loads INSTANTLY on page mount -> spinner hides immediately!
+    // 2. 500ms delay -> Model 2 (4.6MB) loads & caches silently in background
+    // 3. 500ms delay -> Model 3 (5.6MB) loads & caches silently in background
+    const runSequentialLoading = async () => {
+      // Step 1: Load Model 1 (50KB) INSTANTLY on mount
+      const m1 = await loadSingleModel(0);
+      if (!isDisposed && (m1 || loadedPivots[0])) {
+        displayPivot(0);
+        setLoading(false); // Spinner disappears IMMEDIATELY!
+        scheduleNextSwitch(5000);
+      } else if (!isDisposed) {
+        setLoading(false);
+      }
 
-    // Start initial 5-second cycle loop
-    scheduleNextSwitch(5000);
+      // 500ms delay before loading Model 2 in background
+      await new Promise(r => setTimeout(r, 500));
+      if (isDisposed) return;
+
+      // Step 2: Load Model 2 in background & cache in browser
+      await loadSingleModel(1);
+
+      // 500ms delay before loading Model 3 in background
+      await new Promise(r => setTimeout(r, 500));
+      if (isDisposed) return;
+
+      // Step 3: Load Model 3 in background & cache in browser
+      await loadSingleModel(2);
+    };
+
+    runSequentialLoading();
 
     // Interaction Event Handlers: Pause 5s cycling and auto-spin during hover / manual rotation
     const handlePointerEnter = () => {
@@ -902,6 +974,7 @@ export default function Ring3DCanvas() {
     window.addEventListener('resize', handleResize);
 
     return () => {
+      isDisposed = true;
       clearSwitchTimer();
       container.removeEventListener('pointerenter', handlePointerEnter);
       container.removeEventListener('pointerleave', handlePointerLeave);

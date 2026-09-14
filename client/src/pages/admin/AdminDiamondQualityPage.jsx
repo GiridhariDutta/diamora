@@ -6,7 +6,8 @@ import {
   GripVertical, 
   RefreshCw, 
   X, 
-  Gem
+  Gem,
+  Search
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 import api from '../../api/axios';
@@ -25,12 +26,16 @@ const lightSwal = Swal.mixin({
 
 export default function AdminDiamondQualityPage() {
   const [qualities, setQualities] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingQuality, setEditingQuality] = useState(null);
 
+  // Form states with explicit Clarity & Color fields
   const [formData, setFormData] = useState({
+    clarity: '',
+    color: '',
     title: '',
     ratePerCarat: '',
     order: 1,
@@ -80,6 +85,8 @@ export default function AdminDiamondQualityPage() {
       : 1;
 
     setFormData({
+      clarity: '',
+      color: '',
       title: '',
       ratePerCarat: '',
       order: nextOrder,
@@ -91,15 +98,28 @@ export default function AdminDiamondQualityPage() {
 
   const handleAddSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.title.trim()) return;
+    const clarityStr = (formData.clarity || '').trim();
+    const colorStr = (formData.color || '').trim();
+    const constructedTitle = (formData.title && formData.title.trim())
+      ? formData.title.trim()
+      : (colorStr ? `${clarityStr} (${colorStr})` : clarityStr);
+
+    if (!constructedTitle) {
+      setErrorMessage('Please enter Diamond Clarity / Quality grade.');
+      return;
+    }
 
     setSubmitting(true);
     setErrorMessage('');
 
     try {
       const res = await api.post('/api/diamond-qualities', {
-        ...formData,
-        ratePerCarat: Number(formData.ratePerCarat) || 0
+        clarity: clarityStr,
+        color: colorStr,
+        title: constructedTitle,
+        ratePerCarat: Number(formData.ratePerCarat) || 0,
+        order: Number(formData.order) || 1,
+        status: formData.status || 'Active'
       });
 
       if (res.data?.success) {
@@ -109,13 +129,13 @@ export default function AdminDiamondQualityPage() {
         lightSwal.fire({
           icon: 'success',
           title: 'Diamond Quality Added!',
-          text: `"${formData.title}" has been saved.`,
+          text: `"${constructedTitle}" has been saved.`,
           timer: 1800,
           showConfirmButton: false
         });
       }
     } catch (err) {
-      setErrorMessage(err.message || 'Failed to create diamond quality.');
+      setErrorMessage(err.message || 'Failed to create diamond quality grade.');
     } finally {
       setSubmitting(false);
     }
@@ -124,6 +144,8 @@ export default function AdminDiamondQualityPage() {
   const handleOpenEditModal = (item) => {
     setEditingQuality(item);
     setFormData({
+      clarity: item.clarity || '',
+      color: item.color || '',
       title: item.title || '',
       ratePerCarat: item.ratePerCarat !== undefined ? item.ratePerCarat : '',
       order: item.order || 1,
@@ -137,13 +159,23 @@ export default function AdminDiamondQualityPage() {
     e.preventDefault();
     if (!editingQuality) return;
 
+    const clarityStr = (formData.clarity || '').trim();
+    const colorStr = (formData.color || '').trim();
+    const constructedTitle = (formData.title && formData.title.trim())
+      ? formData.title.trim()
+      : (colorStr ? `${clarityStr} (${colorStr})` : clarityStr);
+
     setSubmitting(true);
     setErrorMessage('');
 
     try {
       const res = await api.put(`/api/diamond-qualities/${editingQuality.id}`, {
-        ...formData,
-        ratePerCarat: Number(formData.ratePerCarat) || 0
+        clarity: clarityStr,
+        color: colorStr,
+        title: constructedTitle,
+        ratePerCarat: Number(formData.ratePerCarat) || 0,
+        order: Number(formData.order) || 1,
+        status: formData.status || 'Active'
       });
 
       if (res.data?.success) {
@@ -154,7 +186,7 @@ export default function AdminDiamondQualityPage() {
         lightSwal.fire({
           icon: 'success',
           title: 'Diamond Quality Updated!',
-          text: `"${formData.title}" updated successfully.`,
+          text: `"${constructedTitle}" updated successfully.`,
           timer: 1500,
           showConfirmButton: false
         });
@@ -247,23 +279,57 @@ export default function AdminDiamondQualityPage() {
     }
   };
 
+  // Frontend Live Search Filtering (Without API call)
+  const filteredQualities = qualities.filter(item => {
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.trim().toLowerCase();
+    return (
+      (item.title && item.title.toLowerCase().includes(q)) ||
+      (item.clarity && item.clarity.toLowerCase().includes(q)) ||
+      (item.color && item.color.toLowerCase().includes(q)) ||
+      (item.ratePerCarat && item.ratePerCarat.toString().includes(q))
+    );
+  });
+
   return (
     <div className="space-y-3 font-open-sans">
       
       {/* TOP HEADER & ACTION BAR */}
       <div className="bg-white border border-slate-200 rounded-[4px] p-3 sm:p-3.5 shadow-2xs">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 mb-3 pb-2 border-b border-slate-200">
-          <div>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5 mb-3 pb-2 border-b border-slate-200">
+          <div className="shrink-0">
             <h3 className="font-open-sans text-sm sm:text-base font-semibold text-slate-900 uppercase flex items-center gap-2">
               <Gem className="w-4 h-4 text-amber-700" />
-              Diamond Quality Master
+              Diamond Quality & Color Grade Master
             </h3>
             <p className="text-[11px] text-slate-500 mt-0.5">
-              Manage diamond clarity & color grades (e.g. VVS-EF, VS-GH, IJ-SI) and default rates per carat (₹/Ct).
+              Add diamond clarity & color grades with per-carat valuation rates (₹/Ct).
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          {/* FRONTEND LIVE SEARCH FIELD IN MIDDLE GAP */}
+          <div className="relative flex-1 max-w-sm w-full md:mx-4 my-1 md:my-0">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Search quality, clarity, or color grade..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-8 pr-7 py-2 bg-slate-50 hover:bg-slate-100/80 focus:bg-white border border-slate-300 rounded-[4px] text-xs font-semibold text-slate-900 placeholder-slate-400 focus:outline-none focus:border-amber-600 focus:ring-1 focus:ring-amber-500/20 transition-all"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 p-0.5 rounded-full hover:bg-slate-200 transition-all"
+                title="Clear search"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
             <button
               onClick={fetchQualities}
               className="p-1.5 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-[4px] text-slate-700 hover:text-amber-800 transition-colors shadow-2xs"
@@ -284,11 +350,13 @@ export default function AdminDiamondQualityPage() {
 
         {/* TABLE WITH DRAG AND DROP */}
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs min-w-[500px]">
+          <table className="w-full text-left text-xs min-w-[600px]">
             <thead>
               <tr className="border-b border-slate-200 text-[9.5px] font-semibold tracking-widest text-amber-900 uppercase bg-slate-50">
                 <th className="py-2 px-2.5 text-center w-10">Reorder</th>
                 <th className="py-2 px-3">Quality Grade / Title</th>
+                <th className="py-2 px-3">Clarity</th>
+                <th className="py-2 px-3">Color</th>
                 <th className="py-2 px-3 text-right">Rate / Carat (₹/Ct)</th>
                 <th className="py-2 px-3 text-center">Order</th>
                 <th className="py-2 px-3">Status</th>
@@ -304,6 +372,12 @@ export default function AdminDiamondQualityPage() {
                     </td>
                     <td className="py-2 px-3">
                       <div className="h-3 w-28 bg-slate-200 rounded-[3px]" />
+                    </td>
+                    <td className="py-2 px-3">
+                      <div className="h-3 w-16 bg-slate-200 rounded-[3px]" />
+                    </td>
+                    <td className="py-2 px-3">
+                      <div className="h-3 w-16 bg-slate-200 rounded-[3px]" />
                     </td>
                     <td className="py-2 px-3 text-right">
                       <div className="h-3 w-24 bg-slate-200 ml-auto rounded-[3px]" />
@@ -322,14 +396,18 @@ export default function AdminDiamondQualityPage() {
                     </td>
                   </tr>
                 ))
-              ) : qualities.length === 0 ? (
+              ) : filteredQualities.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-8 text-center text-slate-500 text-xs font-medium">
-                    No data found.
+                  <td colSpan={8} className="py-8 text-center text-slate-500 text-xs font-medium">
+                    {searchQuery ? (
+                      <span>No quality grades match your search &ldquo;<strong>{searchQuery}</strong>&rdquo;.</span>
+                    ) : (
+                      'No data found.'
+                    )}
                   </td>
                 </tr>
               ) : (
-                qualities.map((item, index) => (
+                filteredQualities.map((item, index) => (
                   <tr 
                     key={item.id || index}
                     draggable
@@ -347,6 +425,20 @@ export default function AdminDiamondQualityPage() {
 
                     <td className="py-2 px-3 font-semibold text-slate-900 text-xs">
                       {item.title}
+                    </td>
+
+                    <td className="py-2 px-3 font-medium text-slate-700 text-xs">
+                      {item.clarity || item.title || '—'}
+                    </td>
+
+                    <td className="py-2 px-3 text-xs">
+                      {item.color ? (
+                        <span className="px-2 py-0.5 bg-amber-50 text-amber-900 border border-amber-200 rounded-[3px] font-semibold">
+                          {item.color}
+                        </span>
+                      ) : (
+                        <span className="text-slate-400 font-light italic">None</span>
+                      )}
                     </td>
 
                     <td className="py-2 px-3 text-right font-mono font-semibold text-amber-900 text-xs">
@@ -397,10 +489,10 @@ export default function AdminDiamondQualityPage() {
         </div>
       </div>
 
-      {/* MODAL 1: ADD MODAL */}
+      {/* MODAL 1: ADD MODAL WITH EXPLICIT CLARITY & COLOR FIELDS */}
       {isAddModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-slate-900/60 backdrop-blur-xs animate-fadeIn font-open-sans">
-          <div className="relative w-full max-w-md bg-white border border-slate-300 rounded-[4px] shadow-2xl p-5 sm:p-6">
+          <div className="relative w-full max-w-lg bg-white border border-slate-300 rounded-[4px] shadow-2xl p-5 sm:p-6">
             <button
               onClick={() => setIsAddModalOpen(false)}
               className="absolute top-4 right-4 text-slate-500 hover:text-slate-950 p-1"
@@ -410,10 +502,10 @@ export default function AdminDiamondQualityPage() {
 
             <div className="mb-4">
               <span className="font-open-sans text-base font-semibold text-slate-950 uppercase tracking-wide block">
-                ADD DIAMOND QUALITY
+                ADD DIAMOND QUALITY & COLOR
               </span>
               <p className="text-xs font-medium text-slate-800 mt-0.5">
-                Create a quality grade (e.g. VVS-EF, VS-GH, IJ-SI) and default rate/carat.
+                Set Clarity and Color together with default per-carat rate (₹/Ct).
               </p>
             </div>
 
@@ -424,21 +516,63 @@ export default function AdminDiamondQualityPage() {
             )}
 
             <form onSubmit={handleAddSubmit} className="space-y-4">
+              
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* CLARITY / QUALITY */}
                 <div>
                   <label className="block text-[11px] font-semibold tracking-wider text-slate-900 uppercase mb-1.5">
-                    Quality Title <span className="text-rose-600 font-semibold">*</span>
+                    Diamond Clarity <span className="text-rose-600 font-semibold">*</span>
                   </label>
                   <input
                     type="text"
                     required
-                    placeholder="e.g. VVS-EF, VS-GH, IJ-SI"
-                    value={formData.title}
-                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    placeholder="e.g. VVS-EF, VVS1, VS-GH, SI1"
+                    value={formData.clarity}
+                    onChange={(e) => {
+                      const newClarity = e.target.value;
+                      const constructed = newClarity.trim() + (formData.color.trim() ? ` (${formData.color.trim()})` : '');
+                      setFormData({ ...formData, clarity: newClarity, title: constructed });
+                    }}
                     className="w-full px-3 py-2.5 bg-white border border-slate-400 rounded-[4px] text-xs font-semibold text-slate-950 placeholder-slate-500 focus:outline-none focus:border-amber-600 shadow-2xs"
                   />
                 </div>
 
+                {/* DIAMOND COLOR */}
+                <div>
+                  <label className="block text-[11px] font-semibold tracking-wider text-slate-900 uppercase mb-1.5">
+                    Diamond Color
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. D Color, E-F, G-H, Fancy Yellow"
+                    value={formData.color}
+                    onChange={(e) => {
+                      const newColor = e.target.value;
+                      const constructed = formData.clarity.trim() + (newColor.trim() ? ` (${newColor.trim()})` : '');
+                      setFormData({ ...formData, color: newColor, title: constructed });
+                    }}
+                    className="w-full px-3 py-2.5 bg-white border border-slate-400 rounded-[4px] text-xs font-semibold text-slate-950 placeholder-slate-500 focus:outline-none focus:border-amber-600 shadow-2xs"
+                  />
+                </div>
+              </div>
+
+              {/* GENERATED FULL GRADE TITLE PREVIEW */}
+              <div>
+                <label className="block text-[11px] font-semibold tracking-wider text-slate-900 uppercase mb-1.5">
+                  Combined Grade Title Preview
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. VVS-EF (D Color)"
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  className="w-full px-3 py-2.5 bg-amber-50/70 border border-amber-300 rounded-[4px] text-xs font-bold text-amber-950 focus:outline-none focus:border-amber-600 shadow-2xs"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {/* RATE PER CARAT */}
                 <div>
                   <label className="block text-[11px] font-semibold tracking-wider text-slate-900 uppercase mb-1.5">
                     Rate / Carat (₹/Ct)
@@ -447,15 +581,14 @@ export default function AdminDiamondQualityPage() {
                     type="number"
                     step="0.001"
                     min="0"
-                    placeholder="e.g. 75000.000"
+                    placeholder="e.g. 75000"
                     value={formData.ratePerCarat}
                     onChange={(e) => setFormData({ ...formData, ratePerCarat: limitDecimalPlaces(e.target.value, 3) })}
                     className="w-full px-3 py-2.5 bg-white border border-slate-400 rounded-[4px] text-xs font-semibold font-mono text-slate-950 placeholder-slate-400 focus:outline-none focus:border-amber-600 shadow-2xs"
                   />
                 </div>
-              </div>
 
-              <div className="grid grid-cols-2 gap-3">
+                {/* DISPLAY ORDER */}
                 <div>
                   <label className="block text-[11px] font-semibold tracking-wider text-slate-900 uppercase mb-1.5">
                     Display Order
@@ -470,6 +603,7 @@ export default function AdminDiamondQualityPage() {
                   />
                 </div>
 
+                {/* STATUS */}
                 <div>
                   <label className="block text-[11px] font-semibold tracking-wider text-slate-900 uppercase mb-1.5">
                     Status
@@ -506,10 +640,10 @@ export default function AdminDiamondQualityPage() {
         </div>
       )}
 
-      {/* MODAL 2: EDIT MODAL */}
+      {/* MODAL 2: EDIT MODAL WITH EXPLICIT CLARITY & COLOR FIELDS */}
       {isEditModalOpen && editingQuality && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-slate-900/60 backdrop-blur-xs animate-fadeIn font-open-sans">
-          <div className="relative w-full max-w-md bg-white border border-slate-300 rounded-[4px] shadow-2xl p-5 sm:p-6">
+          <div className="relative w-full max-w-lg bg-white border border-slate-300 rounded-[4px] shadow-2xl p-5 sm:p-6">
             <button
               onClick={() => setIsEditModalOpen(false)}
               className="absolute top-4 right-4 text-slate-500 hover:text-slate-950 p-1"
@@ -519,7 +653,7 @@ export default function AdminDiamondQualityPage() {
 
             <div className="mb-4">
               <span className="font-open-sans text-base font-semibold text-slate-950 uppercase tracking-wide block">
-                EDIT DIAMOND QUALITY
+                EDIT DIAMOND QUALITY & COLOR
               </span>
               <p className="text-xs font-medium text-slate-800 mt-0.5">
                 Update details for <span className="text-amber-900 font-semibold">{editingQuality.title}</span>
@@ -533,20 +667,60 @@ export default function AdminDiamondQualityPage() {
             )}
 
             <form onSubmit={handleEditSubmit} className="space-y-4">
+              
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* CLARITY / QUALITY */}
                 <div>
                   <label className="block text-[11px] font-semibold tracking-wider text-slate-900 uppercase mb-1.5">
-                    Quality Title <span className="text-rose-600 font-semibold">*</span>
+                    Diamond Clarity <span className="text-rose-600 font-semibold">*</span>
                   </label>
                   <input
                     type="text"
                     required
-                    value={formData.title}
-                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    value={formData.clarity}
+                    onChange={(e) => {
+                      const newClarity = e.target.value;
+                      const constructed = newClarity.trim() + (formData.color.trim() ? ` (${formData.color.trim()})` : '');
+                      setFormData({ ...formData, clarity: newClarity, title: constructed });
+                    }}
                     className="w-full px-3 py-2.5 bg-white border border-slate-400 rounded-[4px] text-xs font-semibold text-slate-950 focus:outline-none focus:border-amber-600 shadow-2xs"
                   />
                 </div>
 
+                {/* DIAMOND COLOR */}
+                <div>
+                  <label className="block text-[11px] font-semibold tracking-wider text-slate-900 uppercase mb-1.5">
+                    Diamond Color
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.color}
+                    onChange={(e) => {
+                      const newColor = e.target.value;
+                      const constructed = formData.clarity.trim() + (newColor.trim() ? ` (${newColor.trim()})` : '');
+                      setFormData({ ...formData, color: newColor, title: constructed });
+                    }}
+                    className="w-full px-3 py-2.5 bg-white border border-slate-400 rounded-[4px] text-xs font-semibold text-slate-950 focus:outline-none focus:border-amber-600 shadow-2xs"
+                  />
+                </div>
+              </div>
+
+              {/* COMBINED GRADE TITLE PREVIEW */}
+              <div>
+                <label className="block text-[11px] font-semibold tracking-wider text-slate-900 uppercase mb-1.5">
+                  Combined Grade Title
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  className="w-full px-3 py-2.5 bg-amber-50/70 border border-amber-300 rounded-[4px] text-xs font-bold text-amber-950 focus:outline-none focus:border-amber-600 shadow-2xs"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {/* RATE PER CARAT */}
                 <div>
                   <label className="block text-[11px] font-semibold tracking-wider text-slate-900 uppercase mb-1.5">
                     Rate / Carat (₹/Ct)
@@ -555,15 +729,13 @@ export default function AdminDiamondQualityPage() {
                     type="number"
                     step="0.001"
                     min="0"
-                    placeholder="e.g. 75000.000"
                     value={formData.ratePerCarat}
                     onChange={(e) => setFormData({ ...formData, ratePerCarat: limitDecimalPlaces(e.target.value, 3) })}
-                    className="w-full px-3 py-2.5 bg-white border border-slate-400 rounded-[4px] text-xs font-semibold font-mono text-slate-950 placeholder-slate-400 focus:outline-none focus:border-amber-600 shadow-2xs"
+                    className="w-full px-3 py-2.5 bg-white border border-slate-400 rounded-[4px] text-xs font-semibold font-mono text-slate-950 focus:outline-none focus:border-amber-600 shadow-2xs"
                   />
                 </div>
-              </div>
 
-              <div className="grid grid-cols-2 gap-3">
+                {/* DISPLAY ORDER */}
                 <div>
                   <label className="block text-[11px] font-semibold tracking-wider text-slate-900 uppercase mb-1.5">
                     Display Order
@@ -578,6 +750,7 @@ export default function AdminDiamondQualityPage() {
                   />
                 </div>
 
+                {/* STATUS */}
                 <div>
                   <label className="block text-[11px] font-semibold tracking-wider text-slate-900 uppercase mb-1.5">
                     Status

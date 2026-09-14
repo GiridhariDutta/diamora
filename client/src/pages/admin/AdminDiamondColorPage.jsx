@@ -6,13 +6,12 @@ import {
   GripVertical, 
   RefreshCw, 
   X, 
-  Palette,
-  Search
+  Gem
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 import api from '../../api/axios';
 
-// Executive Light styled SweetAlert2 configuration with ~4-5px border radius
+// Executive Light styled SweetAlert2 configuration
 const lightSwal = Swal.mixin({
   background: '#FFFFFF',
   color: '#0F172A',
@@ -25,15 +24,14 @@ const lightSwal = Swal.mixin({
   }
 });
 
-export default function AdminColorsPage() {
-  const [colors, setColors] = useState([]);
-  const [searchQuery, setSearchQuery] = useState('');
+export default function AdminDiamondColorPage() {
+  const [diamondColors, setDiamondColors] = useState([]);
   const [loading, setLoading] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingColor, setEditingColor] = useState(null);
 
-  // Form states (No Heading/Subtitle field as requested)
+  // Form states
   const [formData, setFormData] = useState({
     title: '',
     order: 1,
@@ -47,32 +45,32 @@ export default function AdminColorsPage() {
   const dragOverItem = useRef(null);
   const [isDragging, setIsDragging] = useState(false);
 
-  // Fetch colors from Backend API
-  const fetchColors = async () => {
+  // Fetch diamond colors from Backend API
+  const fetchDiamondColors = async () => {
     setLoading(true);
     try {
-      const res = await api.get('/api/colors');
+      const res = await api.get('/api/diamond-colors');
       if (res.data?.success && Array.isArray(res.data.data)) {
-        setColors(res.data.data);
+        setDiamondColors(res.data.data);
       } else {
-        setColors([]);
+        setDiamondColors([]);
       }
     } catch (err) {
-      console.warn('Colors API fetch warning:', err.message);
-      setColors([]);
+      console.warn('Diamond colors API fetch warning:', err.message);
+      setDiamondColors([]);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchColors();
+    fetchDiamondColors();
   }, []);
 
   // Open Add Modal
   const handleOpenAddModal = () => {
-    const nextOrder = colors.length > 0 
-      ? Math.max(...colors.map(c => Number(c.order) || 0)) + 1 
+    const nextOrder = diamondColors.length > 0 
+      ? Math.max(...diamondColors.map(c => Number(c.order) || 0)) + 1 
       : 1;
 
     setFormData({
@@ -84,7 +82,7 @@ export default function AdminColorsPage() {
     setIsAddModalOpen(true);
   };
 
-  // Submit Add Color
+  // Submit Add Diamond Color
   const handleAddSubmit = async (e) => {
     e.preventDefault();
     if (!formData.title.trim()) return;
@@ -93,21 +91,21 @@ export default function AdminColorsPage() {
     setErrorMessage('');
 
     try {
-      const res = await api.post('/api/colors', formData);
+      const res = await api.post('/api/diamond-colors', formData);
       if (res.data?.success) {
         setIsAddModalOpen(false);
-        fetchColors();
+        fetchDiamondColors();
 
         lightSwal.fire({
           icon: 'success',
-          title: 'Color Created!',
+          title: 'Diamond Color Created!',
           text: `"${formData.title}" has been saved.`,
           timer: 1800,
           showConfirmButton: false
         });
       }
     } catch (err) {
-      setErrorMessage(err.message || 'Failed to create color.');
+      setErrorMessage(err.message || 'Failed to create diamond color.');
     } finally {
       setSubmitting(false);
     }
@@ -125,7 +123,7 @@ export default function AdminColorsPage() {
     setIsEditModalOpen(true);
   };
 
-  // Submit Edit Color
+  // Submit Edit Diamond Color
   const handleEditSubmit = async (e) => {
     e.preventDefault();
     if (!editingColor) return;
@@ -134,31 +132,31 @@ export default function AdminColorsPage() {
     setErrorMessage('');
 
     try {
-      const res = await api.put(`/api/colors/${editingColor.id}`, formData);
+      const res = await api.put(`/api/diamond-colors/${editingColor.id}`, formData);
       if (res.data?.success) {
         setIsEditModalOpen(false);
         setEditingColor(null);
-        fetchColors();
+        fetchDiamondColors();
 
         lightSwal.fire({
           icon: 'success',
-          title: 'Color Updated!',
+          title: 'Diamond Color Updated!',
           text: `"${formData.title}" updated successfully.`,
           timer: 1500,
           showConfirmButton: false
         });
       }
     } catch (err) {
-      setErrorMessage(err.message || 'Failed to update color.');
+      setErrorMessage(err.message || 'Failed to update diamond color.');
     } finally {
       setSubmitting(false);
     }
   };
 
-  // Delete Color
+  // Delete Diamond Color
   const handleDeleteColor = (col) => {
     lightSwal.fire({
-      title: 'Delete Color?',
+      title: 'Delete Diamond Color?',
       text: `Are you sure you want to remove "${col.title}"?`,
       icon: 'warning',
       showCancelButton: true,
@@ -168,13 +166,13 @@ export default function AdminColorsPage() {
     }).then(async (result) => {
       if (result.isConfirmed) {
         try {
-          const res = await api.delete(`/api/colors/${col.id}`);
+          const res = await api.delete(`/api/diamond-colors/${col.id}`);
           if (res.data?.success) {
-            setColors(prev => prev.filter(c => c.id !== col.id));
+            setDiamondColors(prev => prev.filter(c => c.id !== col.id));
             lightSwal.fire({
               icon: 'success',
               title: 'Deleted!',
-              text: 'Color has been removed.',
+              text: 'Diamond color has been removed.',
               timer: 1500,
               showConfirmButton: false
             });
@@ -183,7 +181,7 @@ export default function AdminColorsPage() {
           lightSwal.fire({
             icon: 'error',
             title: 'Delete Failed',
-            text: err.message || 'Failed to delete color.'
+            text: err.message || 'Failed to delete diamond color.'
           });
         }
       }
@@ -206,8 +204,8 @@ export default function AdminColorsPage() {
     if (dragItem.current === null || dragOverItem.current === null) return;
     if (dragItem.current === dragOverItem.current) return;
 
-    // Create reordered copy of colors array
-    const updatedColors = [...colors];
+    // Create reordered copy array
+    const updatedColors = [...diamondColors];
     const draggedItemContent = updatedColors.splice(dragItem.current, 1)[0];
     updatedColors.splice(dragOverItem.current, 0, draggedItemContent);
 
@@ -217,14 +215,14 @@ export default function AdminColorsPage() {
       order: index + 1
     }));
 
-    setColors(reindexedColors);
+    setDiamondColors(reindexedColors);
 
     dragItem.current = null;
     dragOverItem.current = null;
 
     // Save new order sequence to backend API
     try {
-      const res = await api.put('/api/colors/reorder', {
+      const res = await api.put('/api/diamond-colors/reorder', {
         orderedItems: reindexedColors
       });
       if (res.data?.success) {
@@ -242,58 +240,27 @@ export default function AdminColorsPage() {
     }
   };
 
-  // Frontend Live Search Filtering (Without API call)
-  const filteredColors = colors.filter(item => {
-    if (!searchQuery.trim()) return true;
-    const q = searchQuery.trim().toLowerCase();
-    return (
-      (item.title && item.title.toLowerCase().includes(q))
-    );
-  });
-
   return (
     <div className="space-y-3 font-open-sans">
 
       {/* TOP HEADER & ACTION BAR */}
       <div className="bg-white border border-slate-200 rounded-[4px] p-3 sm:p-3.5 shadow-2xs">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5 mb-3 pb-2 border-b border-slate-200">
-          <div className="shrink-0">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 mb-3 pb-2 border-b border-slate-200">
+          <div>
             <h3 className="font-open-sans text-sm sm:text-base font-semibold text-slate-900 uppercase flex items-center gap-2">
-              <Palette className="w-4 h-4 text-amber-700" />
-              Gold Color Management
+              <Gem className="w-4 h-4 text-amber-700" />
+              Diamond Color Management
             </h3>
             <p className="text-[11px] text-slate-500 mt-0.5">
-              Drag rows with mouse to reorder display sequence or add new metal and gemstone gold colors
+              Drag rows with mouse to reorder display sequence or add new diamond colors (e.g. D, E, F, G, H, Fancy Yellow)
             </p>
           </div>
 
-          {/* FRONTEND LIVE SEARCH FIELD IN MIDDLE GAP */}
-          <div className="relative flex-1 max-w-sm w-full md:mx-4 my-1 md:my-0">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Search gold color title..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-8 pr-7 py-2 bg-slate-50 hover:bg-slate-100/80 focus:bg-white border border-slate-300 rounded-[4px] text-xs font-semibold text-slate-900 placeholder-slate-400 focus:outline-none focus:border-amber-600 focus:ring-1 focus:ring-amber-500/20 transition-all"
-            />
-            {searchQuery && (
-              <button
-                type="button"
-                onClick={() => setSearchQuery('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 p-0.5 rounded-full hover:bg-slate-200 transition-all"
-                title="Clear search"
-              >
-                <X className="w-3 h-3" />
-              </button>
-            )}
-          </div>
-
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex items-center gap-2">
             <button
-              onClick={fetchColors}
+              onClick={fetchDiamondColors}
               className="p-1.5 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-[4px] text-slate-700 hover:text-amber-800 transition-colors shadow-2xs"
-              title="Refresh Colors"
+              title="Refresh Diamond Colors"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin text-amber-700' : ''}`} />
             </button>
@@ -303,12 +270,12 @@ export default function AdminColorsPage() {
               className="flex items-center justify-center gap-1 px-3 py-1.5 bg-gradient-to-r from-[#D4AF37] to-[#B48811] hover:from-[#c5a12d] hover:to-[#a27a0e] text-slate-950 font-semibold text-[11px] tracking-wider rounded-[4px] uppercase shadow-2xs transition-all shrink-0"
             >
               <Plus className="w-3.5 h-3.5" />
-              <span>Add Gold Color</span>
+              <span>Add Diamond Color</span>
             </button>
           </div>
         </div>
 
-        {/* COLORS TABLE WITH DRAG AND DROP */}
+        {/* TABLE WITH DRAG AND DROP */}
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs min-w-[500px]">
             <thead>
@@ -323,7 +290,7 @@ export default function AdminColorsPage() {
             <tbody className="divide-y divide-slate-100 text-slate-700">
               {loading ? (
                 [1, 2, 3, 4].map((n) => (
-                  <tr key={`skel-color-${n}`} className="animate-pulse bg-white">
+                  <tr key={`skel-dcolor-${n}`} className="animate-pulse bg-white">
                     <td className="py-2 px-2.5 text-center">
                       <div className="w-4 h-4 bg-slate-200 mx-auto rounded-[3px]" />
                     </td>
@@ -344,18 +311,14 @@ export default function AdminColorsPage() {
                     </td>
                   </tr>
                 ))
-              ) : filteredColors.length === 0 ? (
+              ) : diamondColors.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="py-8 text-center text-slate-500 text-xs font-medium">
-                    {searchQuery ? (
-                      <span>No gold colors match your search &ldquo;<strong>{searchQuery}</strong>&rdquo;.</span>
-                    ) : (
-                      'No data found.'
-                    )}
+                    No data found.
                   </td>
                 </tr>
               ) : (
-                filteredColors.map((col, index) => (
+                diamondColors.map((col, index) => (
                   <tr 
                     key={col.id || index}
                     draggable
@@ -377,14 +340,14 @@ export default function AdminColorsPage() {
                       {col.title}
                     </td>
 
-                    {/* Order (No # symbol) */}
+                    {/* Order */}
                     <td className="py-2 px-3 text-center font-mono font-medium text-slate-800">
                       <span className="inline-block px-2 py-0.5 bg-slate-100 border border-slate-200 rounded-[3px] text-[10px]">
                         {col.order}
                       </span>
                     </td>
 
-                    {/* Status (Active = Green, Inactive = Red) */}
+                    {/* Status */}
                     <td className="py-2 px-3">
                       <span className={`px-2 py-0.5 rounded-[3px] text-[8.5px] font-semibold uppercase inline-flex items-center gap-1 ${
                         col.status === 'Active'
@@ -402,7 +365,7 @@ export default function AdminColorsPage() {
                         <button
                           onClick={() => handleOpenEditModal(col)}
                           className="p-1 bg-slate-100 hover:bg-slate-200 border border-slate-300 hover:border-amber-500 text-slate-700 hover:text-amber-800 rounded-[4px] transition-all"
-                          title="Edit Color"
+                          title="Edit Diamond Color"
                         >
                           <Pencil className="w-3.5 h-3.5" />
                         </button>
@@ -410,7 +373,7 @@ export default function AdminColorsPage() {
                         <button
                           onClick={() => handleDeleteColor(col)}
                           className="p-1 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-600 hover:text-rose-700 rounded-[4px] transition-all"
-                          title="Delete Color"
+                          title="Delete Diamond Color"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -425,7 +388,7 @@ export default function AdminColorsPage() {
         </div>
       </div>
 
-      {/* MODAL 1: ADD COLOR MODAL */}
+      {/* MODAL 1: ADD DIAMOND COLOR */}
       {isAddModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-slate-900/60 backdrop-blur-xs animate-fadeIn font-open-sans">
           <div className="relative w-full max-w-md bg-white border border-slate-300 rounded-[4px] shadow-2xl p-5 sm:p-6">
@@ -438,10 +401,10 @@ export default function AdminColorsPage() {
 
             <div className="mb-4">
               <span className="font-open-sans text-base font-semibold text-slate-950 uppercase tracking-wide block">
-                ADD NEW COLOR
+                ADD NEW DIAMOND COLOR
               </span>
               <p className="text-xs font-medium text-slate-800 mt-0.5">
-                Creates a new color option for catalog products
+                Creates a new diamond color option for catalog filtering
               </p>
             </div>
 
@@ -456,12 +419,12 @@ export default function AdminColorsPage() {
               {/* TITLE */}
               <div>
                 <label className="block text-[11px] font-semibold tracking-wider text-slate-900 uppercase mb-1.5">
-                  Title <span className="text-rose-600 font-semibold">*</span>
+                  Title / Color Grade <span className="text-rose-600 font-semibold">*</span>
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Yellow Gold, Rose Gold, Platinum"
+                  placeholder="e.g. D, E, F, G-H, I-J, Fancy Yellow"
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                   className="w-full px-3 py-2.5 bg-white border border-slate-400 rounded-[4px] text-xs font-semibold text-slate-950 placeholder-slate-500 focus:outline-none focus:border-amber-600 shadow-2xs"
@@ -512,7 +475,7 @@ export default function AdminColorsPage() {
                   disabled={submitting}
                   className="px-4 py-2 bg-gradient-to-r from-[#D4AF37] to-[#B48811] text-slate-950 font-semibold text-xs tracking-wider rounded-[4px] uppercase disabled:opacity-50 shadow-2xs"
                 >
-                  {submitting ? 'Creating...' : 'Create Color'}
+                  {submitting ? 'Creating...' : 'Create Diamond Color'}
                 </button>
               </div>
 
@@ -521,7 +484,7 @@ export default function AdminColorsPage() {
         </div>
       )}
 
-      {/* MODAL 2: EDIT COLOR MODAL */}
+      {/* MODAL 2: EDIT DIAMOND COLOR */}
       {isEditModalOpen && editingColor && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-slate-900/60 backdrop-blur-xs animate-fadeIn font-open-sans">
           <div className="relative w-full max-w-md bg-white border border-slate-300 rounded-[4px] shadow-2xl p-5 sm:p-6">
@@ -534,7 +497,7 @@ export default function AdminColorsPage() {
 
             <div className="mb-4">
               <span className="font-open-sans text-base font-semibold text-slate-950 uppercase tracking-wide block">
-                EDIT COLOR
+                EDIT DIAMOND COLOR
               </span>
               <p className="text-xs font-medium text-slate-800 mt-0.5">
                 Update details for <span className="text-amber-900 font-semibold">{editingColor.title}</span>
@@ -552,7 +515,7 @@ export default function AdminColorsPage() {
               {/* TITLE */}
               <div>
                 <label className="block text-[11px] font-semibold tracking-wider text-slate-900 uppercase mb-1.5">
-                  Title <span className="text-rose-600 font-semibold">*</span>
+                  Title / Color Grade <span className="text-rose-600 font-semibold">*</span>
                 </label>
                 <input
                   type="text"

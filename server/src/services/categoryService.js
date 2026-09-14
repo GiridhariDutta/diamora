@@ -1,4 +1,5 @@
-import { db, bucket } from '../config/firebase.js';
+import { db } from '../config/firebase.js';
+import { StorageService } from './storageService.js';
 
 export class CategoryService {
   /**
@@ -27,6 +28,7 @@ export class CategoryService {
 
   /**
    * Create a new category
+   * Moves image from temp/ to categories/ if uploaded to temp
    */
   static async createCategory({ title, heading, order = 0, status = 'Active', imageUrl = '' }) {
     if (!db) {
@@ -37,13 +39,19 @@ export class CategoryService {
       throw new Error('Category title is required.');
     }
 
+    // Move image from temp/ to categories/ if it's a temporary upload
+    let finalImageUrl = imageUrl || '';
+    if (finalImageUrl) {
+      finalImageUrl = await StorageService.moveFromTemp(finalImageUrl, 'categories', 'cat');
+    }
+
     const nowIso = new Date().toISOString();
     const categoryData = {
       title: title.trim(),
       heading: heading ? heading.trim() : '',
       order: Number(order) || 0,
       status: status || 'Active',
-      imageUrl: imageUrl || '',
+      imageUrl: finalImageUrl,
       createdAt: nowIso,
       updatedAt: nowIso
     };
@@ -58,6 +66,7 @@ export class CategoryService {
 
   /**
    * Update an existing category
+   * Moves image from temp/ to categories/ if a new temporary image was uploaded
    */
   static async updateCategory(id, { title, heading, order, status, imageUrl }) {
     if (!db) {
@@ -79,7 +88,17 @@ export class CategoryService {
     if (heading !== undefined) updateData.heading = heading.trim();
     if (order !== undefined) updateData.order = Number(order) || 0;
     if (status !== undefined) updateData.status = status;
-    if (imageUrl !== undefined) updateData.imageUrl = imageUrl;
+    
+    if (imageUrl !== undefined) {
+      const oldImageUrl = docSnap.data()?.imageUrl;
+      const newImageUrl = await StorageService.moveFromTemp(imageUrl, 'categories', 'cat');
+      updateData.imageUrl = newImageUrl;
+
+      // Delete previous image from Firebase Storage if replaced with a new image
+      if (oldImageUrl && oldImageUrl !== newImageUrl) {
+        await StorageService.deleteFileFromStorage(oldImageUrl);
+      }
+    }
 
     await docRef.update(updateData);
 
@@ -91,14 +110,25 @@ export class CategoryService {
   }
 
   /**
-   * Delete a category
+   * Delete a category and clean up its associated image file from Firebase Storage
    */
   static async deleteCategory(id) {
     if (!db) {
       throw new Error('Firestore database is not initialized');
     }
 
-    await db.collection('categories').doc(id).delete();
+    const docRef = db.collection('categories').doc(id);
+    const docSnap = await docRef.get();
+
+    if (docSnap.exists) {
+      const categoryData = docSnap.data();
+      if (categoryData?.imageUrl) {
+        // Delete associated image file from Firebase Storage bucket
+        await StorageService.deleteFileFromStorage(categoryData.imageUrl);
+      }
+      await docRef.delete();
+    }
+
     return { success: true, message: 'Category deleted successfully.' };
   }
 
@@ -132,36 +162,9 @@ export class CategoryService {
   }
 
   /**
-   * Upload image file to Firebase Storage bucket & get public URL
+   * Upload image file to `temp/` folder in Firebase Storage bucket & get temporary public URL
    */
   static async uploadCategoryImage(file) {
-    if (!bucket) {
-      throw new Error('Firebase Storage bucket is not initialized');
-    }
-
-    if (!file || !file.buffer) {
-      throw new Error('No image file provided');
-    }
-
-    const fileExtension = file.originalname ? file.originalname.split('.').pop() : 'png';
-    const fileName = `categories/cat_${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${fileExtension}`;
-    const fileRef = bucket.file(fileName);
-
-    await fileRef.save(file.buffer, {
-      metadata: {
-        contentType: file.mimetype || 'image/png'
-      },
-      public: true
-    });
-
-    // Make public or get public URL
-    try {
-      await fileRef.makePublic();
-    } catch (e) {
-      console.warn('makePublic warning:', e.message);
-    }
-
-    const publicUrl = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
-    return { imageUrl: publicUrl, fileName };
+    return StorageService.uploadToTemp(file);
   }
 }
