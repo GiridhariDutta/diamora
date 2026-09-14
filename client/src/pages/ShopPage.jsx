@@ -91,7 +91,7 @@ export default function ShopPage() {
   // Fetch initial batch (Page 1) when active filters change
   useEffect(() => {
     fetchInitialProducts();
-  }, [selectedCategory, selectedCollection, selectedColor, selectedPurity, selectedPriceRange]);
+  }, [selectedCategory, selectedCollection, selectedColor, selectedDiamondColor, selectedPurity, selectedPriceRange]);
 
   const fetchInitialProducts = async () => {
     setLoadingInitial(true);
@@ -103,6 +103,7 @@ export default function ShopPage() {
         category: selectedCategory,
         collection: selectedCollection,
         color: selectedColor,
+        diamondColor: selectedDiamondColor,
         purity: selectedPurity,
         price: selectedPriceRange
       };
@@ -136,6 +137,7 @@ export default function ShopPage() {
         category: selectedCategory,
         collection: selectedCollection,
         color: selectedColor,
+        diamondColor: selectedDiamondColor,
         purity: selectedPurity,
         price: selectedPriceRange
       };
@@ -338,7 +340,7 @@ export default function ShopPage() {
               )}
             </div>
 
-            {/* COLOR FILTER */}
+            {/* GOLD COLOR FILTER */}
             <div className="pt-3 border-t border-white/10">
               <button
                 type="button"
@@ -346,14 +348,21 @@ export default function ShopPage() {
                 className="flex items-center justify-between w-full py-1 text-left group cursor-pointer"
               >
                 <span className="text-[11px] font-semibold tracking-[0.18em] text-[#F5F5F0] group-hover:text-[#E0B094] transition-colors uppercase">
-                  COLOR {selectedColor ? `(${selectedColor})` : ''}
+                  GOLD COLOR {selectedColor ? `(${selectedColor})` : ''}
                 </span>
                 <ChevronDown className={`w-3.5 h-3.5 text-[#E0B094] transition-transform duration-300 ${openSections.color ? 'rotate-180' : ''}`} />
               </button>
 
               {openSections.color && (
                 <div className="space-y-1.5 text-xs font-light text-[#C5C8D0] pt-2 animate-fadeIn">
-                  {colors.length > 0 ? (
+                  {masterLoading ? (
+                    <div className="space-y-2 animate-pulse py-1">
+                      <div className="h-3.5 bg-white/10 rounded w-28" />
+                      <div className="h-3.5 bg-white/10 rounded w-24" />
+                    </div>
+                  ) : colors.length === 0 ? (
+                    <span className="text-xs text-[#C5C8D0]/60 italic block py-1 font-normal">No colors available</span>
+                  ) : (
                     colors.map(clr => (
                       <button
                         key={clr.id || clr.title}
@@ -365,20 +374,6 @@ export default function ShopPage() {
                         }`}
                       >
                         {clr.title}
-                      </button>
-                    ))
-                  ) : (
-                    ['Rose Gold', 'White Gold', 'Yellow Gold'].map(clr => (
-                      <button
-                        key={clr}
-                        onClick={() => updateFilter('color', selectedColor === clr ? '' : clr)}
-                        className={`block w-full text-left py-1 tracking-wide transition-colors rounded px-2 ${
-                          selectedColor.toLowerCase() === clr.toLowerCase()
-                            ? 'text-[#E0B094] bg-[#E0B094]/15 font-semibold border-l-2 border-[#E0B094]'
-                            : 'hover:text-white hover:bg-white/5'
-                        }`}
-                      >
-                        {clr}
                       </button>
                     ))
                   )}
@@ -401,7 +396,14 @@ export default function ShopPage() {
 
               {openSections.purity && (
                 <div className="space-y-1.5 text-xs font-light text-[#C5C8D0] pt-2 animate-fadeIn">
-                  {purities.length > 0 ? (
+                  {masterLoading ? (
+                    <div className="space-y-2 animate-pulse py-1">
+                      <div className="h-3.5 bg-white/10 rounded w-24" />
+                      <div className="h-3.5 bg-white/10 rounded w-28" />
+                    </div>
+                  ) : purities.length === 0 ? (
+                    <span className="text-xs text-[#C5C8D0]/60 italic block py-1 font-normal">No purities available</span>
+                  ) : (
                     purities.map(pur => (
                       <button
                         key={pur.id || pur.title}
@@ -413,20 +415,6 @@ export default function ShopPage() {
                         }`}
                       >
                         {pur.title}
-                      </button>
-                    ))
-                  ) : (
-                    ['14kt', '18kt', '22kt', '24kt'].map(pur => (
-                      <button
-                        key={pur}
-                        onClick={() => updateFilter('purity', selectedPurity === pur ? '' : pur)}
-                        className={`block w-full text-left py-1 tracking-wide transition-colors rounded px-2 ${
-                          selectedPurity.toLowerCase() === pur.toLowerCase()
-                            ? 'text-[#E0B094] bg-[#E0B094]/15 font-semibold border-l-2 border-[#E0B094]'
-                            : 'hover:text-white hover:bg-white/5'
-                        }`}
-                      >
-                        {pur}
                       </button>
                     ))
                   )}

@@ -193,6 +193,28 @@ export class AuthController {
     try {
       const { uid } = req.params;
 
+      if (req.user && (req.user.uid === uid)) {
+        return res.status(400).json({
+          success: false,
+          message: 'You cannot delete your own logged-in admin account.'
+        });
+      }
+
+      // Also check by email match if target user has the same email as logged-in user
+      if (req.user && req.user.email) {
+        try {
+          const targetProfile = await AuthService.getUserProfile(uid);
+          if (targetProfile && targetProfile.email && targetProfile.email.toLowerCase() === req.user.email.toLowerCase()) {
+            return res.status(400).json({
+              success: false,
+              message: 'You cannot delete your own logged-in admin account.'
+            });
+          }
+        } catch (e) {
+          // ignore profile fetch error
+        }
+      }
+
       const result = await AuthService.deleteAdminUser(uid);
 
       return res.status(200).json({
@@ -204,6 +226,29 @@ export class AuthController {
       return res.status(400).json({
         success: false,
         message: error.message || 'Failed to delete admin user.'
+      });
+    }
+  }
+
+  /**
+   * Clean up unsubmitted temporary files from Firebase Storage `temp/` folder
+   */
+  static async cleanTempStorage(req, res) {
+    try {
+      const { StorageService } = await import('../services/storageService.js');
+      const maxAgeHours = Number(req.body?.maxAgeHours) || 24;
+      const result = await StorageService.cleanTempFolder(maxAgeHours);
+
+      return res.status(200).json({
+        success: true,
+        message: `Temp storage cleanup complete. Deleted ${result.deletedCount} temporary file(s).`,
+        data: result
+      });
+    } catch (error) {
+      console.error('Error in AuthController.cleanTempStorage:', error);
+      return res.status(500).json({
+        success: false,
+        message: error.message || 'Failed to clean temp storage.'
       });
     }
   }

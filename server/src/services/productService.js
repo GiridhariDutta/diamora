@@ -9,7 +9,7 @@ export class ProductService {
       throw new Error('Firestore database is not initialized');
     }
 
-    const { page, limit, search, category, collection, color, purity, price } = options;
+    const { page, limit, search, category, collection, color, diamondColor, purity, price } = options;
 
     const snapshot = await db.collection('products').get();
     let products = [];
@@ -54,12 +54,22 @@ export class ProductService {
       );
     }
 
-    // 5. Filter by color if provided
+    // 5. Filter by gold color if provided
     if (color && typeof color === 'string' && color.trim() !== '') {
       const colorQuery = color.trim().toLowerCase();
       products = products.filter(p => 
         (p.colorId && p.colorId.toLowerCase() === colorQuery) ||
         (p.colorTitle && p.colorTitle.toLowerCase().includes(colorQuery))
+      );
+    }
+
+    // 5b. Filter by diamond color if provided
+    if (diamondColor && typeof diamondColor === 'string' && diamondColor.trim() !== '') {
+      const dColorQuery = diamondColor.trim().toLowerCase();
+      products = products.filter(p => 
+        (p.diamondColorId && p.diamondColorId.toLowerCase() === dColorQuery) ||
+        (p.diamondColorTitle && p.diamondColorTitle.toLowerCase().includes(dColorQuery)) ||
+        (p.diamonds && Array.isArray(p.diamonds) && p.diamonds.some(d => d.color && d.color.toLowerCase().includes(dColorQuery)))
       );
     }
 

@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 import api from '../../api/axios';
+import { convertToWebP } from '../../utils/imageUtils';
 
 // Executive Light styled SweetAlert2 configuration with ~4-5px border radius
 const lightSwal = Swal.mixin({
@@ -36,6 +37,7 @@ export default function AdminCategoriesPage() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState(null);
+  const [hoveredImage, setHoveredImage] = useState(null);
 
   // Form states
   const [formData, setFormData] = useState({
@@ -76,17 +78,21 @@ export default function AdminCategoriesPage() {
     fetchCategories();
   }, []);
 
-  // Image Upload Handler (Firebase Storage via backend API)
+  // Image Upload Handler (Converts to WebP in browser -> Firebase Storage via backend API)
   const handleImageFileChange = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const rawFile = e.target.files?.[0];
+    if (!rawFile) return;
 
     setUploadingImage(true);
     setErrorMessage('');
 
     try {
+      // 1. Convert image to WebP format in browser
+      const webpFile = await convertToWebP(rawFile, 0.85);
+
+      // 2. Upload converted WebP file
       const uploadFormData = new FormData();
-      uploadFormData.append('image', file);
+      uploadFormData.append('image', webpFile);
 
       const res = await api.post('/api/categories/upload', uploadFormData, {
         headers: {
@@ -104,7 +110,7 @@ export default function AdminCategoriesPage() {
           toast: true,
           position: 'top-end',
           icon: 'success',
-          title: 'Image Uploaded to Firebase Storage!',
+          title: 'Image Converted to WebP & Uploaded!',
           showConfirmButton: false,
           timer: 2000
         });
@@ -396,16 +402,30 @@ export default function AdminCategoriesPage() {
                       <GripVertical className="w-4 h-4 mx-auto cursor-grab active:cursor-grabbing" title="Drag with mouse to reorder" />
                     </td>
 
-                    {/* Image Thumbnail */}
+                    {/* Image Thumbnail with Floating Larger Preview on Hover */}
                     <td className="py-2 px-3">
                       {cat.imageUrl ? (
-                        <img 
-                          src={cat.imageUrl} 
-                          alt={cat.title}
-                          className="w-8 h-8 rounded-[4px] object-cover border border-slate-200 shadow-2xs" 
-                        />
+                        <div 
+                          className="relative inline-block"
+                          onMouseEnter={(e) => {
+                            const rect = e.currentTarget.getBoundingClientRect();
+                            setHoveredImage({
+                              url: cat.imageUrl,
+                              title: cat.title,
+                              x: rect.right + 16,
+                              y: Math.max(10, rect.top - 110)
+                            });
+                          }}
+                          onMouseLeave={() => setHoveredImage(null)}
+                        >
+                          <img 
+                            src={cat.imageUrl} 
+                            alt={cat.title}
+                            className="w-8.5 h-8.5 rounded-[4px] object-cover border border-slate-200 shadow-2xs cursor-pointer hover:border-amber-500 hover:scale-105 transition-all" 
+                          />
+                        </div>
                       ) : (
-                        <div className="w-8 h-8 rounded-[4px] bg-slate-100 border border-slate-200 text-slate-400 flex items-center justify-center">
+                        <div className="w-8.5 h-8.5 rounded-[4px] bg-slate-100 border border-slate-200 text-slate-400 flex items-center justify-center">
                           <ImageIcon className="w-4 h-4" />
                         </div>
                       )}
@@ -525,7 +545,7 @@ export default function AdminCategoriesPage() {
                     <span>{uploadingImage ? 'Uploading...' : 'Choose Image File'}</span>
                     <input 
                       type="file" 
-                      accept="image/*"
+                      accept="image/jpeg, image/jpg, image/png, image/webp"
                       onChange={handleImageFileChange}
                       disabled={uploadingImage}
                       className="hidden" 
@@ -672,7 +692,7 @@ export default function AdminCategoriesPage() {
                     <span>{uploadingImage ? 'Uploading...' : 'Replace Image File'}</span>
                     <input 
                       type="file" 
-                      accept="image/*"
+                      accept="image/jpeg, image/jpg, image/png, image/webp"
                       onChange={handleImageFileChange}
                       disabled={uploadingImage}
                       className="hidden" 
@@ -757,6 +777,29 @@ export default function AdminCategoriesPage() {
               </div>
 
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* FLOATING HOVER IMAGE PREVIEW POPUP WITH SMOOTH POP-ZOOM ANIMATION */}
+      {hoveredImage && (
+        <div 
+          className="fixed z-50 pointer-events-none animate-pop-zoom"
+          style={{ left: `${hoveredImage.x}px`, top: `${hoveredImage.y}px` }}
+        >
+          <div className="bg-slate-950/95 backdrop-blur-md p-1.5 rounded-[8px] border border-amber-400/50 shadow-[0_30px_70px_rgba(0,0,0,0.75)] text-center">
+            <div className="overflow-hidden rounded-[5px]">
+              <img 
+                src={hoveredImage.url} 
+                alt={hoveredImage.title}
+                className="w-64 h-64 sm:w-72 sm:h-72 object-cover rounded-[5px] border-0 shadow-sm transition-transform duration-500 ease-out hover:scale-105"
+              />
+            </div>
+            <div className="mt-1.5 px-2 py-1 bg-amber-950/80 border border-amber-500/30 rounded-[4px] shadow-inner">
+              <p className="text-[11px] font-bold text-amber-300 tracking-wider truncate max-w-[260px] uppercase">
+                {hoveredImage.title}
+              </p>
+            </div>
           </div>
         </div>
       )}

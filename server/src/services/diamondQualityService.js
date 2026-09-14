@@ -26,18 +26,26 @@ export class DiamondQualityService {
   /**
    * Create a new diamond quality grade
    */
-  static async createQuality({ title, ratePerCarat = 0, order = 0, status = 'Active' }) {
+  static async createQuality({ clarity = '', color = '', title, ratePerCarat = 0, order = 0, status = 'Active' }) {
     if (!db) {
       throw new Error('Firestore database is not initialized');
     }
 
-    if (!title) {
-      throw new Error('Diamond quality title is required.');
+    const clarityStr = (clarity || '').trim();
+    const colorStr = (color || '').trim();
+    const finalTitle = (title && title.trim()) 
+      ? title.trim() 
+      : (colorStr ? `${clarityStr} (${colorStr})` : clarityStr);
+
+    if (!finalTitle) {
+      throw new Error('Diamond quality clarity/title is required.');
     }
 
     const nowIso = new Date().toISOString();
     const itemData = {
-      title: title.trim(),
+      clarity: clarityStr,
+      color: colorStr,
+      title: finalTitle,
       ratePerCarat: Number(ratePerCarat) || 0,
       order: Number(order) || 0,
       status: status || 'Active',
@@ -56,7 +64,7 @@ export class DiamondQualityService {
   /**
    * Update an existing diamond quality grade
    */
-  static async updateQuality(id, { title, ratePerCarat, order, status }) {
+  static async updateQuality(id, { clarity, color, title, ratePerCarat, order, status }) {
     if (!db) {
       throw new Error('Firestore database is not initialized');
     }
@@ -72,10 +80,19 @@ export class DiamondQualityService {
       updatedAt: new Date().toISOString()
     };
 
+    if (clarity !== undefined) updateData.clarity = (clarity || '').trim();
+    if (color !== undefined) updateData.color = (color || '').trim();
     if (title !== undefined) updateData.title = title.trim();
     if (ratePerCarat !== undefined) updateData.ratePerCarat = Number(ratePerCarat) || 0;
     if (order !== undefined) updateData.order = Number(order) || 0;
     if (status !== undefined) updateData.status = status;
+
+    // Auto-update combined title if clarity or color was provided without an explicit custom title
+    if ((clarity !== undefined || color !== undefined) && !title) {
+      const curClarity = updateData.clarity !== undefined ? updateData.clarity : (docSnap.data().clarity || '');
+      const curColor = updateData.color !== undefined ? updateData.color : (docSnap.data().color || '');
+      updateData.title = curColor ? `${curClarity} (${curColor})` : curClarity;
+    }
 
     await docRef.update(updateData);
 

@@ -19,16 +19,11 @@ export class DiamondQualityController {
 
   static async create(req, res) {
     try {
-      const { title, ratePerCarat, order, status } = req.body;
-
-      if (!title) {
-        return res.status(400).json({
-          success: false,
-          message: 'Title is required for diamond quality.'
-        });
-      }
+      const { clarity, color, title, ratePerCarat, order, status } = req.body;
 
       const item = await DiamondQualityService.createQuality({
+        clarity,
+        color,
         title,
         ratePerCarat,
         order,
@@ -52,9 +47,11 @@ export class DiamondQualityController {
   static async update(req, res) {
     try {
       const { id } = req.params;
-      const { title, ratePerCarat, order, status } = req.body;
+      const { clarity, color, title, ratePerCarat, order, status } = req.body;
 
       const updated = await DiamondQualityService.updateQuality(id, {
+        clarity,
+        color,
         title,
         ratePerCarat,
         order,

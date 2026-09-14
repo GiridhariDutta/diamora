@@ -26,6 +26,8 @@ credentials/
 service-account*.json
 *.pem
 *.key
+server/scripts/
+server/scripts/upload3DModels.js
 
 # Logs & Temporary Files
 logs/

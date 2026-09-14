@@ -3,8 +3,8 @@ import { ProductService } from '../services/productService.js';
 export class ProductController {
   static async getAll(req, res) {
     try {
-      const { page, limit, search, category, collection, color, purity, price } = req.query;
-      const result = await ProductService.getAllProducts({ page, limit, search, category, collection, color, purity, price });
+      const { page, limit, search, category, collection, color, diamondColor, purity, price } = req.query;
+      const result = await ProductService.getAllProducts({ page, limit, search, category, collection, color, diamondColor, purity, price });
       return res.status(200).json({
         success: true,
         data: result.products,
