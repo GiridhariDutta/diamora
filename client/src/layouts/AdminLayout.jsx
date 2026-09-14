@@ -113,6 +113,7 @@ export default function AdminLayout() {
     { id: 'colors', label: 'GOLD COLOR', icon: Palette, path: '/admin/colors' },
     { id: 'purities', label: 'PURITY', icon: Award, path: '/admin/purities' },
     { id: 'diamond_qualities', label: 'DIAMOND QUALITY', icon: Gem, path: '/admin/diamond-qualities' },
+    { id: 'stones', label: 'GEMSTONES', icon: Sparkles, path: '/admin/stones' },
     { id: 'inventory', label: 'INVENTORY', icon: Package, path: '/admin/inventory' },
     { id: 'orders', label: 'ORDERS / ENQUIRIES', icon: ShoppingBag, path: '/admin/orders' },
     { id: 'customers', label: 'CLIENT DIRECTORY', icon: Users, path: '/admin/customers' },
@@ -323,6 +324,7 @@ export default function AdminLayout() {
                currentPath === '/admin/colors' ? 'Gold Color Management' :
                currentPath === '/admin/purities' ? 'Purity Management' :
                currentPath === '/admin/diamond-qualities' ? 'Diamond Quality Management' :
+               currentPath === '/admin/stones' ? 'Gemstone Management' :
                currentPath === '/admin/inventory' ? 'Inventory Management' :
                currentPath === '/admin/orders' ? 'Orders & Customer Enquiries' :
                currentPath === '/admin/customers' ? 'Client Directory' :

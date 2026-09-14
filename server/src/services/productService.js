@@ -193,6 +193,10 @@ export class ProductService {
       makingChargeDiscountPercent: Number(data.makingChargeDiscountPercent) || 0,
       gstPercent: Number(data.gstPercent) || 3,
 
+      hasGemstone: Boolean(data.hasGemstone),
+      stones: Array.isArray(data.stones) ? data.stones : [],
+      computedStonePrice: Number(data.computedStonePrice) || 0,
+
       computedGoldPrice: Number(data.computedGoldPrice) || 0,
       computedDiamondPrice: Number(data.computedDiamondPrice) || 0,
       computedMakingCharges: Number(data.computedMakingCharges) || 0,
@@ -203,6 +207,7 @@ export class ProductService {
       certification: data.certification || 'BIS Hallmarked & Certified',
       descriptionHtml: data.descriptionHtml || '',
       showInHomepage: Boolean(data.showInHomepage),
+      showInCarousel: Boolean(data.showInCarousel),
       status: data.status || 'Active',
       createdAt: nowIso,
       updatedAt: nowIso
@@ -257,6 +262,10 @@ export class ProductService {
     if (data.numberOfDiamonds !== undefined) updateData.numberOfDiamonds = Number(data.numberOfDiamonds) || 0;
     if (data.customDiamondPrice !== undefined) updateData.customDiamondPrice = Number(data.customDiamondPrice) || 0;
 
+    if (data.hasGemstone !== undefined) updateData.hasGemstone = Boolean(data.hasGemstone);
+    if (data.stones !== undefined) updateData.stones = Array.isArray(data.stones) ? data.stones : [];
+    if (data.computedStonePrice !== undefined) updateData.computedStonePrice = Number(data.computedStonePrice) || 0;
+
     if (data.makingChargeBase !== undefined) updateData.makingChargeBase = Number(data.makingChargeBase) || 0;
     if (data.makingChargeDiscountPercent !== undefined) updateData.makingChargeDiscountPercent = Number(data.makingChargeDiscountPercent) || 0;
     if (data.gstPercent !== undefined) updateData.gstPercent = Number(data.gstPercent) || 3;
@@ -271,6 +280,7 @@ export class ProductService {
     if (data.certification !== undefined) updateData.certification = data.certification;
     if (data.descriptionHtml !== undefined) updateData.descriptionHtml = data.descriptionHtml;
     if (data.showInHomepage !== undefined) updateData.showInHomepage = Boolean(data.showInHomepage);
+    if (data.showInCarousel !== undefined) updateData.showInCarousel = Boolean(data.showInCarousel);
     if (data.status !== undefined) updateData.status = data.status || 'Active';
 
 

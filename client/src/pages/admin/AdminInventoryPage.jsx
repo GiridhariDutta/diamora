@@ -70,6 +70,7 @@ export default function AdminInventoryPage() {
   const [colors, setColors] = useState([]);
   const [purities, setPurities] = useState([]);
   const [diamondQualities, setDiamondQualities] = useState([]);
+  const [stones, setStones] = useState([]);
 
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -104,6 +105,16 @@ export default function AdminInventoryPage() {
       }
     ],
 
+    hasGemstone: false,
+    stones: [
+      {
+        stoneId: '',
+        stoneWeightCarats: '',
+        numberOfStones: '',
+        customStonePrice: ''
+      }
+    ],
+
     makingChargeBase: '',
     makingChargeDiscountPercent: '',
     gstPercent: 3,
@@ -111,6 +122,7 @@ export default function AdminInventoryPage() {
     certification: '100% Certified & BIS Hallmarked',
     status: 'Active',
     showInHomepage: false,
+    showInCarousel: false,
     descriptionHtml: '',
     media: [] // Array of { url, type }
   };
@@ -159,12 +171,13 @@ export default function AdminInventoryPage() {
   // Fetch Master Data (categories, collections, colors, etc.) once
   const fetchMasterData = async () => {
     try {
-      const [catRes, colRes, clrRes, purRes, dqRes] = await Promise.allSettled([
+      const [catRes, colRes, clrRes, purRes, dqRes, stRes] = await Promise.allSettled([
         api.get('/api/categories'),
         api.get('/api/collections'),
         api.get('/api/colors'),
         api.get('/api/purities'),
-        api.get('/api/diamond-qualities')
+        api.get('/api/diamond-qualities'),
+        api.get('/api/stones')
       ]);
 
       if (catRes.status === 'fulfilled' && catRes.value.data?.success) {
@@ -181,6 +194,9 @@ export default function AdminInventoryPage() {
       }
       if (dqRes.status === 'fulfilled' && dqRes.value.data?.success) {
         setDiamondQualities(dqRes.value.data.data.filter(dq => dq.status === 'Active'));
+      }
+      if (stRes.status === 'fulfilled' && stRes.value.data?.success) {
+        setStones(stRes.value.data.data.filter(st => st.status === 'Active'));
       }
     } catch (err) {
       console.warn('Master data fetch warning:', err.message);
@@ -264,6 +280,40 @@ export default function AdminInventoryPage() {
     });
   };
 
+  // Dynamic Gemstone Component Array Handlers
+  const handleAddStoneRow = () => {
+    setFormData(prev => ({
+      ...prev,
+      stones: [
+        ...(prev.stones || []),
+        {
+          stoneId: '',
+          stoneWeightCarats: '',
+          numberOfStones: '',
+          customStonePrice: ''
+        }
+      ]
+    }));
+  };
+
+  const handleRemoveStoneRow = (indexToRemove) => {
+    setFormData(prev => ({
+      ...prev,
+      stones: (prev.stones || []).filter((_, idx) => idx !== indexToRemove)
+    }));
+  };
+
+  const handleStoneChange = (index, field, value) => {
+    setFormData(prev => {
+      const updated = [...(prev.stones || [])];
+      updated[index] = {
+        ...updated[index],
+        [field]: value
+      };
+      return { ...prev, stones: updated };
+    });
+  };
+
   // Compute Price Breakdown Components Live
   const computePriceBreakdown = () => {
     // 1. Metal Price = Net Gold Weight (g) * Purity Rate (₹/g)
@@ -312,6 +362,38 @@ export default function AdminInventoryPage() {
       };
     });
 
+    // 2.5 Gemstone Price Breakdown
+    let totalStonePrice = 0;
+    let totalStoneCaratsSum = 0;
+    let totalStoneCountSum = 0;
+
+    const stoneComponents = (formData.hasGemstone && Array.isArray(formData.stones) && formData.stones.length > 0)
+      ? formData.stones
+      : [];
+
+    const processedStones = stoneComponents.map(row => {
+      const carats = Number(row.stoneWeightCarats) || 0;
+      const count = Number(row.numberOfStones) || 0;
+      const selectedStone = stones.find(st => st.id === row.stoneId);
+      const ratePerCarat = selectedStone ? (Number(selectedStone.ratePerCarat) || 0) : 0;
+      
+      let rowPrice = carats * ratePerCarat;
+      if (row.customStonePrice) {
+        rowPrice = Number(row.customStonePrice) || rowPrice;
+      }
+
+      totalStonePrice += rowPrice;
+      totalStoneCaratsSum += carats;
+      totalStoneCountSum += count;
+
+      return {
+        ...row,
+        stoneTitle: selectedStone ? selectedStone.title : '',
+        stoneRatePerCarat: ratePerCarat,
+        rowPrice
+      };
+    });
+
     // 3. Making Charges
     const baseMaking = Number(formData.makingChargeBase) || 0;
     const discountPercent = Number(formData.makingChargeDiscountPercent) || 0;
@@ -319,7 +401,7 @@ export default function AdminInventoryPage() {
     const finalMakingCharges = Math.max(0, baseMaking - discountAmount);
 
     // 4. Subtotal & GST Tax
-    const subtotal = goldPrice + totalDiamondPrice + finalMakingCharges;
+    const subtotal = goldPrice + totalDiamondPrice + totalStonePrice + finalMakingCharges;
     const gstRate = Number(formData.gstPercent) || 3;
     const gstAmount = (subtotal * gstRate) / 100;
     const grandTotal = subtotal + gstAmount;
@@ -331,6 +413,10 @@ export default function AdminInventoryPage() {
       totalCaratsSum,
       totalCountSum,
       diamondPrice: totalDiamondPrice,
+      processedStones,
+      totalStoneCaratsSum,
+      totalStoneCountSum,
+      stonePrice: totalStonePrice,
       baseMaking,
       discountAmount,
       finalMakingCharges,
@@ -582,6 +668,10 @@ export default function AdminInventoryPage() {
       totalDiamondCarats: val.totalCaratsSum,
       numberOfDiamonds: val.totalCountSum,
 
+      hasGemstone: Boolean(formData.hasGemstone),
+      stones: val.processedStones,
+      computedStonePrice: val.stonePrice,
+
       categoryTitle: selectedCat ? selectedCat.title : '',
       collectionTitle: selectedCol ? selectedCol.title : '',
       colorTitle: selectedClr ? selectedClr.title : '',
@@ -633,6 +723,18 @@ export default function AdminInventoryPage() {
       }];
     }
 
+    let existingStones = [];
+    if (Array.isArray(prod.stones) && prod.stones.length > 0) {
+      existingStones = prod.stones;
+    } else {
+      existingStones = [{
+        stoneId: '',
+        stoneWeightCarats: '',
+        numberOfStones: '',
+        customStonePrice: ''
+      }];
+    }
+
     setFormData({
       title: prod.title || '',
       sku: prod.sku || '',
@@ -645,6 +747,9 @@ export default function AdminInventoryPage() {
       diamondMode: prod.diamondMode || 'auto',
       diamonds: existingDiamonds,
 
+      hasGemstone: Boolean(prod.hasGemstone),
+      stones: existingStones,
+
       makingChargeBase: prod.makingChargeBase !== undefined ? prod.makingChargeBase : '',
       makingChargeDiscountPercent: prod.makingChargeDiscountPercent !== undefined ? prod.makingChargeDiscountPercent : '',
       gstPercent: prod.gstPercent || 3,
@@ -652,6 +757,7 @@ export default function AdminInventoryPage() {
       certification: prod.certification || '100% Certified & BIS Hallmarked',
       status: prod.status || 'Active',
       showInHomepage: Boolean(prod.showInHomepage),
+      showInCarousel: Boolean(prod.showInCarousel),
       descriptionHtml: prod.descriptionHtml || '',
       media: Array.isArray(prod.media) ? prod.media : []
     });
@@ -681,6 +787,10 @@ export default function AdminInventoryPage() {
       diamondRatePerCarat: val.processedDiamonds[0]?.diamondRatePerCarat || 0,
       totalDiamondCarats: val.totalCaratsSum,
       numberOfDiamonds: val.totalCountSum,
+
+      hasGemstone: Boolean(formData.hasGemstone),
+      stones: val.processedStones,
+      computedStonePrice: val.stonePrice,
 
       categoryTitle: selectedCat ? selectedCat.title : '',
       collectionTitle: selectedCol ? selectedCol.title : '',
@@ -901,6 +1011,11 @@ export default function AdminInventoryPage() {
                             {p.showInHomepage && (
                               <span className="px-1.5 py-0.2 rounded-[2px] bg-amber-100 text-amber-900 text-[8.5px] font-semibold uppercase tracking-wider border border-amber-300">
                                 Homepage
+                              </span>
+                            )}
+                            {p.showInCarousel && (
+                              <span className="px-1.5 py-0.2 rounded-[2px] bg-indigo-100 text-indigo-900 text-[8.5px] font-semibold uppercase tracking-wider border border-indigo-300">
+                                Carousel
                               </span>
                             )}
                           </div>
@@ -1156,8 +1271,8 @@ export default function AdminInventoryPage() {
                   </div>
                 </div>
 
-                {/* STATUS & SHOW IN HOMEPAGE TOGGLE */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
+                {/* STATUS & DISPLAY TOGGLES */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 pt-1">
                   <div>
                     <label className="block text-[11px] font-semibold tracking-wider text-slate-700 uppercase mb-1">
                       Status
@@ -1182,6 +1297,20 @@ export default function AdminInventoryPage() {
                       />
                       <span className="text-xs font-semibold text-slate-800 tracking-wide">
                         Show in Homepage
+                      </span>
+                    </label>
+                  </div>
+
+                  <div className="flex items-end">
+                    <label className="inline-flex items-center gap-2 cursor-pointer bg-white px-3.5 py-2 border border-slate-300 rounded-[4px] w-full hover:border-amber-500 transition-colors shadow-2xs">
+                      <input
+                        type="checkbox"
+                        checked={Boolean(formData.showInCarousel)}
+                        onChange={(e) => setFormData({ ...formData, showInCarousel: e.target.checked })}
+                        className="w-4 h-4 text-amber-600 border-slate-300 rounded focus:ring-amber-500 accent-amber-600 cursor-pointer"
+                      />
+                      <span className="text-xs font-semibold text-slate-800 tracking-wide">
+                        Show in Carousel
                       </span>
                     </label>
                   </div>
@@ -1405,7 +1534,117 @@ export default function AdminInventoryPage() {
                 </button>
               </div>
 
-              {/* SECTION 4: MAKING CHARGES & TAXES */}
+              {/* SECTION 4: GEMSTONE & STONE SPECIFICATIONS */}
+              <div className="bg-slate-50/80 border border-slate-200 rounded-[4px] p-3.5 space-y-3">
+                <div className="flex items-center justify-between border-b border-slate-200 pb-1.5">
+                  <span className="text-xs font-semibold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-700" />
+                    4. Gemstone / Stone Specifications
+                  </span>
+
+                  {/* Has Gemstone Toggle */}
+                  <label className="inline-flex items-center gap-2 cursor-pointer bg-white px-2.5 py-1 border border-slate-300 rounded-[3px] hover:border-amber-500 transition-colors shadow-2xs">
+                    <input
+                      type="checkbox"
+                      checked={Boolean(formData.hasGemstone)}
+                      onChange={(e) => setFormData({ ...formData, hasGemstone: e.target.checked })}
+                      className="w-3.5 h-3.5 text-amber-600 border-slate-300 rounded focus:ring-amber-500 accent-amber-600 cursor-pointer"
+                    />
+                    <span className="text-[11px] font-semibold text-slate-800 tracking-wide uppercase">
+                      Has Gemstones / Colored Stones
+                    </span>
+                  </label>
+                </div>
+
+                {formData.hasGemstone && (
+                  <div className="space-y-2.5 animate-fadeIn">
+                    {(formData.stones || []).map((sRow, index) => (
+                      <div key={`srow-${index}`} className="p-2.5 bg-white border border-slate-200 rounded-[4px] relative shadow-2xs space-y-2">
+                        <div className="flex items-center justify-between border-b border-slate-100 pb-1">
+                          <span className="text-[10px] font-semibold text-amber-900 uppercase tracking-wider">
+                            Gemstone Component #{index + 1}
+                          </span>
+
+                          {(formData.stones || []).length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveStoneRow(index)}
+                              className="text-rose-600 hover:text-rose-800 p-0.5 text-xs flex items-center gap-1 font-semibold transition-colors"
+                              title="Remove this gemstone component"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                              <span className="text-[9.5px] uppercase">Remove</span>
+                            </button>
+                          )}
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                          {/* Stone Type */}
+                          <div>
+                            <label className="block text-[10.5px] font-semibold tracking-wider text-slate-700 uppercase mb-1">
+                              Gemstone Type
+                            </label>
+                            <select
+                              value={sRow.stoneId || ''}
+                              onChange={(e) => handleStoneChange(index, 'stoneId', e.target.value)}
+                              className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-[4px] text-xs font-medium text-slate-800 focus:outline-none focus:border-amber-600 shadow-2xs"
+                            >
+                              <option value="">Select Gemstone</option>
+                              {stones.map(st => (
+                                <option key={st.id} value={st.id}>
+                                  {st.title} {st.ratePerCarat ? `(₹${Number(st.ratePerCarat).toLocaleString('en-IN')}/Ct)` : ''}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+
+                          {/* Weight Carats */}
+                          <div>
+                            <label className="block text-[10.5px] font-semibold tracking-wider text-slate-700 uppercase mb-1">
+                              Weight (Carats / Ct)
+                            </label>
+                            <input
+                              type="number"
+                              step="0.001"
+                              min="0"
+                              placeholder="e.g. 0.500"
+                              value={sRow.stoneWeightCarats || ''}
+                              onChange={(e) => handleStoneChange(index, 'stoneWeightCarats', limitDecimalPlaces(e.target.value, 3))}
+                              className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-[4px] text-xs font-medium font-mono text-slate-800 focus:outline-none focus:border-amber-600 shadow-2xs"
+                            />
+                          </div>
+
+                          {/* Number of Stones */}
+                          <div>
+                            <label className="block text-[10.5px] font-semibold tracking-wider text-slate-700 uppercase mb-1">
+                              Number of Stones (Pcs)
+                            </label>
+                            <input
+                              type="number"
+                              min="0"
+                              placeholder="e.g. 2"
+                              value={sRow.numberOfStones || ''}
+                              onChange={(e) => handleStoneChange(index, 'numberOfStones', e.target.value)}
+                              className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-[4px] text-xs font-medium font-mono text-slate-800 focus:outline-none focus:border-amber-600 shadow-2xs"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+
+                    <button
+                      type="button"
+                      onClick={handleAddStoneRow}
+                      className="w-full py-2 bg-white hover:bg-slate-100 border border-dashed border-amber-600/70 text-amber-900 font-semibold text-xs rounded-[4px] uppercase tracking-wider transition-colors flex items-center justify-center gap-1.5"
+                    >
+                      <Plus className="w-3.5 h-3.5 text-amber-700" />
+                      <span>Add Another Gemstone Component</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* SECTION 5: MAKING CHARGES & TAXES */}
               <div className="bg-slate-50/80 border border-slate-200 rounded-[4px] p-3.5 space-y-3">
                 <span className="text-xs font-semibold text-slate-900 uppercase tracking-wider block border-b border-slate-200 pb-1.5">
                   4. Making Charges & Taxes
@@ -1470,7 +1709,7 @@ export default function AdminInventoryPage() {
                   </span>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs">
+                <div className={`grid grid-cols-2 ${computedValuation.stonePrice > 0 ? 'sm:grid-cols-6' : 'sm:grid-cols-5'} gap-2 text-xs`}>
                   <div className="p-2 bg-white rounded-[3px] border border-amber-200/60">
                     <span className="text-[10px] text-slate-500 uppercase block">Metal Value</span>
                     <span className="font-mono font-semibold text-slate-900">
@@ -1484,6 +1723,15 @@ export default function AdminInventoryPage() {
                       ₹{computedValuation.diamondPrice.toLocaleString('en-IN')}
                     </span>
                   </div>
+
+                  {computedValuation.stonePrice > 0 && (
+                    <div className="p-2 bg-white rounded-[3px] border border-amber-200/60">
+                      <span className="text-[10px] text-slate-500 uppercase block">Gemstone Value</span>
+                      <span className="font-mono font-semibold text-slate-900">
+                        ₹{computedValuation.stonePrice.toLocaleString('en-IN')}
+                      </span>
+                    </div>
+                  )}
 
                   <div className="p-2 bg-white rounded-[3px] border border-amber-200/60">
                     <span className="text-[10px] text-slate-500 uppercase block">Net Making Charge</span>
@@ -1890,12 +2138,49 @@ export default function AdminInventoryPage() {
                   </div>
                 </div>
 
+                {/* 2.5 GEMSTONE SPECIFICATIONS CARD (IF HAS GEMSTONE) */}
+                {viewingProduct.hasGemstone && Array.isArray(viewingProduct.stones) && viewingProduct.stones.length > 0 && (
+                  <div className="bg-slate-50/90 border border-slate-200 rounded-[4px] p-3 space-y-2">
+                    <div className="flex items-center justify-between border-b border-slate-200 pb-1">
+                      <span className="text-xs font-semibold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5 text-amber-700" />
+                        Gemstone / Stone Specifications
+                      </span>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-xs">
+                        <thead>
+                          <tr className="text-[9.5px] font-semibold text-slate-600 uppercase border-b border-slate-200 bg-slate-100">
+                            <th className="py-1.5 px-2">Gemstone Type</th>
+                            <th className="py-1.5 px-2 text-right">Carats</th>
+                            <th className="py-1.5 px-2 text-center">Count</th>
+                            <th className="py-1.5 px-2 text-right">Rate / Ct</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-200">
+                          {viewingProduct.stones.map((st, idx) => (
+                            <tr key={`vst-${idx}`} className="bg-white">
+                              <td className="py-1.5 px-2 font-semibold text-slate-900">{st.stoneTitle || 'Gemstone'}</td>
+                              <td className="py-1.5 px-2 text-right font-mono">{st.stoneWeightCarats || 0} Ct</td>
+                              <td className="py-1.5 px-2 text-center font-mono">{st.numberOfStones || 0} Pcs</td>
+                              <td className="py-1.5 px-2 text-right font-mono text-amber-900 font-semibold">
+                                ₹{Number(st.stoneRatePerCarat || 0).toLocaleString('en-IN')}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+
                 {/* 3. DYNAMIC VALUATION BREAKDOWN CARD */}
                 <div className="bg-amber-50/80 border border-amber-300 rounded-[4px] p-3 space-y-2">
                   <span className="text-xs font-semibold text-amber-950 uppercase tracking-wider block border-b border-amber-200 pb-1">
                     3. Dynamic Price Breakdown
                   </span>
-                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-xs">
+                  <div className={`grid grid-cols-2 ${Number(viewingProduct.computedStonePrice || 0) > 0 ? 'sm:grid-cols-6' : 'sm:grid-cols-5'} gap-2 text-xs`}>
                     <div className="p-2 bg-white rounded-[3px] border border-amber-200">
                       <span className="text-[9.5px] text-slate-500 uppercase block">Metal Value</span>
                       <span className="font-mono font-semibold text-slate-900">₹{Number(viewingProduct.computedGoldPrice || 0).toLocaleString('en-IN')}</span>
@@ -1904,6 +2189,12 @@ export default function AdminInventoryPage() {
                       <span className="text-[9.5px] text-slate-500 uppercase block">Diamond Value</span>
                       <span className="font-mono font-semibold text-slate-900">₹{Number(viewingProduct.computedDiamondPrice || 0).toLocaleString('en-IN')}</span>
                     </div>
+                    {Number(viewingProduct.computedStonePrice || 0) > 0 && (
+                      <div className="p-2 bg-white rounded-[3px] border border-amber-200">
+                        <span className="text-[9.5px] text-slate-500 uppercase block">Gemstone Value</span>
+                        <span className="font-mono font-semibold text-slate-900">₹{Number(viewingProduct.computedStonePrice || 0).toLocaleString('en-IN')}</span>
+                      </div>
+                    )}
                     <div className="p-2 bg-white rounded-[3px] border border-amber-200">
                       <span className="text-[9.5px] text-slate-500 uppercase block">Making Charges</span>
                       <span className="font-mono font-semibold text-slate-900">₹{Number(viewingProduct.computedMakingCharges || 0).toLocaleString('en-IN')}</span>
