@@ -73,7 +73,7 @@ export class AuthController {
    */
   static async firebaseLogin(req, res) {
     try {
-      const { idToken } = req.body;
+      const { idToken, name } = req.body;
 
       if (!idToken) {
         return res.status(400).json({
@@ -82,7 +82,7 @@ export class AuthController {
         });
       }
 
-      const result = await AuthService.verifyFirebaseTokenAndLogin(idToken);
+      const result = await AuthService.verifyFirebaseTokenAndLogin(idToken, name);
 
       return res.status(200).json({
         success: true,
@@ -116,6 +116,29 @@ export class AuthController {
       return res.status(404).json({
         success: false,
         message: error.message || 'Profile not found.'
+      });
+    }
+  }
+
+  /**
+   * Update authenticated user profile
+   */
+  static async updateProfile(req, res) {
+    try {
+      const updatedUser = await AuthService.updateUserProfile(req.user.uid, req.body);
+      const token = AuthService.generateJwtToken(updatedUser);
+
+      return res.status(200).json({
+        success: true,
+        message: 'Profile updated successfully!',
+        data: updatedUser,
+        token
+      });
+    } catch (error) {
+      console.error('Error in AuthController.updateProfile:', error);
+      return res.status(400).json({
+        success: false,
+        message: error.message || 'Failed to update profile.'
       });
     }
   }

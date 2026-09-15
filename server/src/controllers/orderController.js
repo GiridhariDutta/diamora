@@ -3,11 +3,12 @@ import { OrderService } from '../services/orderService.js';
 export class OrderController {
   /**
    * GET /api/orders
-   * Get all orders/inquiries
+   * Get all orders (supports optional ?userId= filter)
    */
   static async getAllOrders(req, res) {
     try {
-      const orders = await OrderService.getAllOrders();
+      const { userId } = req.query;
+      const orders = await OrderService.getAllOrders(userId);
       return res.status(200).json({
         success: true,
         count: orders.length,
@@ -23,58 +24,94 @@ export class OrderController {
   }
 
   /**
+   * POST /api/orders/create-razorpay-order
+   * Create Razorpay order with server price & profile verification
+   */
+  static async createRazorpayOrder(req, res) {
+    try {
+      const { items, shippingDetails, totalAmount, userId } = req.body;
+      const activeUserId = req.user?.uid || userId;
+
+      const result = await OrderService.createRazorpayOrder({
+        items,
+        shippingDetails,
+        totalAmount,
+        userId: activeUserId
+      });
+
+      return res.status(200).json({
+        success: true,
+        message: 'Razorpay order created successfully',
+        data: result
+      });
+    } catch (error) {
+      console.error('Error in createRazorpayOrder:', error);
+      const errMsg = error.description || error.error?.description || error.message || 'Razorpay order creation failed.';
+      return res.status(400).json({
+        success: false,
+        message: errMsg
+      });
+    }
+  }
+
+  /**
+   * POST /api/orders/verify-razorpay-payment
+   * Verify Razorpay payment signature & save paid order to database
+   */
+  static async verifyRazorpayPayment(req, res) {
+    try {
+      const { razorpay_order_id, razorpay_payment_id, razorpay_signature, items, shippingDetails, totalAmount, userId } = req.body;
+      const activeUserId = req.user?.uid || userId;
+
+      const savedOrder = await OrderService.verifyRazorpayPayment({
+        razorpay_order_id,
+        razorpay_payment_id,
+        razorpay_signature,
+        items,
+        shippingDetails,
+        totalAmount,
+        userId: activeUserId
+      });
+
+      return res.status(200).json({
+        success: true,
+        message: 'Payment verified and order saved successfully!',
+        data: savedOrder
+      });
+    } catch (error) {
+      console.error('Error in verifyRazorpayPayment:', error);
+      return res.status(400).json({
+        success: false,
+        message: error.message || 'Payment verification failed.'
+      });
+    }
+  }
+
+  /**
    * POST /api/orders
    * Create a new order/inquiry
    */
   static async createOrder(req, res) {
     try {
-      const {
-        customerName,
-        customerPhone,
-        customerEmail,
-        notes,
-        productId,
-        productTitle,
-        productSku,
-        productPrice,
-        productImage,
-        selectedMetal,
-        selectedColor,
-        userId
-      } = req.body;
-
-      const newOrder = await OrderService.createOrder({
-        customerName,
-        customerPhone,
-        customerEmail,
-        notes,
-        productId,
-        productTitle,
-        productSku,
-        productPrice,
-        productImage,
-        selectedMetal,
-        selectedColor,
-        userId
-      });
+      const newOrder = await OrderService.createOrder(req.body);
 
       return res.status(201).json({
         success: true,
-        message: 'Inquiry submitted successfully',
+        message: 'Order placed successfully',
         data: newOrder
       });
     } catch (error) {
       console.error('Error creating order:', error);
       return res.status(400).json({
         success: false,
-        message: error.message || 'Failed to submit inquiry'
+        message: error.message || 'Failed to place order'
       });
     }
   }
 
   /**
    * PUT /api/orders/:id/status
-   * Update order status (e.g. Mark as Viewed)
+   * Update order status
    */
   static async updateOrderStatus(req, res) {
     try {
@@ -119,3 +156,4 @@ export class OrderController {
     }
   }
 }
+

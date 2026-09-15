@@ -370,16 +370,16 @@ export default function AdminOrdersPage() {
 
                           <div className="min-w-0">
                             <p className="font-semibold text-slate-900 text-xs truncate max-w-[180px]">
-                              {order.productTitle || 'General Product'}
+                              {order.productTitle || (Array.isArray(order.items) && order.items.length > 0 ? `${order.items.length} Item(s)` : 'General Product')}
                             </p>
                             {order.productSku && (
                               <span className="text-[10px] font-mono text-slate-500 uppercase block">
                                 SKU: {order.productSku}
                               </span>
                             )}
-                            {order.productPrice ? (
-                              <span className="text-[10.5px] font-mono font-semibold text-amber-900">
-                                ₹{Number(order.productPrice).toLocaleString('en-IN')}
+                            {(order.totalAmount || order.productPrice) ? (
+                              <span className="text-[10.5px] font-mono font-semibold text-amber-900 block">
+                                ₹{Number(order.totalAmount || order.productPrice).toLocaleString('en-IN')}
                               </span>
                             ) : null}
                           </div>
@@ -519,33 +519,94 @@ export default function AdminOrdersPage() {
                 </div>
               </div>
 
-              {/* PRODUCT INFO */}
-              <div className="p-3 bg-slate-50 rounded-[4px] border border-slate-200 flex items-start gap-3">
-                {selectedOrderDetails.productImage && (
-                  <img 
-                    src={selectedOrderDetails.productImage} 
-                    alt="Product"
-                    className="w-16 h-16 rounded-[4px] object-cover border border-slate-300 shrink-0" 
-                  />
-                )}
-                <div className="space-y-1 flex-1">
-                  <span className="text-[10px] font-semibold text-slate-500 uppercase block tracking-wider">
-                    Inquired Product Details
-                  </span>
-                  <p className="font-bold text-slate-900">{selectedOrderDetails.productTitle}</p>
-                  {selectedOrderDetails.productSku && (
-                    <p className="font-mono text-[10px] text-slate-500">SKU: {selectedOrderDetails.productSku}</p>
+              {/* SHIPPING & PAYMENT INFO */}
+              <div className="p-3 bg-amber-50/50 rounded-[4px] border border-amber-200/70 space-y-1.5">
+                <span className="text-[10px] font-semibold text-amber-900 uppercase block tracking-wider">
+                  Payment & Delivery Address
+                </span>
+                <div className="grid grid-cols-2 gap-2 text-slate-800">
+                  <div>
+                    <span className="text-slate-400 text-[10px] uppercase block">Payment Status</span>
+                    <span className="font-bold text-emerald-700 flex items-center gap-1">
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                      {selectedOrderDetails.paymentStatus || 'Paid'} ({selectedOrderDetails.paymentMethod || 'Razorpay'})
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 text-[10px] uppercase block">Total Amount</span>
+                    <span className="font-mono font-bold text-slate-900">
+                      ₹{Number(selectedOrderDetails.totalAmount || selectedOrderDetails.productPrice || 0).toLocaleString('en-IN')}
+                    </span>
+                  </div>
+                  {selectedOrderDetails.razorpayPaymentId && (
+                    <div className="col-span-2 font-mono text-[10.5px]">
+                      <span className="text-slate-400 text-[10px] uppercase block">Razorpay Payment ID</span>
+                      <span className="text-slate-900 font-semibold">{selectedOrderDetails.razorpayPaymentId}</span>
+                    </div>
                   )}
-                  {selectedOrderDetails.productPrice && (
-                    <p className="font-mono font-bold text-amber-900">₹{Number(selectedOrderDetails.productPrice).toLocaleString('en-IN')}</p>
+                  {selectedOrderDetails.shippingAddress && (
+                    <div className="col-span-2">
+                      <span className="text-slate-400 text-[10px] uppercase block">Full Delivery Address</span>
+                      <p className="text-slate-900 font-medium">
+                        {selectedOrderDetails.shippingAddress}
+                        {selectedOrderDetails.landmark ? ` (Landmark: ${selectedOrderDetails.landmark})` : ''}
+                        , {selectedOrderDetails.city}, {selectedOrderDetails.state} - {selectedOrderDetails.pincode}
+                      </p>
+                    </div>
                   )}
                 </div>
               </div>
 
+              {/* PRODUCTS LIST */}
+              <div className="p-3 bg-slate-50 rounded-[4px] border border-slate-200 space-y-2">
+                <span className="text-[10px] font-semibold text-slate-500 uppercase block tracking-wider">
+                  Purchased Items Breakdown
+                </span>
+                {Array.isArray(selectedOrderDetails.items) && selectedOrderDetails.items.length > 0 ? (
+                  <div className="space-y-2 divide-y divide-slate-200">
+                    {selectedOrderDetails.items.map((item, idx) => (
+                      <div key={idx} className="pt-2 first:pt-0 flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-2.5">
+                          {item.image && (
+                            <img src={item.image} alt={item.title} className="w-10 h-10 rounded object-cover border border-slate-300" />
+                          )}
+                          <div>
+                            <p className="font-bold text-slate-900 text-xs">{item.title}</p>
+                            <p className="text-[10.5px] text-slate-500 font-mono">Qty: {item.quantity || 1} × ₹{Number(item.price || 0).toLocaleString('en-IN')}</p>
+                          </div>
+                        </div>
+                        <span className="font-mono font-bold text-slate-900 text-xs">
+                          ₹{(Number(item.price || 0) * (Number(item.quantity) || 1)).toLocaleString('en-IN')}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex items-start gap-3">
+                    {selectedOrderDetails.productImage && (
+                      <img 
+                        src={selectedOrderDetails.productImage} 
+                        alt="Product"
+                        className="w-14 h-14 rounded-[4px] object-cover border border-slate-300 shrink-0" 
+                      />
+                    )}
+                    <div className="space-y-0.5 flex-1">
+                      <p className="font-bold text-slate-900">{selectedOrderDetails.productTitle}</p>
+                      {selectedOrderDetails.productSku && (
+                        <p className="font-mono text-[10px] text-slate-500">SKU: {selectedOrderDetails.productSku}</p>
+                      )}
+                      {selectedOrderDetails.productPrice && (
+                        <p className="font-mono font-bold text-amber-900">₹{Number(selectedOrderDetails.productPrice).toLocaleString('en-IN')}</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
               {/* NOTES */}
               {selectedOrderDetails.notes && (
-                <div className="p-3 bg-amber-50/60 rounded-[4px] border border-amber-200">
-                  <span className="text-[10px] font-semibold text-amber-900 uppercase block tracking-wider mb-1">
+                <div className="p-3 bg-slate-50 rounded-[4px] border border-slate-200">
+                  <span className="text-[10px] font-semibold text-slate-600 uppercase block tracking-wider mb-1">
                     Customer Notes / Special Request
                   </span>
                   <p className="text-slate-800 italic">"{selectedOrderDetails.notes}"</p>

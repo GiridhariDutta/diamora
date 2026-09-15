@@ -8,7 +8,8 @@ import {
   loginSchema, 
   firebaseLoginSchema,
   createAdminSchema,
-  updateAdminSchema
+  updateAdminSchema,
+  updateProfileSchema
 } from '../validators/authValidator.js';
 
 const router = express.Router();
@@ -20,6 +21,7 @@ router.post('/firebase-login', validateBody(firebaseLoginSchema), AuthController
 
 // Protected routes
 router.get('/me', authenticateToken, AuthController.getProfile);
+router.put('/me', authenticateToken, validateBody(updateProfileSchema), AuthController.updateProfile);
 
 // Admin-only management routes with Zod validation & admin role guard
 router.get('/admin-users', authenticateToken, requireAdminRole, AuthController.getAdminUsers);

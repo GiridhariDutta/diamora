@@ -3,6 +3,7 @@ import { createBrowserRouter, Navigate } from 'react-router-dom';
 import UserLayout from '../layouts/UserLayout';
 import AdminLayout from '../layouts/AdminLayout';
 import AdminRoute from '../components/AdminRoute';
+import UserRoute from '../components/UserRoute';
 import HomePage from '../pages/HomePage';
 import ShopPage from '../pages/ShopPage';
 import AboutPage from '../pages/AboutPage';
@@ -20,6 +21,9 @@ import AdminOrdersPage from '../pages/admin/AdminOrdersPage';
 import AdminSettingsPage from '../pages/admin/AdminSettingsPage';
 import AdminDynamicPageEditor from '../pages/admin/AdminDynamicPageEditor';
 import ProductDetailPage from '../pages/ProductDetailPage';
+import ProfilePage from '../pages/ProfilePage';
+import CartPage from '../pages/CartPage';
+import OrderPage from '../pages/OrderPage';
 
 export const router = createBrowserRouter([
   {
@@ -29,6 +33,11 @@ export const router = createBrowserRouter([
       { index: true, element: <HomePage /> },
       { path: 'shop', element: <ShopPage /> },
       { path: 'product/:id', element: <ProductDetailPage /> },
+      { path: 'cart', element: <CartPage /> },
+      { path: 'order', element: <UserRoute><OrderPage /></UserRoute> },
+      { path: 'orders', element: <UserRoute><Navigate to="/profile?tab=orders" replace /></UserRoute> },
+      { path: 'my-orders', element: <UserRoute><Navigate to="/profile?tab=orders" replace /></UserRoute> },
+      { path: 'profile', element: <UserRoute><ProfilePage /></UserRoute> },
       { path: 'about', element: <AboutPage pageKey="about_us" /> },
       { path: 'about-us', element: <AboutPage pageKey="about_us" /> },
       { path: 'privacy-policy', element: <AboutPage pageKey="privacy_policy" /> },
@@ -36,6 +45,7 @@ export const router = createBrowserRouter([
       { path: '*', element: <Navigate to="/" replace /> }
     ]
   },
+
 
   {
     path: '/admin',

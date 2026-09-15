@@ -1,129 +1,141 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, Sparkles, ChevronLeft, ChevronRight, Eye, Diamond } from 'lucide-react';
+import { ArrowRight, Sparkles, ChevronLeft, ChevronRight, Eye, Diamond, ShoppingBag } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import api from '../api/axios';
+import { addToCart, showCartAlert } from '../utils/cartManager';
 
 export default function RotatingArcShowcase({ onOpenShop }) {
+  const navigate = useNavigate();
+  const [products, setProducts] = useState([]);
+  const [page, setPage] = useState(1);
+  const [hasNextPage, setHasNextPage] = useState(false);
+  const [loadingInitial, setLoadingInitial] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+
   const [rotationAngle, setRotationAngle] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
+  const [isSectionInView, setIsSectionInView] = useState(false);
+  const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' ? window.innerWidth < 640 : false);
   const [activeItem, setActiveItem] = useState(null);
+
   const animRef = useRef(null);
+  const sectionRef = useRef(null);
+  const fetchedPages = useRef(new Set());
 
-  const products = [
-    {
-      id: 'ring-solitaire',
-      title: 'Oval Solitaire Ring',
-      category: '18K YELLOW GOLD',
-      price: '$2,450',
-      image: '/images/ring_hero.jpg'
-    },
-    {
-      id: 'necklace-riviere',
-      title: 'Riviere Diamond Choker',
-      category: 'PLATINUM 950',
-      price: '$5,800',
-      image: '/images/necklace_hero.jpg'
-    },
-    {
-      id: 'marquise-ring',
-      title: 'Marquise Victoria Band',
-      category: '18K GOLD & DIAMOND',
-      price: '$3,120',
-      image: '/images/Diamond_drop_earrings_displayed_202608261740.jpeg'
-    },
-    {
-      id: 'emerald-ring',
-      title: 'Diamond Nath Craft',
-      category: 'SOLITAIRE COLLECTION',
-      price: '$4,900',
-      image: '/images/Diamond_Nath_product_photography_202608261800.jpeg'
-    },
-    {
-      id: 'venus-ring',
-      title: 'Royal Diamond Bangle',
-      category: 'HIGH JEWELRY',
-      price: '$6,200',
-      image: '/images/Diamond_bangle_product_shot_202608271248.jpeg'
-    },
-    {
-      id: 'huggie-earrings',
-      title: 'Place Vendôme Huggies',
-      category: '18K SOLID GOLD',
-      price: '$1,850',
-      image: '/images/Diamond_hoop_earrings_displayed_202608261741.jpeg'
-    },
-    {
-      id: 'pave-band',
-      title: 'Pavé Eternity Band',
-      category: 'DIAMOND ESSENTIALS',
-      price: '$2,980',
-      image: '/images/Diamond_stud_earrings_in_setting_202608261741.jpeg'
-    },
-    {
-      id: 'gold-bangle',
-      title: 'Architectural Gold Cuff',
-      category: 'FINE JEWELRY',
-      price: '$4,150',
-      image: '/images/Diamond_cuff_bracelet_photography_202608271248.jpeg'
-    },
-    {
-      id: 'trio-pendant',
-      title: 'Trio Solitaire Pendant',
-      category: 'NECKLACES',
-      price: '$3,400',
-      image: '/images/necklace_hero.jpg'
-    },
-    {
-      id: 'heritage-signet',
-      title: 'Heritage Gold Signet',
-      category: 'RINGS',
-      price: '$1,950',
-      image: '/images/ring_hero.jpg'
-    },
-    {
-      id: 'baguette-drop',
-      title: 'Baguette Diamond Drops',
-      category: 'EARRINGS',
-      price: '$2,750',
-      image: '/images/Diamond_drop_earrings_displayed_202608261741.jpeg'
-    },
-    {
-      id: 'radiant-halo',
-      title: 'Radiant Nose Ring',
-      category: 'SOLITAIRE COLLECTION',
-      price: '$5,100',
-      image: '/images/Diamond_nose_ring_close_up_202608261801.jpeg'
-    },
-    {
-      id: 'venetian-chain',
-      title: 'Venetian Gold Chain',
-      category: '18K SOLID GOLD',
-      price: '$2,280',
-      image: '/images/necklace_hero.jpg'
-    },
-    {
-      id: 'emerald-halo-pendant',
-      title: 'Floral Cluster Stud',
-      category: 'HIGH JEWELRY',
-      price: '$4,650',
-      image: '/images/Diamond_nose_stud_floral_cluster_202608261759.jpeg'
-    },
-    {
-      id: 'comfort-fit-band',
-      title: 'Comfort-Fit Dome Band',
-      category: 'ESSENTIAL RINGS',
-      price: '$1,650',
-      image: '/images/ring_hero.jpg'
-    },
-    {
-      id: 'astral-pave-cuff',
-      title: 'Astral Diamond Cuff',
-      category: 'HAUTE JOAILLERIE',
-      price: '$7,400',
-      image: '/images/Diamond_cuff_bracelet_photography_202608271248.jpeg'
+  // Listen to window resize for responsive arch radii without layout thrashing on frame updates
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 640);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // IntersectionObserver to pause auto-scroll & fetching when section is out of viewport
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setIsSectionInView(entry.isIntersecting);
+      },
+      { threshold: 0.15 }
+    );
+
+    if (sectionRef.current) {
+      observer.observe(sectionRef.current);
     }
-  ];
 
-  // Smooth continuous clockwise rotation loop
+    return () => {
+      if (sectionRef.current) {
+        observer.unobserve(sectionRef.current);
+      }
+    };
+  }, []);
+
+  const transformProduct = (p) => {
+    const image = p.media && p.media.length > 0 
+      ? (typeof p.media[0] === 'string' ? p.media[0] : p.media[0]?.url)
+      : p.image || '/images/ring_hero.jpg';
+    
+    const rawPrice = p.grandTotal || p.computedGoldPrice || p.price;
+    const formattedPrice = rawPrice ? `₹${Number(rawPrice).toLocaleString('en-IN')}` : 'Contact for Price';
+
+    return {
+      id: p.id || `prod-${Math.random()}`,
+      title: p.title || 'Exclusive Jewelry',
+      category: p.categoryTitle || p.collectionTitle || 'FINE JEWELRY',
+      price: formattedPrice,
+      image: image
+    };
+  };
+
+  // Initial Fetch (Page 1, limit 10 where showInCarousel is true)
+  const fetchInitialCarouselProducts = async () => {
+    setLoadingInitial(true);
+    fetchedPages.current.add(1);
+    try {
+      const res = await api.get('/api/products', {
+        params: { showInCarousel: true, page: 1, limit: 10 }
+      });
+      if (res.data?.success && Array.isArray(res.data.data)) {
+        const items = res.data.data.map(transformProduct);
+        setProducts(items);
+        if (res.data.pagination) {
+          setHasNextPage(Boolean(res.data.pagination.hasNextPage));
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching initial carousel products:', err);
+    } finally {
+      setLoadingInitial(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchInitialCarouselProducts();
+  }, []);
+
+  // Fetch Next Page (Limit 10)
+  const fetchNextPage = useCallback(async (nextPageNum) => {
+    if (loadingMore || !hasNextPage || fetchedPages.current.has(nextPageNum)) return;
+    
+    fetchedPages.current.add(nextPageNum);
+    setLoadingMore(true);
+    try {
+      const res = await api.get('/api/products', {
+        params: { showInCarousel: true, page: nextPageNum, limit: 10 }
+      });
+      if (res.data?.success && Array.isArray(res.data.data)) {
+        const newItems = res.data.data.map(transformProduct);
+        setProducts(prev => [...prev, ...newItems]);
+        setPage(nextPageNum);
+        if (res.data.pagination) {
+          setHasNextPage(Boolean(res.data.pagination.hasNextPage));
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching next carousel page:', err);
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [hasNextPage, loadingMore]);
+
+  // Orbital Arch Configuration
+  const numProducts = products.length;
+  const visibleCount = 6; // Show 5-6 cards across top arc
+  const arcSpanDeg = 150; // Total arc angle span (-75 deg to +75 deg)
+  const angleStep = arcSpanDeg / Math.max(1, visibleCount - 1); // ~30 deg between visible cards
+
+  // Decoupled pre-fetch trigger check (runs outside of 60FPS state update callbacks)
+  useEffect(() => {
+    if (isSectionInView && hasNextPage && !loadingMore && products.length > 0) {
+      const currentIndex = Math.floor((rotationAngle / angleStep) % products.length);
+      const remainingItems = products.length - currentIndex;
+      if (remainingItems <= 5) {
+        fetchNextPage(page + 1);
+      }
+    }
+  }, [rotationAngle, isSectionInView, hasNextPage, loadingMore, products.length, page, angleStep, fetchNextPage]);
+
+  // Ultra-smooth 60FPS continuous clockwise rotation loop
   useEffect(() => {
     let lastTime = performance.now();
 
@@ -131,34 +143,33 @@ export default function RotatingArcShowcase({ onOpenShop }) {
       const deltaTime = currentTime - lastTime;
       lastTime = currentTime;
 
-      if (!isPaused) {
-        // Increment angle clockwise (~0.012 degrees per ms)
-        setRotationAngle((prev) => (prev + (deltaTime * 0.012)) % 360);
+      // Only auto-scroll if section is visible in viewport AND user is not hovering
+      if (isSectionInView && !isPaused && products.length > 0) {
+        setRotationAngle((prev) => prev + (deltaTime * 0.012));
       }
+
       animRef.current = requestAnimationFrame(updateRotation);
     };
 
     animRef.current = requestAnimationFrame(updateRotation);
     return () => cancelAnimationFrame(animRef.current);
-  }, [isPaused]);
+  }, [isSectionInView, isPaused, products.length]);
 
-  // Manual rotation controls (steps precisely 1 item angle)
+  // Manual rotation controls
   const handlePrev = () => {
+    if (products.length === 0) return;
     setRotationAngle((prev) => prev - (360 / products.length));
   };
 
   const handleNext = () => {
+    if (products.length === 0) return;
     setRotationAngle((prev) => prev + (360 / products.length));
   };
 
-  // Orbital Arch Configuration
-  const numProducts = products.length;
-  const visibleCount = 6; // Show 5-6 cards across top arc
-  const arcSpanDeg = 150; // Total arc angle span (-75 deg to +75 deg)
-  const angleStep = arcSpanDeg / (visibleCount - 1); // ~30 deg between visible cards
+  const skeletonAngles = [-60, -30, 0, 30, 60];
 
   return (
-    <section className="relative w-full min-h-[660px] sm:min-h-[760px] bg-[#0C0D10] text-[#F5F5F0] pt-20 sm:pt-28 lg:pt-32 pb-12 px-4 overflow-hidden flex flex-col justify-between select-none z-20">
+    <section ref={sectionRef} className="relative w-full min-h-[660px] sm:min-h-[760px] bg-[#0C0D10] text-[#F5F5F0] pt-20 sm:pt-28 lg:pt-32 pb-12 px-4 overflow-hidden flex flex-col justify-between select-none z-20">
       
       {/* Background Radial Glow & Hairline Grid */}
       <div className="absolute inset-0 hairline-grid pointer-events-none opacity-30 z-0" />
@@ -168,6 +179,57 @@ export default function RotatingArcShowcase({ onOpenShop }) {
       <div 
         className="relative max-w-7xl w-full mx-auto h-[440px] sm:h-[500px] flex items-center justify-center z-10 pt-16 sm:pt-20"
       >
+
+        {/* SKELETON LOADING STATE FOR 3D ARC Showcase */}
+        {loadingInitial && products.length === 0 ? (
+          skeletonAngles.map((relAngle, idx) => {
+            const relAngleRad = (relAngle * Math.PI) / 180;
+            const absAngleRatio = Math.abs(relAngle) / 80;
+
+            const rx = isMobile ? 220 : 420;
+            const ry = isMobile ? 110 : 185;
+
+            const x = Math.sin(relAngleRad) * rx;
+            const y = (1 - Math.cos(relAngleRad)) * ry - 165;
+
+            const opacity = Math.max(0.15, Math.min(1, 1 - Math.pow(absAngleRatio, 1.6) * 0.88));
+            const scale = Math.max(0.6, 1.08 - (absAngleRatio * 0.45));
+            const zIndex = Math.round((1 - absAngleRatio) * 50) + 10;
+            const cardTilt = Math.sin(relAngleRad) * 22;
+            const isPeakCenter = absAngleRatio < 0.2;
+
+            return (
+              <div
+                key={`skeleton-${idx}`}
+                style={{
+                  transform: `translate3d(${x}px, ${y}px, 0px) scale(${scale}) rotate(${cardTilt}deg)`,
+                  opacity: opacity,
+                  zIndex: zIndex,
+                  pointerEvents: 'none',
+                  willChange: 'transform, opacity'
+                }}
+                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+              >
+                <div 
+                  className={`relative w-[155px] sm:w-[195px] md:w-[220px] aspect-[4/5] rounded-2xl sm:rounded-3xl bg-[#12131A]/90 border p-2.5 sm:p-3 shadow-[0_14px_35px_rgba(0,0,0,0.9)] flex flex-col justify-between ${
+                    isPeakCenter ? 'border-[#E0B094]/40' : 'border-white/10'
+                  }`}
+                >
+                  {/* Skeleton Image Placeholder */}
+                  <div className="relative w-full h-[75%] rounded-xl sm:rounded-2xl overflow-hidden bg-white/5 animate-pulse shrink-0 flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-full bg-white/10 animate-pulse" />
+                  </div>
+
+                  {/* Skeleton Text Placeholders */}
+                  <div className="py-1.5 sm:py-2 px-1 flex flex-col justify-center items-center gap-1.5 grow">
+                    <div className="h-3 w-3/4 rounded bg-white/10 animate-pulse" />
+                    <div className="h-2.5 w-1/2 rounded bg-[#E0B094]/20 animate-pulse" />
+                  </div>
+                </div>
+              </div>
+            );
+          })
+        ) : null}
 
         {/* TOP ARCH ORBITING PRODUCT CARDS */}
         {products.map((item, index) => {
@@ -193,8 +255,8 @@ export default function RotatingArcShowcase({ onOpenShop }) {
 
           // Curved top arch coordinates
           // Horizontal radius Rx = 420px (mobile 220px), Vertical arch depth Ry = 185px for a deep rounded arch
-          const rx = typeof window !== 'undefined' && window.innerWidth < 640 ? 220 : 420;
-          const ry = typeof window !== 'undefined' && window.innerWidth < 640 ? 110 : 185;
+          const rx = isMobile ? 220 : 420;
+          const ry = isMobile ? 110 : 185;
           
           const x = Math.sin(relAngleRad) * rx;
           const y = (1 - Math.cos(relAngleRad)) * ry - 165; // Deep inverted arch bowing over top center
@@ -212,8 +274,7 @@ export default function RotatingArcShowcase({ onOpenShop }) {
             <div
               key={item.id}
               onClick={() => {
-                setActiveItem(item);
-                if (onOpenShop) onOpenShop();
+                navigate(`/product/${item.id}`);
               }}
               onMouseEnter={() => setIsPaused(true)}
               onMouseLeave={() => setIsPaused(false)}
@@ -221,13 +282,15 @@ export default function RotatingArcShowcase({ onOpenShop }) {
                 transform: `translate3d(${x}px, ${y}px, 0px) scale(${scale}) rotate(${cardTilt}deg)`,
                 opacity: opacity,
                 zIndex: zIndex,
-                pointerEvents: opacity < 0.2 ? 'none' : 'auto'
+                pointerEvents: opacity < 0.2 ? 'none' : 'auto',
+                willChange: 'transform, opacity',
+                backfaceVisibility: 'hidden'
               }}
-              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 transition-transform duration-100 ease-linear cursor-pointer group"
+              className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 cursor-pointer group"
             >
               {/* Product Card Solid Dark Container (Sharp Crisp Visibility) */}
               <div 
-                className={`relative w-[155px] sm:w-[195px] md:w-[220px] aspect-[4/5] rounded-2xl sm:rounded-3xl bg-[#12131A] border p-2.5 sm:p-3 transition-all duration-300 shadow-[0_14px_35px_rgba(0,0,0,0.9)] antialiased flex flex-col justify-between ${
+                className={`relative w-[155px] sm:w-[195px] md:w-[220px] aspect-[4/5] rounded-2xl sm:rounded-3xl bg-[#12131A] border p-2.5 sm:p-3 transition-colors duration-300 shadow-[0_14px_35px_rgba(0,0,0,0.9)] antialiased flex flex-col justify-between ${
                   isPeakCenter
                     ? 'border-[#E0B094] stroke-2'
                     : 'border-white/15 group-hover:border-[#E0B094]/60'
@@ -244,14 +307,29 @@ export default function RotatingArcShowcase({ onOpenShop }) {
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-50" />
                 </div>
 
-                {/* Sharp Clear Card Title & Price */}
-                <div className="py-1.5 sm:py-2 text-center px-1 flex flex-col justify-center grow">
-                  <h4 className="font-cinzel font-medium text-xs sm:text-[13px] text-[#F0F2F5] tracking-normal truncate group-hover:text-[#E0B094] transition-colors leading-tight">
-                    {item.title}
-                  </h4>
-                  <p className="font-poppins font-medium text-[11px] sm:text-xs text-[#E0B094] mt-0.5 tracking-wide">
-                    {item.price}
-                  </p>
+                {/* Sharp Clear Card Title, Price & Quick Cart Button */}
+                <div className="py-1.5 sm:py-2 px-1 flex items-center justify-between gap-1 grow border-t border-white/10 mt-1">
+                  <div className="text-left flex-1 min-w-0">
+                    <h4 className="font-cinzel font-medium text-[11px] sm:text-xs text-[#F0F2F5] tracking-normal line-clamp-2 leading-snug group-hover:text-[#E0B094] transition-colors" title={item.title}>
+                      {item.title}
+                    </h4>
+
+                    <p className="font-poppins font-medium text-[10px] sm:text-[11px] text-[#E0B094] tracking-wide mt-0.5">
+                      {item.price}
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      addToCart(item, 1);
+                      showCartAlert(item, navigate);
+                    }}
+                    className="p-1.5 rounded-lg bg-black/80 hover:bg-[#E0B094] text-[#E0B094] hover:text-[#0C0D10] border border-[#E0B094]/40 hover:border-[#E0B094] transition-all duration-300 shadow-md shrink-0 cursor-pointer"
+                    title="Add to Shopping Cart"
+                  >
+                    <ShoppingBag className="w-3.5 h-3.5" />
+                  </button>
                 </div>
 
               </div>
@@ -277,7 +355,10 @@ export default function RotatingArcShowcase({ onOpenShop }) {
           {/* CTA Button */}
           <div className="pointer-events-auto flex items-center justify-center gap-3">
             <button
-              onClick={onOpenShop}
+              onClick={() => {
+                if (onOpenShop) onOpenShop();
+                navigate('/shop');
+              }}
               className="group font-poppins px-7 py-3 border border-[#E0B094]/70 hover:border-[#E0B094] bg-black/80 hover:bg-[#E0B094]/15 text-[#E0B094] font-semibold text-xs tracking-[0.2em] uppercase transition-all duration-300 flex items-center gap-2.5 shadow-[0_4px_25px_rgba(0,0,0,0.7)]"
             >
               <span>SHOP THE ESSENTIALS</span>
@@ -309,7 +390,11 @@ export default function RotatingArcShowcase({ onOpenShop }) {
             <ChevronRight className="w-4 h-4" />
           </button>
           <span className="text-[10px] tracking-widest text-[#9B9EA7] uppercase hidden sm:inline">
-            {isPaused ? 'PAUSED (HOVERING CARD)' : 'AUTOPLAYING CLOCKWISE'}
+            {!isSectionInView 
+              ? 'PAUSED (OUT OF VIEW)' 
+              : isPaused 
+                ? 'PAUSED (HOVERING CARD)' 
+                : 'AUTOPLAYING CLOCKWISE'}
           </span>
         </div>
 

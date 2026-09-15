@@ -1,9 +1,44 @@
 import React, { useState, useEffect } from 'react';
 import { X, Mail, Lock, User as UserIcon, ArrowRight, AlertCircle, CheckCircle2, Eye, EyeOff } from 'lucide-react';
-import { signInWithPopup } from 'firebase/auth';
+import { 
+  signInWithPopup, 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword, 
+  updateProfile 
+} from 'firebase/auth';
 import { auth, googleProvider } from '../config/firebase';
 import api from '../api/axios';
 import { setCookie } from '../utils/cookies';
+
+const getFirebaseErrorMessage = (error) => {
+  if (error?.response?.data?.message) {
+    return error.response.data.message;
+  }
+  const code = error?.code || '';
+  switch (code) {
+    case 'auth/invalid-credential':
+    case 'auth/wrong-password':
+      return 'Invalid email or password.';
+    case 'auth/user-not-found':
+      return 'No account found with this email address.';
+    case 'auth/email-already-in-use':
+      return 'An account with this email address already exists. Please log in instead.';
+    case 'auth/invalid-email':
+      return 'Invalid email address format.';
+    case 'auth/weak-password':
+      return 'Password should be at least 6 characters long.';
+    case 'auth/user-disabled':
+      return 'This account has been disabled. Please contact support.';
+    case 'auth/too-many-requests':
+      return 'Access temporarily disabled due to too many failed attempts. Please try again later.';
+    case 'auth/popup-closed-by-user':
+      return 'Sign-in popup was closed before completing.';
+    case 'auth/network-request-failed':
+      return 'Network connection error. Please check your internet connection.';
+    default:
+      return error?.message || 'Authentication failed. Please check your details and try again.';
+  }
+};
 
 export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
   const [isLoginTab, setIsLoginTab] = useState(true);
@@ -40,17 +75,32 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
     setError('');
     setSuccess('');
 
-    const endpoint = isLoginTab ? '/api/auth/login' : '/api/auth/register';
-    const payload = isLoginTab
-      ? { email: formData.email, password: formData.password }
-      : { name: formData.name, email: formData.email, password: formData.password };
-
     try {
-      const response = await api.post(endpoint, payload);
+      let idToken;
+
+      if (isLoginTab) {
+        // 1. Direct Client-Side Login with Firebase Web SDK
+        const userCredential = await signInWithEmailAndPassword(auth, formData.email, formData.password);
+        idToken = await userCredential.user.getIdToken();
+      } else {
+        // 2. Direct Client-Side Sign-Up with Firebase Web SDK
+        const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
+        if (formData.name) {
+          await updateProfile(userCredential.user, { displayName: formData.name });
+        }
+        idToken = await userCredential.user.getIdToken();
+      }
+
+      // 3. Send Firebase ID Token to Backend to get 7-day backend JWT & sync profile
+      // If Firebase login fails above, execution jumps to catch and NO request is sent to backend!
+      const response = await api.post('/api/auth/firebase-login', { 
+        idToken,
+        name: isLoginTab ? undefined : formData.name 
+      });
       const data = response.data;
 
       if (!data.success) {
-        throw new Error(data.message || 'Authentication failed. Please check your credentials.');
+        throw new Error(data.message || 'Backend verification failed.');
       }
 
       // Store JWT token in cookie (expires in 7 days) and user info in localStorage
@@ -65,7 +115,8 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
       }, 1200);
 
     } catch (err) {
-      setError(err.message || 'An error occurred during authentication.');
+      console.error('Auth Submit Error:', err);
+      setError(getFirebaseErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -102,7 +153,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
 
     } catch (err) {
       console.error('Google Auth Error:', err);
-      setError(err.message || 'Google Sign-In failed.');
+      setError(getFirebaseErrorMessage(err));
     } finally {
       setLoading(false);
     }

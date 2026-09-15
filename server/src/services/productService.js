@@ -1,5 +1,14 @@
 import { db } from '../config/firebase.js';
 
+const formatCertification = (cert) => {
+  if (!cert || typeof cert !== 'string') return '100% Certified';
+  const cleaned = cert
+    .replace(/&\s*BIS\s*Hallmarked/gi, '')
+    .replace(/BIS\s*Hallmarked\s*&?/gi, '')
+    .trim();
+  return cleaned || '100% Certified';
+};
+
 export class ProductService {
   /**
    * Fetch products with optional search, category, collection, color, purity, price, and pagination
@@ -9,20 +18,34 @@ export class ProductService {
       throw new Error('Firestore database is not initialized');
     }
 
-    const { page, limit, search, category, collection, color, diamondColor, purity, price } = options;
+    const { page, limit, search, category, collection, color, diamondColor, purity, price, showInCarousel, showInHomepage } = options;
 
     const snapshot = await db.collection('products').get();
     let products = [];
 
     snapshot.forEach(doc => {
+      const data = doc.data();
       products.push({
         id: doc.id,
-        ...doc.data()
+        ...data,
+        certification: formatCertification(data.certification)
       });
     });
 
     // 1. Sort by createdAt descending
     products.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+
+    // 1b. Filter by showInCarousel if provided
+    if (showInCarousel !== undefined && showInCarousel !== '') {
+      const isCarouselBool = showInCarousel === 'true' || showInCarousel === true;
+      products = products.filter(p => Boolean(p.showInCarousel || p.isCarousel) === isCarouselBool);
+    }
+
+    // 1c. Filter by showInHomepage if provided
+    if (showInHomepage !== undefined && showInHomepage !== '') {
+      const isHomepageBool = showInHomepage === 'true' || showInHomepage === true;
+      products = products.filter(p => Boolean(p.showInHomepage || p.isHomepage) === isHomepageBool);
+    }
 
     // 2. Filter by search query if provided
     if (search && typeof search === 'string' && search.trim() !== '') {
@@ -147,9 +170,11 @@ export class ProductService {
       throw new Error('Product not found');
     }
 
+    const data = docSnap.data();
     return {
       id: docSnap.id,
-      ...docSnap.data()
+      ...data,
+      certification: formatCertification(data.certification)
     };
   }
 
@@ -204,7 +229,7 @@ export class ProductService {
       grandTotal: Number(data.grandTotal) || 0,
 
       media: Array.isArray(data.media) ? data.media : [],
-      certification: data.certification || 'BIS Hallmarked & Certified',
+      certification: formatCertification(data.certification),
       descriptionHtml: data.descriptionHtml || '',
       showInHomepage: Boolean(data.showInHomepage),
       showInCarousel: Boolean(data.showInCarousel),
@@ -277,7 +302,7 @@ export class ProductService {
     if (data.grandTotal !== undefined) updateData.grandTotal = Number(data.grandTotal) || 0;
 
     if (data.media !== undefined) updateData.media = Array.isArray(data.media) ? data.media : [];
-    if (data.certification !== undefined) updateData.certification = data.certification;
+    if (data.certification !== undefined) updateData.certification = formatCertification(data.certification);
     if (data.descriptionHtml !== undefined) updateData.descriptionHtml = data.descriptionHtml;
     if (data.showInHomepage !== undefined) updateData.showInHomepage = Boolean(data.showInHomepage);
     if (data.showInCarousel !== undefined) updateData.showInCarousel = Boolean(data.showInCarousel);

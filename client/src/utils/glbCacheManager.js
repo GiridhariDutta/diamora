@@ -1,26 +1,32 @@
 /**
- * Browser CacheStorage Utility for 3D GLB Models
- * Ensures GLB files are cached locally in the browser so they load instantly (0ms)
- * on return visits without making network requests.
+ * Browser CacheStorage & Memory Blob Utility for 3D GLB Models
+ * Ensures remote Firebase CDN GLB files are cached locally in browser memory & CacheStorage,
+ * keeping the frontend JS bundle ultra-lightweight while guaranteeing 0ms instant loading
+ * when navigating between pages.
  */
 const CACHE_NAME = 'diamora-3d-models-v1';
+const memoryBlobMap = new Map();
 
 export class GLBCacheManager {
   /**
-   * Fetch a GLB model with CacheStorage caching.
+   * Fetch a GLB model with CacheStorage & Memory Blob caching.
    * Returns a local Blob Object URL for Three.js GLTFLoader.
-   * @param {string} url - Remote GLB file URL
+   * @param {string} url - Remote GLB file URL (Firebase CDN)
    * @returns {Promise<string>} - Local Blob URL or fallback URL
    */
   static async getCachedGlbUrl(url) {
     if (!url) return url;
 
-    // For local bundled assets (e.g. /src/assets/models/...), return directly with zero delay
+    // 1. Check in-memory Blob URL Map (0ms Instant Return on Page Navigation)
+    if (memoryBlobMap.has(url)) {
+      return memoryBlobMap.get(url);
+    }
+
+    // For local non-HTTP URLs, return directly
     if (!url.startsWith('http://') && !url.startsWith('https://')) {
       return url;
     }
 
-    // If CacheStorage API is not supported in current environment
     if (typeof window === 'undefined' || !('caches' in window)) {
       return url;
     }
@@ -32,10 +38,12 @@ export class GLBCacheManager {
       if (cachedResponse) {
         // Returned from browser CacheStorage instantly (0ms network request)
         const blob = await cachedResponse.blob();
-        return URL.createObjectURL(blob);
+        const blobUrl = URL.createObjectURL(blob);
+        memoryBlobMap.set(url, blobUrl);
+        return blobUrl;
       }
 
-      // Fetch from network if not already cached
+      // Fetch from Firebase CDN if not already cached
       const response = await fetch(url);
       if (response.ok) {
         // Save clone in CacheStorage asynchronously
@@ -43,7 +51,9 @@ export class GLBCacheManager {
           console.warn('CacheStorage save warning:', err.message);
         });
         const blob = await response.blob();
-        return URL.createObjectURL(blob);
+        const blobUrl = URL.createObjectURL(blob);
+        memoryBlobMap.set(url, blobUrl);
+        return blobUrl;
       }
     } catch (err) {
       console.warn('GLBCacheManager warning, using direct URL fallback:', err.message);

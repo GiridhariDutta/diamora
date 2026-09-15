@@ -38,6 +38,8 @@ export default function UserLayout() {
     setUser(userData);
     if (userData?.role === 'admin') {
       navigate('/admin');
+    } else if (window.location.pathname.startsWith('/cart')) {
+      navigate('/order');
     }
   };
 
@@ -70,9 +72,11 @@ export default function UserLayout() {
           onOpenShop: () => handleOpenInquiry(null), 
           onOpenInquiry: (prod) => handleOpenInquiry(prod),
           onOpenSignup: () => setIsAuthModalOpen(true),
+          onOpenAuthModal: () => setIsAuthModalOpen(true),
           user
         }} />
       </main>
+
 
       {/* Footer */}
       <Footer onOpenTickets={() => handleOpenInquiry(null)} />

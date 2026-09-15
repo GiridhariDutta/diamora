@@ -14,6 +14,14 @@ export default function HeroSectionUI({ onOpenShop, onOpenSignup }) {
     }
   };
 
+  const handleExploreCollection = (e) => {
+    if (e) e.preventDefault();
+    const collectionSection = document.getElementById('collection');
+    if (collectionSection) {
+      collectionSection.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   const navLinks = ['HOME', 'FEATURES', 'BLOG', 'HANDMADE', 'AUTHOR', 'SHOP'];
 
   // Hotspots on 3D Ring
@@ -184,8 +192,8 @@ export default function HeroSectionUI({ onOpenShop, onOpenSignup }) {
           {/* CTA Button */}
           <div className="pt-1 flex items-center">
             <button
-              onClick={onOpenShop}
-              className="group font-poppins px-7 py-3.5 border border-[#E0B094]/70 hover:border-[#E0B094] bg-black/40 hover:bg-[#E0B094]/10 text-[#E0B094] font-semibold text-xs tracking-[0.22em] uppercase transition-all duration-300 flex items-center gap-3 shadow-[0_4px_25px_rgba(0,0,0,0.5)] shrink-0 w-fit"
+              onClick={handleExploreCollection}
+              className="group font-poppins px-7 py-3.5 border border-[#E0B094]/70 hover:border-[#E0B094] bg-black/40 hover:bg-[#E0B094]/10 text-[#E0B094] font-semibold text-xs tracking-[0.22em] uppercase transition-all duration-300 flex items-center gap-3 shadow-[0_4px_25px_rgba(0,0,0,0.5)] shrink-0 w-fit cursor-pointer"
             >
               <span>EXPLORE COLLECTION</span>
               <span className="text-sm group-hover:translate-x-1 transition-transform">→</span>

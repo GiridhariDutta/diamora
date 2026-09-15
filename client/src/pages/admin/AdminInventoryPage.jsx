@@ -34,6 +34,7 @@ import Swal from 'sweetalert2';
 import api from '../../api/axios';
 import { storage } from '../../config/firebase';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+import { convertToWebP } from '../../utils/imageUtils';
 
 const lightSwal = Swal.mixin({
   background: '#FFFFFF',
@@ -119,7 +120,7 @@ export default function AdminInventoryPage() {
     makingChargeDiscountPercent: '',
     gstPercent: 3,
 
-    certification: '100% Certified & BIS Hallmarked',
+    certification: '100% Certified',
     status: 'Active',
     showInHomepage: false,
     showInCarousel: false,
@@ -444,7 +445,7 @@ export default function AdminInventoryPage() {
     }
   };
 
-  // Helper to compress base64 images to prevent 413 Payload Too Large
+  // Helper to compress base64 images to WebP format to prevent 413 Payload Too Large
   const compressImageFile = (file) => {
     return new Promise((resolve) => {
       if (!file.type || !file.type.startsWith('image/')) {
@@ -474,7 +475,7 @@ export default function AdminInventoryPage() {
           canvas.height = height;
           const ctx = canvas.getContext('2d');
           ctx.drawImage(img, 0, 0, width, height);
-          const compressedBase64 = canvas.toDataURL('image/jpeg', 0.82);
+          const compressedBase64 = canvas.toDataURL('image/webp', 0.85);
           resolve(compressedBase64);
         };
         img.onerror = () => {
@@ -512,17 +513,31 @@ export default function AdminInventoryPage() {
     try {
       const uploadedMedia = [];
 
-      for (const file of files) {
-        const isVideo = file.type.startsWith('video/');
+      for (const rawFile of files) {
+        const isVideo = rawFile.type.startsWith('video/');
+        let fileToUpload = rawFile;
+
+        // Convert image files to WebP format before uploading to Firebase Storage (Videos remain as is)
+        if (!isVideo && rawFile.type.startsWith('image/')) {
+          try {
+            fileToUpload = await convertToWebP(rawFile, 0.85, 1920);
+          } catch (webpErr) {
+            console.warn('WebP image conversion notice (using original image):', webpErr.message);
+            fileToUpload = rawFile;
+          }
+        }
+
         let finalUrl = '';
 
         // Try Firebase Storage upload first with 6s timeout
         try {
-          const fileExt = file.name.split('.').pop();
+          const fileExt = isVideo 
+            ? (fileToUpload.name.split('.').pop() || 'mp4') 
+            : 'webp';
           const fileName = `products/${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
           const storageRef = ref(storage, fileName);
 
-          const uploadTask = uploadBytesResumable(storageRef, file);
+          const uploadTask = uploadBytesResumable(storageRef, fileToUpload);
 
           finalUrl = await new Promise((resolve, reject) => {
             const timer = setTimeout(() => {
@@ -550,7 +565,7 @@ export default function AdminInventoryPage() {
         } catch (firebaseErr) {
           console.warn('Firebase Storage upload notice (using local compressed fallback):', firebaseErr.message);
           // Fallback to compressed Base64 Data URL to avoid HTTP 413 Payload Too Large
-          finalUrl = await compressImageFile(file);
+          finalUrl = await compressImageFile(fileToUpload);
         }
 
         if (finalUrl) {
@@ -754,7 +769,7 @@ export default function AdminInventoryPage() {
       makingChargeDiscountPercent: prod.makingChargeDiscountPercent !== undefined ? prod.makingChargeDiscountPercent : '',
       gstPercent: prod.gstPercent || 3,
 
-      certification: prod.certification || '100% Certified & BIS Hallmarked',
+      certification: prod.certification || '100% Certified',
       status: prod.status || 'Active',
       showInHomepage: Boolean(prod.showInHomepage),
       showInCarousel: Boolean(prod.showInCarousel),
@@ -1167,7 +1182,7 @@ export default function AdminInventoryPage() {
       {/* MODAL 1 & 2: ADD / EDIT PRODUCT MODAL */}
       {(isAddModalOpen || isEditModalOpen) && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-slate-900/60 backdrop-blur-xs animate-fadeIn font-open-sans overflow-y-auto">
-          <div className="relative w-full max-w-5xl bg-white border border-slate-300 rounded-[4px] shadow-2xl my-auto max-h-[92vh] flex flex-col overflow-hidden">
+          <div className="relative w-full max-w-6xl bg-white border border-slate-300 rounded-[4px] shadow-2xl my-auto max-h-[92vh] flex flex-col overflow-hidden">
             
             {/* FIXED STICKY CARD HEADER */}
             <div className="px-4 py-3 sm:px-6 sm:py-3.5 border-b border-slate-200 bg-white flex items-center justify-between gap-3 shrink-0">
@@ -1962,7 +1977,7 @@ export default function AdminInventoryPage() {
       {/* MODAL 3: VIEW PRODUCT DETAILS MODAL CARD */}
       {isViewModalOpen && viewingProduct && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-slate-900/60 backdrop-blur-xs animate-fadeIn font-open-sans overflow-y-auto">
-          <div className="relative w-full max-w-4xl bg-white border border-slate-300 rounded-[4px] shadow-2xl my-auto max-h-[92vh] flex flex-col overflow-hidden">
+          <div className="relative w-full max-w-5xl bg-white border border-slate-300 rounded-[4px] shadow-2xl my-auto max-h-[92vh] flex flex-col overflow-hidden">
             
             {/* FIXED STICKY CARD HEADER */}
             <div className="px-4 py-3 sm:px-6 sm:py-3.5 border-b border-slate-200 bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0">
@@ -2007,10 +2022,10 @@ export default function AdminInventoryPage() {
 
             {/* SCROLLABLE CARD BODY */}
             <div className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-start">
               
-              {/* MEDIA GALLERY CAROUSEL (5 COLS) */}
-              <div className="md:col-span-5 space-y-3">
+              {/* MEDIA GALLERY CAROUSEL (5 COLS) - STICKY LEFT COLUMN */}
+              <div className="md:col-span-5 space-y-3 md:sticky md:top-0 self-start">
                 <div className="aspect-square bg-slate-950 rounded-[4px] overflow-hidden border border-slate-300 flex items-center justify-center relative shadow-2xs">
                   {viewingProduct.media && viewingProduct.media.length > 0 ? (
                     viewingProduct.media[activeMediaIndex]?.type === 'video' ? (
@@ -2054,7 +2069,7 @@ export default function AdminInventoryPage() {
                 <div className="p-2.5 bg-slate-50 border border-slate-200 rounded-[4px] text-center">
                   <span className="text-[11px] font-semibold text-slate-800 uppercase flex items-center justify-center gap-1.5">
                     <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                    {viewingProduct.certification || 'BIS Hallmarked & Certified'}
+                    {(viewingProduct.certification || '100% Certified').replace(/&\s*BIS\s*Hallmarked/gi, '').replace(/BIS\s*Hallmarked\s*&?/gi, '').trim() || '100% Certified'}
                   </span>
                 </div>
               </div>

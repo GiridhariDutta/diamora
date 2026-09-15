@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Search, User, ShoppingBag, Menu, X, Award, ShieldCheck, Sparkles, Gem } from 'lucide-react';
 import api from '../api/axios';
+import { getCartCount } from '../utils/cartManager';
 
 export default function Navbar({
   onOpenShop,
@@ -17,6 +18,15 @@ export default function Navbar({
   const [activeTab, setActiveTab] = useState('HOME');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [cartCount, setCartCount] = useState(0);
+
+  useEffect(() => {
+    const updateCount = () => {
+      setCartCount(getCartCount());
+    };
+    updateCount();
+    window.addEventListener('cartUpdated', updateCount);
+    return () => window.removeEventListener('cartUpdated', updateCount);
+  }, []);
 
   // Mega Menu Hover State
   const [isShopHovered, setIsShopHovered] = useState(false);
@@ -42,15 +52,43 @@ export default function Navbar({
     { id: 'CONTACT', label: 'CONTACT', href: '#contact', isRoute: false },
   ];
 
+  const getUserDisplayName = (usr) => {
+    if (!usr) return '';
+    if (usr.name && usr.name.trim() !== '') {
+      const nameStr = usr.name.trim();
+      if (usr.email && nameStr.toLowerCase() === usr.email.split('@')[0].toLowerCase()) {
+        const cleanName = nameStr.replace(/[0-9]/g, '');
+        if (cleanName) {
+          return cleanName.charAt(0).toUpperCase() + cleanName.slice(1);
+        }
+      }
+      return nameStr;
+    }
+    if (usr.email) {
+      const prefix = usr.email.split('@')[0].replace(/[0-9]/g, '');
+      return prefix ? prefix.charAt(0).toUpperCase() + prefix.slice(1) : usr.email.split('@')[0];
+    }
+    return 'Member';
+  };
+
+  const isCartPage = location.pathname.startsWith('/cart');
+
   useEffect(() => {
     if (location.pathname === '/') {
       setActiveTab('HOME');
-    } else if (location.pathname.startsWith('/shop')) {
+    } else if (location.pathname.startsWith('/shop') || location.pathname.startsWith('/product')) {
       setActiveTab('SHOP');
     } else if (location.pathname.startsWith('/about')) {
       setActiveTab('ABOUT US');
+    } else if (location.pathname.startsWith('/profile')) {
+      setActiveTab('PROFILE');
+    } else if (location.pathname.startsWith('/cart')) {
+      setActiveTab('CART');
+    } else {
+      setActiveTab('');
     }
   }, [location.pathname]);
+
 
   useEffect(() => {
     const handleScroll = () => {
@@ -241,18 +279,19 @@ export default function Navbar({
             {user ? (
               <div className="relative group">
                 <button
-                  className="p-1.5 text-[#E0B094] hover:text-white transition-colors focus:outline-none flex items-center gap-1.5 text-xs"
-                  title={`Logged in as ${user.name || user.email}`}
+                  onClick={() => navigate('/profile')}
+                  className="p-1.5 text-[#E0B094] hover:text-white transition-colors focus:outline-none flex items-center gap-1.5 text-xs cursor-pointer"
+                  title={`Logged in as ${getUserDisplayName(user)}`}
                 >
                   <User className="w-4 h-4 text-[#E0B094]" />
-                  <span className="hidden lg:inline text-[11px] text-[#E0B094] font-medium max-w-[90px] truncate">
-                    {user.name?.split(' ')[0] || 'Vault'}
+                  <span className="hidden lg:inline text-[11px] text-[#E0B094] font-medium max-w-[110px] truncate">
+                    {getUserDisplayName(user)}
                   </span>
                 </button>
 
-                <div className="absolute right-0 top-full mt-2 w-48 bg-[#0C0D10]/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl p-3 hidden group-hover:block transition-all z-50">
+                <div className="absolute right-0 top-full mt-2 w-52 bg-[#0C0D10]/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl p-3 hidden group-hover:block transition-all z-50">
                   <div className="px-2 py-1.5 border-b border-white/10 mb-2">
-                    <p className="text-xs font-semibold text-[#F5F5F0] truncate">{user.name || 'Valued Member'}</p>
+                    <p className="text-xs font-semibold text-[#F5F5F0] truncate">{getUserDisplayName(user)}</p>
                     <p className="text-[10px] text-[#C5C8D0] truncate">{user.email}</p>
                     {user.role === 'admin' && (
                       <span className="inline-block mt-1 px-2 py-0.5 bg-[#E0B094]/20 border border-[#E0B094]/30 text-[#E0B094] text-[9px] font-bold rounded uppercase">
@@ -260,6 +299,22 @@ export default function Navbar({
                       </span>
                     )}
                   </div>
+
+                  <button
+                    onClick={() => navigate('/profile')}
+                    className="w-full text-left px-2 py-1.5 text-xs text-[#F5F5F0] hover:bg-white/5 rounded-md transition-colors font-medium mb-1 flex items-center justify-between"
+                  >
+                    <span>My Profile</span>
+                    <span>→</span>
+                  </button>
+
+                  <button
+                    onClick={() => navigate('/profile?tab=orders')}
+                    className="w-full text-left px-2 py-1.5 text-xs text-[#E0B094] hover:bg-white/5 rounded-md transition-colors font-medium mb-1 flex items-center justify-between"
+                  >
+                    <span>My Orders & Purchases</span>
+                    <span>→</span>
+                  </button>
 
                   {user.role === 'admin' && onNavigateToAdmin && (
                     <button
@@ -290,14 +345,21 @@ export default function Navbar({
             )}
 
             <button
-              onClick={onOpenShop}
-              className="relative p-1.5 hover:text-[#E0B094] transition-colors focus:outline-none"
+              onClick={() => navigate('/cart')}
+              className={`relative p-1.5 transition-colors focus:outline-none cursor-pointer ${
+                isCartPage ? 'text-[#E0B094]' : 'text-[#F5F5F0] hover:text-[#E0B094]'
+              }`}
               title="Shopping Cart"
             >
               <ShoppingBag className="w-4 h-4" />
-              <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#E0B094] text-[#0C0D10] text-[9px] font-extrabold flex items-center justify-center shadow-md">
-                {cartCount}
-              </span>
+              {isCartPage && (
+                <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-4 h-[1.5px] bg-[#E0B094] shadow-[0_0_8px_rgba(224,176,148,0.6)]" />
+              )}
+              {cartCount > 0 && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#E0B094] text-[#0C0D10] text-[9px] font-extrabold flex items-center justify-center shadow-md">
+                  {cartCount}
+                </span>
+              )}
             </button>
 
           </div>
@@ -307,14 +369,20 @@ export default function Navbar({
         {/* MOBILE MENU TOGGLE */}
         <div className="md:hidden flex items-center space-x-3">
           <button
-            onClick={onOpenShop}
-            className="relative p-1.5 text-[#F5F5F0] hover:text-[#E0B094]"
+            onClick={() => navigate('/cart')}
+            className={`relative p-1.5 transition-colors ${
+              isCartPage ? 'text-[#E0B094]' : 'text-[#F5F5F0] hover:text-[#E0B094]'
+            }`}
           >
             <ShoppingBag className="w-5 h-5" />
+            {isCartPage && (
+              <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-4 h-[1.5px] bg-[#E0B094] shadow-[0_0_8px_rgba(224,176,148,0.6)]" />
+            )}
             <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#E0B094] text-[#0C0D10] text-[9px] font-extrabold flex items-center justify-center">
               {cartCount}
             </span>
           </button>
+
 
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -328,15 +396,19 @@ export default function Navbar({
 
       {/* COMPACT DARK GLASSMORPHIC SHOP MEGA MENU DROPDOWN (Easy In/Out Animation) */}
       <div 
-        className={`absolute top-full left-0 right-0 z-50 pt-2 px-4 font-poppins transition-all duration-300 ease-in-out transform origin-top ${
+        className={`absolute top-full left-0 right-0 z-50 pt-2 px-4 font-poppins transition-all duration-300 ease-in-out transform origin-top flex justify-center pointer-events-none ${
           isShopHovered
-            ? 'opacity-100 translate-y-0 scale-100 pointer-events-auto'
-            : 'opacity-0 -translate-y-2 scale-[0.98] pointer-events-none'
+            ? 'opacity-100 translate-y-0 scale-100'
+            : 'opacity-0 -translate-y-2 scale-[0.98]'
         }`}
-        onMouseEnter={handleMouseEnterShop}
-        onMouseLeave={handleMouseLeaveShop}
       >
-        <div className="max-w-2xl mx-auto bg-[#16181F]/90 backdrop-blur-3xl border border-white/20 rounded-2xl shadow-[0_25px_60px_rgba(0,0,0,0.85)] p-6 text-[#F5F5F0]">
+        <div 
+          onMouseEnter={handleMouseEnterShop}
+          onMouseLeave={handleMouseLeaveShop}
+          className={`w-full max-w-2xl bg-[#0F1017] border border-[#E0B094]/40 rounded-2xl shadow-[0_30px_90px_rgba(0,0,0,0.98)] p-6 text-[#F5F5F0] transition-opacity duration-300 ${
+            isShopHovered ? 'pointer-events-auto' : 'pointer-events-none'
+          }`}
+        >
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
 
               
@@ -458,13 +530,22 @@ export default function Navbar({
               <span>ALL JEWELLERY</span>
             </button>
             {user ? (
-              <button
-                onClick={onLogout}
-                className="flex items-center gap-2 text-xs text-red-400 hover:text-red-300"
-              >
-                <User className="w-4 h-4" />
-                <span>LOGOUT ({user.name?.split(' ')[0] || 'USER'})</span>
-              </button>
+              <>
+                <button
+                  onClick={() => { setMobileMenuOpen(false); navigate('/profile?tab=orders'); }}
+                  className="flex items-center gap-1.5 text-xs text-[#E0B094] hover:text-white font-semibold"
+                >
+                  <ShoppingBag className="w-4 h-4" />
+                  <span>MY ORDERS</span>
+                </button>
+                <button
+                  onClick={onLogout}
+                  className="flex items-center gap-1.5 text-xs text-red-400 hover:text-red-300"
+                >
+                  <User className="w-4 h-4" />
+                  <span>LOGOUT</span>
+                </button>
+              </>
             ) : (
               <button
                 onClick={() => { setMobileMenuOpen(false); if (onOpenAuthModal) onOpenAuthModal(); }}

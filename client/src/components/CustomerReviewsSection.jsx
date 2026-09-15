@@ -153,7 +153,7 @@ export default function CustomerReviewsSection() {
   };
 
   return (
-    <section className="relative pt-16 sm:pt-24 pb-8 sm:pb-12 px-4 sm:px-8 lg:px-12 bg-[#0C0D10] text-[#F5F5F0] select-none z-20 overflow-hidden">
+    <section className="relative pt-8 sm:pt-12 pb-8 sm:pb-12 px-4 sm:px-8 lg:px-12 bg-[#0C0D10] text-[#F5F5F0] select-none z-20 overflow-hidden">
       
       {/* Background Hairline Gridlines */}
       <div className="absolute inset-0 hairline-grid pointer-events-none opacity-25 z-0" />
