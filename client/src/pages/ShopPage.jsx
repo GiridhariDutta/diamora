@@ -91,7 +91,7 @@ export default function ShopPage() {
   // Fetch initial batch (Page 1) when active filters change
   useEffect(() => {
     fetchInitialProducts();
-  }, [selectedCategory, selectedCollection, selectedColor, selectedDiamondColor, selectedPurity, selectedPriceRange]);
+  }, [selectedCategory, selectedCollection, selectedColor, selectedPurity, selectedPriceRange]);
 
   const fetchInitialProducts = async () => {
     setLoadingInitial(true);
@@ -103,7 +103,6 @@ export default function ShopPage() {
         category: selectedCategory,
         collection: selectedCollection,
         color: selectedColor,
-        diamondColor: selectedDiamondColor,
         purity: selectedPurity,
         price: selectedPriceRange
       };
@@ -137,7 +136,6 @@ export default function ShopPage() {
         category: selectedCategory,
         collection: selectedCollection,
         color: selectedColor,
-        diamondColor: selectedDiamondColor,
         purity: selectedPurity,
         price: selectedPriceRange
       };

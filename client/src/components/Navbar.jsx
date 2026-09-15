@@ -45,7 +45,7 @@ export default function Navbar({
   useEffect(() => {
     if (location.pathname === '/') {
       setActiveTab('HOME');
-    } else if (location.pathname.startsWith('/shop')) {
+    } else if (location.pathname.startsWith('/shop') || location.pathname.startsWith('/product')) {
       setActiveTab('SHOP');
     } else if (location.pathname.startsWith('/about')) {
       setActiveTab('ABOUT US');
@@ -328,15 +328,19 @@ export default function Navbar({
 
       {/* COMPACT DARK GLASSMORPHIC SHOP MEGA MENU DROPDOWN (Easy In/Out Animation) */}
       <div 
-        className={`absolute top-full left-0 right-0 z-50 pt-2 px-4 font-poppins transition-all duration-300 ease-in-out transform origin-top ${
+        className={`absolute top-full left-0 right-0 z-50 pt-2 px-4 font-poppins transition-all duration-300 ease-in-out transform origin-top flex justify-center pointer-events-none ${
           isShopHovered
-            ? 'opacity-100 translate-y-0 scale-100 pointer-events-auto'
-            : 'opacity-0 -translate-y-2 scale-[0.98] pointer-events-none'
+            ? 'opacity-100 translate-y-0 scale-100'
+            : 'opacity-0 -translate-y-2 scale-[0.98]'
         }`}
-        onMouseEnter={handleMouseEnterShop}
-        onMouseLeave={handleMouseLeaveShop}
       >
-        <div className="max-w-2xl mx-auto bg-[#16181F]/90 backdrop-blur-3xl border border-white/20 rounded-2xl shadow-[0_25px_60px_rgba(0,0,0,0.85)] p-6 text-[#F5F5F0]">
+        <div 
+          onMouseEnter={handleMouseEnterShop}
+          onMouseLeave={handleMouseLeaveShop}
+          className={`w-full max-w-2xl bg-[#0F1017] border border-[#E0B094]/40 rounded-2xl shadow-[0_30px_90px_rgba(0,0,0,0.98)] p-6 text-[#F5F5F0] transition-opacity duration-300 ${
+            isShopHovered ? 'pointer-events-auto' : 'pointer-events-none'
+          }`}
+        >
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
 
               

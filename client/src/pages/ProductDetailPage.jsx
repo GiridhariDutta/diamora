@@ -296,10 +296,10 @@ export default function ProductDetailPage() {
                 />
               )}
 
-              {/* SKU Badge */}
-              <div className="absolute top-3 left-3 bg-[#0C0D10]/80 backdrop-blur-md px-2.5 py-1 rounded-md border border-white/10 text-[10px] font-mono text-[#E0B094]">
+              {/* SKU Badge - Commented out */}
+              {/* <div className="absolute top-3 left-3 bg-[#0C0D10]/80 backdrop-blur-md px-2.5 py-1 rounded-md border border-white/10 text-[10px] font-mono text-[#E0B094]">
                 SKU: {product.sku || 'DIAM-VAULT'}
-              </div>
+              </div> */}
             </div>
 
           </div>
@@ -320,18 +320,13 @@ export default function ProductDetailPage() {
               </h1>
 
               <div className="flex items-center gap-3 mt-1.5 text-xs text-[#C5C8D0] font-light">
-                <span>Ref: <strong className="font-mono text-white">{product.sku || product.id}</strong></span>
+                {/* <span>Ref: <strong className="font-mono text-white">{product.sku || product.id}</strong></span> */}
                 {product.purityTitle && (
-                  <>
-                    <span>•</span>
-                    <span className="text-[#E0B094]">{product.purityTitle}</span>
-                  </>
+                  <span className="text-[#E0B094]">{product.purityTitle}</span>
                 )}
+                {product.purityTitle && product.colorTitle && <span>•</span>}
                 {product.colorTitle && (
-                  <>
-                    <span>•</span>
-                    <span className="text-[#E0B094]">{product.colorTitle}</span>
-                  </>
+                  <span className="text-[#E0B094]">{product.colorTitle}</span>
                 )}
               </div>
             </div>
@@ -529,15 +524,12 @@ export default function ProductDetailPage() {
                       </h4>
 
                       {/* SKU & Purity */}
-                      <div className="flex items-center gap-2 text-[10px] text-gray-400 font-mono mb-2">
-                        <span>{item.sku || 'DIAM-VAULT'}</span>
-                        {item.purityTitle && (
-                          <>
-                            <span>•</span>
-                            <span className="text-[#E0B094]">{item.purityTitle}</span>
-                          </>
-                        )}
-                      </div>
+                      {item.purityTitle && (
+                        <div className="flex items-center gap-2 text-[10px] text-gray-400 font-mono mb-2">
+                          {/* <span>{item.sku || 'DIAM-VAULT'}</span> */}
+                          <span className="text-[#E0B094]">{item.purityTitle}</span>
+                        </div>
+                      )}
                     </div>
 
                     {/* Footer Row: Price & Action */}
@@ -663,15 +655,12 @@ export default function ProductDetailPage() {
                       </h4>
 
                       {/* SKU & Purity */}
-                      <div className="flex items-center gap-2 text-[10px] text-gray-400 font-mono mb-2">
-                        <span>{item.sku || 'DIAM-VAULT'}</span>
-                        {item.purityTitle && (
-                          <>
-                            <span>•</span>
-                            <span className="text-[#E0B094]">{item.purityTitle}</span>
-                          </>
-                        )}
-                      </div>
+                      {item.purityTitle && (
+                        <div className="flex items-center gap-2 text-[10px] text-gray-400 font-mono mb-2">
+                          {/* <span>{item.sku || 'DIAM-VAULT'}</span> */}
+                          <span className="text-[#E0B094]">{item.purityTitle}</span>
+                        </div>
+                      )}
                     </div>
 
                     {/* Footer Row: Price & Action */}

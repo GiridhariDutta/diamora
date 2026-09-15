@@ -73,7 +73,7 @@ export class AuthController {
    */
   static async firebaseLogin(req, res) {
     try {
-      const { idToken } = req.body;
+      const { idToken, name } = req.body;
 
       if (!idToken) {
         return res.status(400).json({
@@ -82,7 +82,7 @@ export class AuthController {
         });
       }
 
-      const result = await AuthService.verifyFirebaseTokenAndLogin(idToken);
+      const result = await AuthService.verifyFirebaseTokenAndLogin(idToken, name);
 
       return res.status(200).json({
         success: true,

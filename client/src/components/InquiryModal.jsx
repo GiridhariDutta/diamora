@@ -144,9 +144,9 @@ export default function InquiryModal({ isOpen, onClose, product }) {
                 )}
 
                 <div className="min-w-0 flex-1">
-                  <span className="text-[9.5px] font-mono text-[#E0B094] tracking-widest uppercase block truncate">
+                  {/* <span className="text-[9.5px] font-mono text-[#E0B094] tracking-widest uppercase block truncate">
                     SKU: {product.sku || 'N/A'}
-                  </span>
+                  </span> */}
                   <h4 className="font-serif text-sm font-semibold text-white truncate">
                     {product.title || product.name || 'Selected Jewelry'}
                   </h4>

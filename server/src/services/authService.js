@@ -91,9 +91,9 @@ export class AuthService {
   }
 
   /**
-   * Login or Sync user via Firebase Client ID Token (e.g. Google Sign-In or Firebase Auth)
+   * Login or Sync user via Firebase Client ID Token (e.g. Google Sign-In or Firebase Auth Email/Password)
    */
-  static async verifyFirebaseTokenAndLogin(idToken) {
+  static async verifyFirebaseTokenAndLogin(idToken, customName = null) {
     if (!adminAuth || !db) {
       throw new Error('Firebase Admin service is not initialized');
     }
@@ -102,10 +102,12 @@ export class AuthService {
     const { uid, email, name, picture } = decodedToken;
     const nowIso = new Date().toISOString();
 
+    const displayName = customName || name || email?.split('@')[0] || 'User';
+
     let userProfile = {
       uid,
       email: email || '',
-      name: name || email?.split('@')[0] || 'User',
+      name: displayName,
       photoURL: picture || '',
       createdAt: nowIso,
       lastSignInAt: nowIso,
@@ -119,7 +121,13 @@ export class AuthService {
       if (!docSnap.exists) {
         await userRef.set(userProfile);
       } else {
-        userProfile = { ...docSnap.data(), lastSignInAt: nowIso };
+        const existingData = docSnap.data();
+        userProfile = { 
+          ...existingData, 
+          uid: docSnap.id,
+          name: existingData.name || displayName,
+          lastSignInAt: nowIso 
+        };
         await userRef.update({ lastSignInAt: nowIso });
       }
     } catch (dbError) {
@@ -157,39 +165,72 @@ export class AuthService {
       throw new Error('User profile not found');
     }
 
-    return docSnap.data();
+    return { uid, ...docSnap.data() };
   }
 
   /**
-   * Direct Email/Password login fallback
+   * Direct Email/Password login with proper password verification via Firebase Identity Toolkit API
    */
   static async loginUser({ email, password }) {
     if (!adminAuth || !db) {
       throw new Error('Firebase Admin service is not initialized');
     }
 
-    let userRecord;
+    const apiKey = process.env.FIREBASE_API_KEY || process.env.VITE_FIREBASE_API_KEY || 'AIzaSyAymkPz3tozEJekj42Y9zZXKU8z-C7apiw';
+
+    // 1. Verify credentials using Firebase Auth REST API
+    let uid;
     try {
-      userRecord = await adminAuth.getUserByEmail(email);
-    } catch (error) {
-      if (error.code === 'auth/user-not-found') {
-        throw new Error('No account found with this email address.');
+      const response = await fetch(
+        `https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=${apiKey}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            email,
+            password,
+            returnSecureToken: true
+          })
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok || data.error) {
+        const errCode = data.error?.message;
+        if (errCode === 'INVALID_PASSWORD' || errCode === 'INVALID_LOGIN_CREDENTIALS') {
+          throw new Error('Invalid email or password.');
+        } else if (errCode === 'EMAIL_NOT_FOUND') {
+          throw new Error('No account found with this email address.');
+        } else if (errCode === 'USER_DISABLED') {
+          throw new Error('This user account has been disabled.');
+        } else if (errCode === 'TOO_MANY_ATTEMPTS_TRY_LATER') {
+          throw new Error('Access to this account has been temporarily disabled due to many failed login attempts.');
+        } else {
+          throw new Error(data.error?.message || 'Invalid email or password.');
+        }
       }
-      throw error;
+
+      uid = data.localId;
+    } catch (authErr) {
+      throw authErr;
     }
 
     const nowIso = new Date().toISOString();
 
-    // Automatically update lastSignInAt in Firestore DB
+    // 2. Automatically update lastSignInAt in Firestore DB
     try {
-      await db.collection('users').doc(userRecord.uid).set({
+      await db.collection('users').doc(uid).set({
         lastSignInAt: nowIso
       }, { merge: true });
     } catch (dbErr) {
       console.warn('Failed to update lastSignInAt in Firestore:', dbErr.message);
     }
     
-    const userProfile = await this.getUserProfile(userRecord.uid);
+    // 3. Retrieve User Profile & issue JWT token
+    const userProfile = await this.getUserProfile(uid);
     const token = generateJwtToken(userProfile);
 
     return {
