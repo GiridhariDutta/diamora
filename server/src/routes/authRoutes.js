@@ -20,6 +20,7 @@ router.post('/firebase-login', validateBody(firebaseLoginSchema), AuthController
 
 // Protected routes
 router.get('/me', authenticateToken, AuthController.getProfile);
+router.put('/me', authenticateToken, AuthController.updateProfile);
 
 // Admin-only management routes with Zod validation & admin role guard
 router.get('/admin-users', authenticateToken, requireAdminRole, AuthController.getAdminUsers);

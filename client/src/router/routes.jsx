@@ -20,6 +20,7 @@ import AdminOrdersPage from '../pages/admin/AdminOrdersPage';
 import AdminSettingsPage from '../pages/admin/AdminSettingsPage';
 import AdminDynamicPageEditor from '../pages/admin/AdminDynamicPageEditor';
 import ProductDetailPage from '../pages/ProductDetailPage';
+import ProfilePage from '../pages/ProfilePage';
 
 export const router = createBrowserRouter([
   {
@@ -29,6 +30,7 @@ export const router = createBrowserRouter([
       { index: true, element: <HomePage /> },
       { path: 'shop', element: <ShopPage /> },
       { path: 'product/:id', element: <ProductDetailPage /> },
+      { path: 'profile', element: <ProfilePage /> },
       { path: 'about', element: <AboutPage pageKey="about_us" /> },
       { path: 'about-us', element: <AboutPage pageKey="about_us" /> },
       { path: 'privacy-policy', element: <AboutPage pageKey="privacy_policy" /> },

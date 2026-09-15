@@ -42,6 +42,25 @@ export default function Navbar({
     { id: 'CONTACT', label: 'CONTACT', href: '#contact', isRoute: false },
   ];
 
+  const getUserDisplayName = (usr) => {
+    if (!usr) return '';
+    if (usr.name && usr.name.trim() !== '') {
+      const nameStr = usr.name.trim();
+      if (usr.email && nameStr.toLowerCase() === usr.email.split('@')[0].toLowerCase()) {
+        const cleanName = nameStr.replace(/[0-9]/g, '');
+        if (cleanName) {
+          return cleanName.charAt(0).toUpperCase() + cleanName.slice(1);
+        }
+      }
+      return nameStr;
+    }
+    if (usr.email) {
+      const prefix = usr.email.split('@')[0].replace(/[0-9]/g, '');
+      return prefix ? prefix.charAt(0).toUpperCase() + prefix.slice(1) : usr.email.split('@')[0];
+    }
+    return 'Member';
+  };
+
   useEffect(() => {
     if (location.pathname === '/') {
       setActiveTab('HOME');
@@ -49,6 +68,8 @@ export default function Navbar({
       setActiveTab('SHOP');
     } else if (location.pathname.startsWith('/about')) {
       setActiveTab('ABOUT US');
+    } else if (location.pathname.startsWith('/profile')) {
+      setActiveTab('PROFILE');
     }
   }, [location.pathname]);
 
@@ -241,18 +262,19 @@ export default function Navbar({
             {user ? (
               <div className="relative group">
                 <button
-                  className="p-1.5 text-[#E0B094] hover:text-white transition-colors focus:outline-none flex items-center gap-1.5 text-xs"
-                  title={`Logged in as ${user.name || user.email}`}
+                  onClick={() => navigate('/profile')}
+                  className="p-1.5 text-[#E0B094] hover:text-white transition-colors focus:outline-none flex items-center gap-1.5 text-xs cursor-pointer"
+                  title={`Logged in as ${getUserDisplayName(user)}`}
                 >
                   <User className="w-4 h-4 text-[#E0B094]" />
-                  <span className="hidden lg:inline text-[11px] text-[#E0B094] font-medium max-w-[90px] truncate">
-                    {user.name?.split(' ')[0] || 'Vault'}
+                  <span className="hidden lg:inline text-[11px] text-[#E0B094] font-medium max-w-[110px] truncate">
+                    {getUserDisplayName(user)}
                   </span>
                 </button>
 
-                <div className="absolute right-0 top-full mt-2 w-48 bg-[#0C0D10]/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl p-3 hidden group-hover:block transition-all z-50">
+                <div className="absolute right-0 top-full mt-2 w-52 bg-[#0C0D10]/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl p-3 hidden group-hover:block transition-all z-50">
                   <div className="px-2 py-1.5 border-b border-white/10 mb-2">
-                    <p className="text-xs font-semibold text-[#F5F5F0] truncate">{user.name || 'Valued Member'}</p>
+                    <p className="text-xs font-semibold text-[#F5F5F0] truncate">{getUserDisplayName(user)}</p>
                     <p className="text-[10px] text-[#C5C8D0] truncate">{user.email}</p>
                     {user.role === 'admin' && (
                       <span className="inline-block mt-1 px-2 py-0.5 bg-[#E0B094]/20 border border-[#E0B094]/30 text-[#E0B094] text-[9px] font-bold rounded uppercase">
@@ -260,6 +282,14 @@ export default function Navbar({
                       </span>
                     )}
                   </div>
+
+                  <button
+                    onClick={() => navigate('/profile')}
+                    className="w-full text-left px-2 py-1.5 text-xs text-[#F5F5F0] hover:bg-white/5 rounded-md transition-colors font-medium mb-1 flex items-center justify-between"
+                  >
+                    <span>My Profile</span>
+                    <span>→</span>
+                  </button>
 
                   {user.role === 'admin' && onNavigateToAdmin && (
                     <button

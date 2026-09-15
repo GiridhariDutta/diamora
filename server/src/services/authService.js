@@ -169,6 +169,38 @@ export class AuthService {
   }
 
   /**
+   * Update user profile in Firestore DB & Firebase Auth
+   */
+  static async updateUserProfile(uid, updateData) {
+    if (!db) {
+      throw new Error('Firestore database is not initialized');
+    }
+
+    const allowedFields = ['name', 'phone', 'address', 'city', 'state', 'pincode'];
+    const filteredUpdate = {};
+    for (const key of allowedFields) {
+      if (updateData[key] !== undefined) {
+        filteredUpdate[key] = updateData[key];
+      }
+    }
+    filteredUpdate.updatedAt = new Date().toISOString();
+
+    const userRef = db.collection('users').doc(uid);
+    await userRef.set(filteredUpdate, { merge: true });
+
+    if (filteredUpdate.name && adminAuth) {
+      try {
+        await adminAuth.updateUser(uid, { displayName: filteredUpdate.name });
+      } catch (e) {
+        console.warn('Could not update Firebase displayName:', e.message);
+      }
+    }
+
+    const docSnap = await userRef.get();
+    return { uid, ...docSnap.data() };
+  }
+
+  /**
    * Direct Email/Password login with proper password verification via Firebase Identity Toolkit API
    */
   static async loginUser({ email, password }) {
