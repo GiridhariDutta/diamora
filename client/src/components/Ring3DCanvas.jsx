@@ -4,9 +4,6 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 
-import ring1Url from '../assets/models/ring_ornament_1.glb?url';
-import ring2Url from '../assets/models/dymond-model2.glb?url';
-import ring3Url from '../assets/models/ring_ornament_3.glb?url';
 import { GLBCacheManager } from '../utils/glbCacheManager.js';
 
 // Module-level GLTF raw scene cache (persists in RAM across page navigation)
@@ -24,13 +21,12 @@ export default function Ring3DCanvas() {
     transition: 'none'
   });
 
-  // Model files list: Firebase Storage hosted URLs with local fallbacks
+  // Model files list: Hosted on Remote Firebase Storage CDN
   const modelConfigs = [
     {
       id: 'ring_shader_pos1',
       name: 'ORNAMENT POS 1',
-      url: ring1Url,
-      fallbackUrl: ring1Url,
+      url: 'https://firebasestorage.googleapis.com/v0/b/diamora-508307.firebasestorage.app/o/models%2Fring_ornament_1.glb?alt=media&token=1ed1f8b2-09e5-419a-8f34-49dd506839cb',
       explicitScale: 0.38,
       positionY: -0.18,
       rawRotation: [0, Math.PI / 2, 0]
@@ -39,7 +35,6 @@ export default function Ring3DCanvas() {
       id: 'vers4_men_design',
       name: 'ETERNITY DESIGN 2',
       url: 'https://firebasestorage.googleapis.com/v0/b/diamora-508307.firebasestorage.app/o/models%2Fdymond-model2.glb?alt=media&token=806a5775-d941-4ea8-97b6-79c4162039aa',
-      fallbackUrl: ring2Url,
       explicitScale: 0.10,
       positionY: -0.18,
       rawRotation: [0, 0, 0],
@@ -50,7 +45,6 @@ export default function Ring3DCanvas() {
       id: 'ring3_design',
       name: 'RING 3 DESIGN',
       url: 'https://firebasestorage.googleapis.com/v0/b/diamora-508307.firebasestorage.app/o/models%2Fring_ornament_3.glb?alt=media&token=3fc2b221-3654-48c3-8f1c-4b89aac57d50',
-      fallbackUrl: ring3Url,
       explicitScale: 0.09,
       positionY: -0.18,
       rawRotation: [-Math.PI / 2, 0, Math.PI / 2]
@@ -239,7 +233,7 @@ export default function Ring3DCanvas() {
 
     // Helper to process GLB model geometry
     const processGltfModel = (gltf, config) => {
-      const rawModel = gltf.scene;
+      const rawModel = gltf.scene.clone(true);
 
       // 1. Ultra-Realistic Crystal Diamond Material (High Dispersion Rainbow Fire & Iridescence)
       const diamondMaterial = new THREE.MeshPhysicalMaterial({
@@ -692,10 +686,11 @@ export default function Ring3DCanvas() {
           },
           undefined,
           (err) => {
-            console.warn(`Error loading primary URL for model ${idx}, trying fallback:`, err.message);
-            if (cfg.fallbackUrl && targetUrl !== cfg.fallbackUrl) {
+            console.warn(`Error loading cached URL for model ${idx}, trying direct URL fallback:`, err?.message || err);
+            const fallbackUrl = cfg.fallbackUrl || cfg.url;
+            if (fallbackUrl && targetUrl !== fallbackUrl) {
               loader.load(
-                cfg.fallbackUrl,
+                fallbackUrl,
                 (gltf) => {
                   if (isDisposed) return resolve(null);
                   globalGltfCache[idx] = gltf;
@@ -704,7 +699,10 @@ export default function Ring3DCanvas() {
                   resolve(pivot);
                 },
                 undefined,
-                () => resolve(null)
+                (fallbackErr) => {
+                  console.error(`Fatal error loading fallback for model ${idx}:`, fallbackErr);
+                  resolve(null);
+                }
               );
             } else {
               resolve(null);
