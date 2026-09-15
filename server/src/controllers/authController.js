@@ -117,6 +117,9 @@ export class AuthController {
         success: false,
         message: error.message || 'Profile not found.'
       });
+    }
+  }
+
   /**
    * Update authenticated user profile
    */

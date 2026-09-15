@@ -11,7 +11,10 @@ import api from '../api/axios';
 import { setCookie } from '../utils/cookies';
 
 const getFirebaseErrorMessage = (error) => {
-  const code = error.code || '';
+  if (error?.response?.data?.message) {
+    return error.response.data.message;
+  }
+  const code = error?.code || '';
   switch (code) {
     case 'auth/invalid-credential':
     case 'auth/wrong-password':
@@ -33,7 +36,7 @@ const getFirebaseErrorMessage = (error) => {
     case 'auth/network-request-failed':
       return 'Network connection error. Please check your internet connection.';
     default:
-      return error.message || 'Authentication failed. Please check your details and try again.';
+      return error?.message || 'Authentication failed. Please check your details and try again.';
   }
 };
 
