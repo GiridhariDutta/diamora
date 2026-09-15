@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, Sparkles, ChevronLeft, ChevronRight, Eye, Diamond } from 'lucide-react';
+import { ArrowRight, Sparkles, ChevronLeft, ChevronRight, Eye, Diamond, ShoppingBag } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
+import { addToCart, showCartAlert } from '../utils/cartManager';
 
 export default function RotatingArcShowcase({ onOpenShop }) {
   const navigate = useNavigate();
@@ -306,14 +307,29 @@ export default function RotatingArcShowcase({ onOpenShop }) {
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-50" />
                 </div>
 
-                {/* Sharp Clear Card Title & Price */}
-                <div className="py-1.5 sm:py-2 text-center px-1 flex flex-col justify-center grow">
-                  <h4 className="font-cinzel font-medium text-xs sm:text-[13px] text-[#F0F2F5] tracking-normal truncate group-hover:text-[#E0B094] transition-colors leading-tight">
-                    {item.title}
-                  </h4>
-                  <p className="font-poppins font-medium text-[11px] sm:text-xs text-[#E0B094] mt-0.5 tracking-wide">
-                    {item.price}
-                  </p>
+                {/* Sharp Clear Card Title, Price & Quick Cart Button */}
+                <div className="py-1.5 sm:py-2 px-1 flex items-center justify-between gap-1 grow border-t border-white/10 mt-1">
+                  <div className="text-left flex-1 min-w-0">
+                    <h4 className="font-cinzel font-medium text-[11px] sm:text-xs text-[#F0F2F5] tracking-normal line-clamp-2 leading-snug group-hover:text-[#E0B094] transition-colors" title={item.title}>
+                      {item.title}
+                    </h4>
+
+                    <p className="font-poppins font-medium text-[10px] sm:text-[11px] text-[#E0B094] tracking-wide mt-0.5">
+                      {item.price}
+                    </p>
+                  </div>
+
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      addToCart(item, 1);
+                      showCartAlert(item, navigate);
+                    }}
+                    className="p-1.5 rounded-lg bg-black/80 hover:bg-[#E0B094] text-[#E0B094] hover:text-[#0C0D10] border border-[#E0B094]/40 hover:border-[#E0B094] transition-all duration-300 shadow-md shrink-0 cursor-pointer"
+                    title="Add to Shopping Cart"
+                  >
+                    <ShoppingBag className="w-3.5 h-3.5" />
+                  </button>
                 </div>
 
               </div>

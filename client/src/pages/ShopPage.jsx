@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams, useOutletContext, useNavigate } from 'react-router-dom';
 import { Sparkles, ShoppingBag, SlidersHorizontal, Loader2, ChevronDown } from 'lucide-react';
 import api from '../api/axios';
+import { addToCart, showCartAlert } from '../utils/cartManager';
 
 export default function ShopPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -530,13 +531,29 @@ export default function ShopPage() {
                       </div>
 
                       {/* PRODUCT CARD DETAILS */}
-                      <div className="p-4 text-center space-y-1.5 flex-1 flex flex-col justify-end">
-                        <h3 className="font-poppins text-xs font-medium tracking-wide text-[#F5F5F0] uppercase line-clamp-2 leading-relaxed group-hover:text-[#E0B094] transition-colors">
-                          {product.title}
-                        </h3>
-                        <p className="font-mono text-xs font-semibold text-[#E0B094]">
-                          RS. {formattedPrice}
-                        </p>
+                      <div className="p-3.5 flex items-center justify-between gap-2 border-t border-white/10">
+                        <div className="text-left flex-1 min-w-0">
+                          <h3 className="font-poppins text-xs font-medium tracking-wide text-[#F5F5F0] uppercase line-clamp-2 leading-tight group-hover:text-[#E0B094] transition-colors" title={product.title}>
+                            {product.title}
+                          </h3>
+
+                          <p className="font-mono text-xs font-semibold text-[#E0B094] mt-0.5">
+                            RS. {formattedPrice}
+                          </p>
+                        </div>
+
+                        {/* Quick Add To Cart Button */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            addToCart(product, 1);
+                            showCartAlert(product, navigate);
+                          }}
+                          className="p-2 rounded-lg bg-black/60 hover:bg-[#E0B094] text-[#E0B094] hover:text-[#0C0D10] border border-[#E0B094]/40 hover:border-[#E0B094] transition-all duration-300 shadow-md shrink-0 cursor-pointer"
+                          title="Add to Shopping Cart"
+                        >
+                          <ShoppingBag className="w-4 h-4" />
+                        </button>
                       </div>
 
                     </div>

@@ -71,6 +71,8 @@ export default function Navbar({
     return 'Member';
   };
 
+  const isCartPage = location.pathname.startsWith('/cart');
+
   useEffect(() => {
     if (location.pathname === '/') {
       setActiveTab('HOME');
@@ -80,8 +82,13 @@ export default function Navbar({
       setActiveTab('ABOUT US');
     } else if (location.pathname.startsWith('/profile')) {
       setActiveTab('PROFILE');
+    } else if (location.pathname.startsWith('/cart')) {
+      setActiveTab('CART');
+    } else {
+      setActiveTab('');
     }
   }, [location.pathname]);
+
 
   useEffect(() => {
     const handleScroll = () => {
@@ -301,6 +308,14 @@ export default function Navbar({
                     <span>→</span>
                   </button>
 
+                  <button
+                    onClick={() => navigate('/profile?tab=orders')}
+                    className="w-full text-left px-2 py-1.5 text-xs text-[#E0B094] hover:bg-white/5 rounded-md transition-colors font-medium mb-1 flex items-center justify-between"
+                  >
+                    <span>My Orders & Purchases</span>
+                    <span>→</span>
+                  </button>
+
                   {user.role === 'admin' && onNavigateToAdmin && (
                     <button
                       onClick={onNavigateToAdmin}
@@ -331,10 +346,15 @@ export default function Navbar({
 
             <button
               onClick={() => navigate('/cart')}
-              className="relative p-1.5 hover:text-[#E0B094] transition-colors focus:outline-none cursor-pointer"
+              className={`relative p-1.5 transition-colors focus:outline-none cursor-pointer ${
+                isCartPage ? 'text-[#E0B094]' : 'text-[#F5F5F0] hover:text-[#E0B094]'
+              }`}
               title="Shopping Cart"
             >
               <ShoppingBag className="w-4 h-4" />
+              {isCartPage && (
+                <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-4 h-[1.5px] bg-[#E0B094] shadow-[0_0_8px_rgba(224,176,148,0.6)]" />
+              )}
               {cartCount > 0 && (
                 <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#E0B094] text-[#0C0D10] text-[9px] font-extrabold flex items-center justify-center shadow-md">
                   {cartCount}
@@ -349,14 +369,20 @@ export default function Navbar({
         {/* MOBILE MENU TOGGLE */}
         <div className="md:hidden flex items-center space-x-3">
           <button
-            onClick={onOpenShop}
-            className="relative p-1.5 text-[#F5F5F0] hover:text-[#E0B094]"
+            onClick={() => navigate('/cart')}
+            className={`relative p-1.5 transition-colors ${
+              isCartPage ? 'text-[#E0B094]' : 'text-[#F5F5F0] hover:text-[#E0B094]'
+            }`}
           >
             <ShoppingBag className="w-5 h-5" />
+            {isCartPage && (
+              <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-4 h-[1.5px] bg-[#E0B094] shadow-[0_0_8px_rgba(224,176,148,0.6)]" />
+            )}
             <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#E0B094] text-[#0C0D10] text-[9px] font-extrabold flex items-center justify-center">
               {cartCount}
             </span>
           </button>
+
 
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -504,13 +530,22 @@ export default function Navbar({
               <span>ALL JEWELLERY</span>
             </button>
             {user ? (
-              <button
-                onClick={onLogout}
-                className="flex items-center gap-2 text-xs text-red-400 hover:text-red-300"
-              >
-                <User className="w-4 h-4" />
-                <span>LOGOUT ({user.name?.split(' ')[0] || 'USER'})</span>
-              </button>
+              <>
+                <button
+                  onClick={() => { setMobileMenuOpen(false); navigate('/profile?tab=orders'); }}
+                  className="flex items-center gap-1.5 text-xs text-[#E0B094] hover:text-white font-semibold"
+                >
+                  <ShoppingBag className="w-4 h-4" />
+                  <span>MY ORDERS</span>
+                </button>
+                <button
+                  onClick={onLogout}
+                  className="flex items-center gap-1.5 text-xs text-red-400 hover:text-red-300"
+                >
+                  <User className="w-4 h-4" />
+                  <span>LOGOUT</span>
+                </button>
+              </>
             ) : (
               <button
                 onClick={() => { setMobileMenuOpen(false); if (onOpenAuthModal) onOpenAuthModal(); }}

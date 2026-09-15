@@ -176,7 +176,7 @@ export class AuthService {
       throw new Error('Firestore database is not initialized');
     }
 
-    const allowedFields = ['name', 'phone', 'address', 'city', 'state', 'pincode'];
+    const allowedFields = ['name', 'phone', 'address', 'landmark', 'city', 'state', 'pincode', 'aadhaar', 'addresses'];
     const filteredUpdate = {};
     for (const key of allowedFields) {
       if (updateData[key] !== undefined) {

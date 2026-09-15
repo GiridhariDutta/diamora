@@ -55,6 +55,72 @@ export const updateAdminSchema = z.object({
     .optional()
 });
 
+// Address Item Schema
+export const addressSchema = z.object({
+  id: z.string().max(100).optional(),
+  _id: z.string().max(100).optional(),
+  name: z
+    .string()
+    .min(1, 'Recipient name is required')
+    .max(100, 'Recipient name must not exceed 100 characters'),
+  phone: z
+    .string()
+    .regex(/^[0-9]{10}$/, 'Phone number must be exactly 10 digits'),
+  altPhone: z
+    .string()
+    .regex(/^[0-9]{10}$/, 'Alternative phone number must be exactly 10 digits')
+    .or(z.literal(''))
+    .optional(),
+  address: z
+    .string()
+    .min(1, 'Street address is required')
+    .max(100, 'Street address must not exceed 100 characters'),
+  landmark: z
+    .string()
+    .max(100, 'Landmark must not exceed 100 characters')
+    .optional(),
+  city: z
+    .string()
+    .min(1, 'City is required')
+    .max(100, 'City must not exceed 100 characters'),
+  state: z
+    .string()
+    .min(1, 'State is required')
+    .max(100, 'State must not exceed 100 characters'),
+  pincode: z
+    .string()
+    .regex(/^[0-9]{6}$/, 'Pincode must be exactly 6 digits'),
+  isDefault: z.boolean().optional()
+});
+
+// Profile Update Validation Schema
+export const updateProfileSchema = z.object({
+  name: z
+    .string()
+    .min(2, 'Name must be at least 2 characters long')
+    .max(100, 'Name must not exceed 100 characters')
+    .optional(),
+  phone: z
+    .string()
+    .regex(/^[0-9]{10}$/, 'Phone number must be exactly 10 digits')
+    .or(z.literal(''))
+    .optional(),
+  aadhaar: z
+    .string()
+    .regex(/^[0-9]{12}$/, 'Aadhaar number must be exactly 12 digits')
+    .or(z.literal(''))
+    .optional(),
+  address: z.string().max(100, 'Address must not exceed 100 characters').optional(),
+  landmark: z.string().max(100, 'Landmark must not exceed 100 characters').optional(),
+  city: z.string().max(100, 'City must not exceed 100 characters').optional(),
+  state: z.string().max(100, 'State must not exceed 100 characters').optional(),
+  pincode: z.string().max(10, 'Pincode must not exceed 10 characters').optional(),
+  addresses: z
+    .array(addressSchema)
+    .max(10, 'You cannot save more than 10 shipping addresses')
+    .optional()
+});
+
 /**
  * Generic Express Middleware to validate request body using Zod schema
  */
@@ -80,3 +146,4 @@ export const validateBody = (schema) => (req, res, next) => {
     });
   }
 };
+

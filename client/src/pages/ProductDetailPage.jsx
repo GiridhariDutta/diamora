@@ -15,7 +15,7 @@ import {
   Zap
 } from 'lucide-react';
 import api from '../api/axios';
-import { addToCart } from '../utils/cartManager';
+import { addToCart, showCartAlert } from '../utils/cartManager';
 
 export default function ProductDetailPage() {
   const { id } = useParams();
@@ -49,8 +49,7 @@ export default function ProductDetailPage() {
       purityTitle: product.purityTitle,
       colorTitle: product.colorTitle
     });
-    setAddedToast(true);
-    setTimeout(() => setAddedToast(false), 3000);
+    showCartAlert(product, navigate);
   };
 
   const handleBuyNow = () => {
@@ -575,9 +574,10 @@ export default function ProductDetailPage() {
                       </div>
 
                       {/* Product Title */}
-                      <h4 className="font-serif text-sm font-semibold text-white group-hover:text-[#E0B094] transition-colors truncate mb-1">
+                      <h4 className="font-serif text-sm font-semibold text-white group-hover:text-[#E0B094] transition-colors line-clamp-2 leading-snug mb-1" title={item.title}>
                         {item.title}
                       </h4>
+
 
                       {/* SKU & Purity */}
                       {item.purityTitle && (
@@ -600,10 +600,11 @@ export default function ProductDetailPage() {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleInquireClick(item);
+                          addToCart(item, 1);
+                          showCartAlert(item, navigate);
                         }}
-                        className="p-2 rounded-lg bg-white/5 hover:bg-[#E0B094] hover:text-[#0C0D10] text-[#E0B094] border border-white/15 transition-colors cursor-pointer"
-                        title="Inquire for this item"
+                        className="p-2 rounded-lg bg-black/60 hover:bg-[#E0B094] hover:text-[#0C0D10] text-[#E0B094] border border-[#E0B094]/40 hover:border-[#E0B094] transition-all duration-300 shadow-md cursor-pointer"
+                        title="Add to Shopping Cart"
                       >
                         <ShoppingBag className="w-3.5 h-3.5" />
                       </button>
@@ -706,9 +707,10 @@ export default function ProductDetailPage() {
                       </div>
 
                       {/* Product Title */}
-                      <h4 className="font-serif text-sm font-semibold text-white group-hover:text-[#E0B094] transition-colors truncate mb-1">
+                      <h4 className="font-serif text-sm font-semibold text-white group-hover:text-[#E0B094] transition-colors line-clamp-2 leading-snug mb-1" title={item.title}>
                         {item.title}
                       </h4>
+
 
                       {/* SKU & Purity */}
                       {item.purityTitle && (
@@ -731,10 +733,11 @@ export default function ProductDetailPage() {
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleInquireClick(item);
+                          addToCart(item, 1);
+                          showCartAlert(item, navigate);
                         }}
-                        className="p-2 rounded-lg bg-white/5 hover:bg-[#E0B094] hover:text-[#0C0D10] text-[#E0B094] border border-white/15 transition-colors cursor-pointer"
-                        title="Inquire for this item"
+                        className="p-2 rounded-lg bg-black/60 hover:bg-[#E0B094] hover:text-[#0C0D10] text-[#E0B094] border border-[#E0B094]/40 hover:border-[#E0B094] transition-all duration-300 shadow-md cursor-pointer"
+                        title="Add to Shopping Cart"
                       >
                         <ShoppingBag className="w-3.5 h-3.5" />
                       </button>

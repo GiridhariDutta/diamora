@@ -1,43 +1,166 @@
-import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { ShoppingBag, Trash2, Plus, Minus, ArrowRight, ArrowLeft, ShieldCheck, Award, Lock, Sparkles, Check } from 'lucide-react';
-import { getCart, removeFromCart, updateQuantity, clearCart, getCartTotal, getCartCount } from '../utils/cartManager';
+import React, { useState, useEffect, useRef } from 'react';
+import { Link, useNavigate, useOutletContext } from 'react-router-dom';
+import { ShoppingBag, Trash2, Plus, Minus, ArrowRight, ArrowLeft, ShieldCheck, Award, Lock, Loader2 } from 'lucide-react';
+import { getCart, removeFromCart, updateQuantity, clearCart, getProductImage } from '../utils/cartManager';
+import api from '../api/axios';
 
 export default function CartPage() {
   const navigate = useNavigate();
+  const { user, onOpenAuthModal, onOpenSignup } = useOutletContext() || {};
   const [cartItems, setCartItems] = useState([]);
   const [cartTotal, setCartTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const ignoreNextEventRef = useRef(false);
 
-  const reloadCart = () => {
-    const items = getCart();
-    setCartItems(items);
-    setCartTotal(getCartTotal());
+  const handleProceedToCheckout = () => {
+    if (user) {
+      navigate('/order');
+    } else {
+      if (onOpenAuthModal) {
+        onOpenAuthModal();
+      } else if (onOpenSignup) {
+        onOpenSignup();
+      }
+    }
+  };
+
+
+  const loadCartData = async () => {
+    const rawCart = getCart(); // [{ cartItemId, productId, quantity, options }]
+    if (!rawCart || rawCart.length === 0) {
+      setCartItems([]);
+      setCartTotal(0);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // 1. Fetch bulk products list from backend API
+      const res = await api.get('/api/products?limit=500');
+      let productsList = [];
+      if (res.data?.success && Array.isArray(res.data.data)) {
+        productsList = res.data.data;
+      }
+
+      const productMap = new Map();
+      productsList.forEach(p => {
+        if (p.id) productMap.set(String(p.id), p);
+        if (p._id) productMap.set(String(p._id), p);
+        if (p.sku) productMap.set(String(p.sku), p);
+      });
+
+      // 2. Map stored minimal cart items to live backend product data
+      const resolvedItems = await Promise.all(rawCart.map(async (item) => {
+        let liveProduct = productMap.get(String(item.productId));
+
+        // If not found in bulk list, attempt single fetch by ID
+        if (!liveProduct) {
+          try {
+            const singleRes = await api.get(`/api/products/${item.productId}`);
+            if (singleRes.data?.success && singleRes.data.data) {
+              liveProduct = singleRes.data.data;
+            }
+          } catch (e) {
+            console.warn(`Product ${item.productId} live fetch warning:`, e);
+          }
+        }
+
+        const price = Number(liveProduct?.grandTotal || liveProduct?.computedGoldPrice || liveProduct?.price || 0);
+        const img = getProductImage(liveProduct);
+        const title = liveProduct?.title || liveProduct?.name || 'Haute Joaillerie Piece';
+        const categoryTitle = liveProduct?.categoryTitle || liveProduct?.category || 'DIAMORA LUXURY';
+
+        return {
+          ...item,
+          product: liveProduct,
+          title,
+          categoryTitle,
+          image: img,
+          price,
+          subtotal: price * (item.quantity || 1)
+        };
+      }));
+
+      setCartItems(resolvedItems);
+      const total = resolvedItems.reduce((acc, i) => acc + (i.subtotal || 0), 0);
+      setCartTotal(total);
+    } catch (err) {
+      console.error('Error loading live cart data:', err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
-    reloadCart();
+    loadCartData();
 
     const handleCartUpdate = () => {
-      reloadCart();
+      if (ignoreNextEventRef.current) {
+        ignoreNextEventRef.current = false;
+        return;
+      }
+      loadCartData();
     };
 
     window.addEventListener('cartUpdated', handleCartUpdate);
     return () => window.removeEventListener('cartUpdated', handleCartUpdate);
   }, []);
 
+  // Instant local removal without triggering API re-fetch
   const handleRemove = (cartItemId) => {
-    const updated = removeFromCart(cartItemId);
-    setCartItems(updated);
-    setCartTotal(getCartTotal());
+    ignoreNextEventRef.current = true;
+    removeFromCart(cartItemId);
+    setCartItems(prev => {
+      const updated = prev.filter(item => (item.cartItemId || item.productId) !== cartItemId);
+      const total = updated.reduce((acc, i) => acc + (i.subtotal || 0), 0);
+      setCartTotal(total);
+      return updated;
+    });
   };
 
+  // Instant local quantity update without triggering API re-fetch
   const handleQuantityChange = (cartItemId, newQty) => {
-    const updated = updateQuantity(cartItemId, newQty);
-    setCartItems(updated);
-    setCartTotal(getCartTotal());
+    if (newQty <= 0) {
+      handleRemove(cartItemId);
+      return;
+    }
+    ignoreNextEventRef.current = true;
+    updateQuantity(cartItemId, newQty);
+    setCartItems(prev => {
+      const updated = prev.map(item => {
+        if ((item.cartItemId || item.productId) === cartItemId) {
+          const newSubtotal = item.price * newQty;
+          return { ...item, quantity: newQty, subtotal: newSubtotal };
+        }
+        return item;
+      });
+      const total = updated.reduce((acc, i) => acc + (i.subtotal || 0), 0);
+      setCartTotal(total);
+      return updated;
+    });
+  };
+
+  const handleClearCart = () => {
+    ignoreNextEventRef.current = true;
+    clearCart();
+    setCartItems([]);
+    setCartTotal(0);
   };
 
   const formattedTotal = Number(cartTotal).toLocaleString('en-IN');
+
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#0C0D10] text-[#F5F5F0] pt-32 pb-16 flex flex-col items-center justify-center space-y-4">
+        <Loader2 className="w-10 h-10 text-[#E0B094] animate-spin" />
+        <p className="text-xs font-mono text-[#C5C8D0] uppercase tracking-widest">
+          Fetching Live Jewelry Pricing & Details...
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#0C0D10] text-[#F5F5F0] pt-24 sm:pt-28 pb-16 px-4 sm:px-8 lg:px-12 font-open-sans select-none">
@@ -77,7 +200,8 @@ export default function CartPage() {
 
         {/* EMPTY CART STATE */}
         {cartItems.length === 0 ? (
-          <div className="bg-[#12131A] border border-white/10 rounded-3xl p-12 text-center space-y-5 shadow-2xl max-w-2xl mx-auto my-8">
+          <div className="bg-[#12131A] border border-white/10 rounded-xl p-12 text-center space-y-5 shadow-2xl max-w-2xl mx-auto my-8">
+
             <div className="w-20 h-20 rounded-full bg-[#E0B094]/10 border border-[#E0B094]/30 text-[#E0B094] flex items-center justify-center mx-auto shadow-inner">
               <ShoppingBag className="w-9 h-9" />
             </div>
@@ -107,7 +231,7 @@ export default function CartPage() {
               
               {cartItems.map((item) => (
                 <div 
-                  key={item.cartItemId || item.id}
+                  key={item.cartItemId || item.productId}
                   className="bg-[#12131A] border border-white/10 hover:border-[#E0B094]/40 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-center gap-5 transition-all shadow-xl"
                 >
                   
@@ -149,7 +273,7 @@ export default function CartPage() {
                     )}
 
                     <div className="font-mono text-sm font-semibold text-[#E0B094] sm:hidden pt-1">
-                      ₹{(item.rawPrice ? (item.rawPrice * item.quantity).toLocaleString('en-IN') : item.price)}
+                      ₹{item.subtotal.toLocaleString('en-IN')}
                     </div>
                   </div>
 
@@ -159,8 +283,8 @@ export default function CartPage() {
                     {/* Quantity Modifier */}
                     <div className="flex items-center rounded-lg border border-white/15 bg-[#0C0D10] overflow-hidden">
                       <button
-                        onClick={() => handleQuantityChange(item.cartItemId || item.id, item.quantity - 1)}
-                        className="p-2 text-[#C5C8D0] hover:text-white hover:bg-white/10 transition-colors"
+                        onClick={() => handleQuantityChange(item.cartItemId || item.productId, item.quantity - 1)}
+                        className="p-2 text-[#C5C8D0] hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
                         title="Decrease Quantity"
                       >
                         <Minus className="w-3.5 h-3.5" />
@@ -171,8 +295,8 @@ export default function CartPage() {
                       </span>
 
                       <button
-                        onClick={() => handleQuantityChange(item.cartItemId || item.id, item.quantity + 1)}
-                        className="p-2 text-[#C5C8D0] hover:text-white hover:bg-white/10 transition-colors"
+                        onClick={() => handleQuantityChange(item.cartItemId || item.productId, item.quantity + 1)}
+                        className="p-2 text-[#C5C8D0] hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
                         title="Increase Quantity"
                       >
                         <Plus className="w-3.5 h-3.5" />
@@ -183,13 +307,13 @@ export default function CartPage() {
                     <div className="hidden sm:block text-right min-w-[100px]">
                       <span className="text-[10px] text-[#C5C8D0]/60 block uppercase">Subtotal</span>
                       <span className="font-mono text-base font-semibold text-[#E0B094]">
-                        ₹{(item.rawPrice ? (item.rawPrice * item.quantity).toLocaleString('en-IN') : item.price)}
+                        ₹{item.subtotal.toLocaleString('en-IN')}
                       </span>
                     </div>
 
                     {/* Remove Item Button */}
                     <button
-                      onClick={() => handleRemove(item.cartItemId || item.id)}
+                      onClick={() => handleRemove(item.cartItemId || item.productId)}
                       className="p-2 text-red-400/70 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors cursor-pointer"
                       title="Remove Item"
                     >
@@ -204,7 +328,7 @@ export default function CartPage() {
               {/* Clear Cart Link */}
               <div className="flex justify-between items-center pt-2">
                 <button
-                  onClick={() => clearCart()}
+                  onClick={handleClearCart}
                   className="text-xs text-red-400/80 hover:text-red-400 underline font-light transition-colors cursor-pointer"
                 >
                   Clear All Cart Items
@@ -218,7 +342,8 @@ export default function CartPage() {
             </div>
 
             {/* RIGHT COLUMN: ORDER SUMMARY CARD (SPAN 4) */}
-            <div className="lg:col-span-4 bg-[#12131A] border border-[#E0B094]/30 rounded-3xl p-6 sm:p-7 space-y-6 shadow-2xl sticky top-28">
+            <div className="lg:col-span-4 bg-[#12131A] border border-[#E0B094]/30 rounded-xl p-6 sm:p-7 space-y-6 shadow-2xl sticky top-28">
+
               
               <div className="border-b border-white/10 pb-4">
                 <span className="font-poppins text-xs font-semibold tracking-[0.2em] text-[#E0B094] uppercase block">
@@ -242,7 +367,7 @@ export default function CartPage() {
                 </div>
 
                 <div className="flex justify-between items-center">
-                  <span>Hallmark Certification</span>
+                  <span>IGI & GIA Diamond Certification</span>
                   <span className="text-[#E0B094] font-medium">INCLUDED</span>
                 </div>
 
@@ -267,19 +392,21 @@ export default function CartPage() {
 
               {/* CHECKOUT BUTTON */}
               <button
-                onClick={() => alert('Proceeding to Checkout... (Next feature step)')}
+                onClick={handleProceedToCheckout}
                 className="w-full py-4 bg-gradient-to-r from-[#F7E09A] via-[#D4AF37] to-[#C59B27] text-[#0C0D10] font-bold text-xs tracking-[0.22em] uppercase rounded-xl hover:brightness-110 transition-all shadow-[0_4px_25px_rgba(212,175,55,0.35)] flex items-center justify-center gap-2.5 cursor-pointer"
               >
                 <span>PROCEED TO CHECKOUT</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
 
+
               {/* Security & Authenticity Trust Badges */}
               <div className="pt-2 border-t border-white/10 space-y-2.5 text-[11px] text-[#C5C8D0]/70 font-light">
                 <div className="flex items-center gap-2.5">
                   <ShieldCheck className="w-4 h-4 text-[#E0B094] shrink-0" />
-                  <span>100% Certified Solid Gold & Hallmarked</span>
+                  <span>100% Certified Natural & Lab-Grown Diamonds</span>
                 </div>
+
                 <div className="flex items-center gap-2.5">
                   <Lock className="w-4 h-4 text-[#E0B094] shrink-0" />
                   <span>256-Bit Encrypted Secure Checkout</span>
@@ -299,3 +426,4 @@ export default function CartPage() {
     </div>
   );
 }
+
