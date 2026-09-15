@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Search, User, ShoppingBag, Menu, X, Award, ShieldCheck, Sparkles, Gem } from 'lucide-react';
 import api from '../api/axios';
+import { getCartCount } from '../utils/cartManager';
 
 export default function Navbar({
   onOpenShop,
@@ -17,6 +18,15 @@ export default function Navbar({
   const [activeTab, setActiveTab] = useState('HOME');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [cartCount, setCartCount] = useState(0);
+
+  useEffect(() => {
+    const updateCount = () => {
+      setCartCount(getCartCount());
+    };
+    updateCount();
+    window.addEventListener('cartUpdated', updateCount);
+    return () => window.removeEventListener('cartUpdated', updateCount);
+  }, []);
 
   // Mega Menu Hover State
   const [isShopHovered, setIsShopHovered] = useState(false);
@@ -320,14 +330,16 @@ export default function Navbar({
             )}
 
             <button
-              onClick={onOpenShop}
-              className="relative p-1.5 hover:text-[#E0B094] transition-colors focus:outline-none"
+              onClick={() => navigate('/cart')}
+              className="relative p-1.5 hover:text-[#E0B094] transition-colors focus:outline-none cursor-pointer"
               title="Shopping Cart"
             >
               <ShoppingBag className="w-4 h-4" />
-              <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#E0B094] text-[#0C0D10] text-[9px] font-extrabold flex items-center justify-center shadow-md">
-                {cartCount}
-              </span>
+              {cartCount > 0 && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#E0B094] text-[#0C0D10] text-[9px] font-extrabold flex items-center justify-center shadow-md">
+                  {cartCount}
+                </span>
+              )}
             </button>
 
           </div>
