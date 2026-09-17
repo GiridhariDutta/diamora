@@ -116,9 +116,9 @@ export class OrderController {
   static async updateOrderStatus(req, res) {
     try {
       const { id } = req.params;
-      const { status } = req.body;
+      const { status, note } = req.body;
 
-      const updatedOrder = await OrderService.updateOrderStatus(id, { status });
+      const updatedOrder = await OrderService.updateOrderStatus(id, { status, note });
 
       return res.status(200).json({
         success: true,

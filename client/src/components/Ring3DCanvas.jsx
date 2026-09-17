@@ -27,7 +27,7 @@ export default function Ring3DCanvas() {
       id: 'ring_shader_pos1',
       name: 'ORNAMENT POS 1',
       url: 'https://firebasestorage.googleapis.com/v0/b/diamora-508307.firebasestorage.app/o/models%2Fring_ornament_1.glb?alt=media&token=1ed1f8b2-09e5-419a-8f34-49dd506839cb',
-      explicitScale: 0.38,
+      explicitScale: 0.29,
       positionY: -0.18,
       rawRotation: [0, Math.PI / 2, 0]
     },

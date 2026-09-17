@@ -169,7 +169,7 @@ export default function RotatingArcShowcase({ onOpenShop }) {
   const skeletonAngles = [-60, -30, 0, 30, 60];
 
   return (
-    <section ref={sectionRef} className="relative w-full min-h-[660px] sm:min-h-[760px] bg-[#0C0D10] text-[#F5F5F0] pt-20 sm:pt-28 lg:pt-32 pb-12 px-4 overflow-hidden flex flex-col justify-between select-none z-20">
+    <section ref={sectionRef} className="relative w-full min-h-0 sm:min-h-[760px] bg-[#0C0D10] text-[#F5F5F0] pt-8 sm:pt-28 lg:pt-32 pb-6 sm:pb-12 px-4 overflow-hidden flex flex-col justify-start sm:justify-between select-none z-20">
       
       {/* Background Radial Glow & Hairline Grid */}
       <div className="absolute inset-0 hairline-grid pointer-events-none opacity-30 z-0" />
@@ -177,7 +177,7 @@ export default function RotatingArcShowcase({ onOpenShop }) {
 
       {/* ROTATING CLOCKWISE TOP ARCH CAROUSEL STAGE */}
       <div 
-        className="relative max-w-7xl w-full mx-auto h-[440px] sm:h-[500px] flex items-center justify-center z-10 pt-16 sm:pt-20"
+        className="relative max-w-7xl w-full mx-auto h-[320px] sm:h-[500px] flex items-center justify-center z-10 pt-4 sm:pt-20"
       >
 
         {/* SKELETON LOADING STATE FOR 3D ARC Showcase */}
@@ -371,7 +371,7 @@ export default function RotatingArcShowcase({ onOpenShop }) {
       </div>
 
       {/* BOTTOM CONTROLS & PAUSE INDICATOR */}
-      <div className="relative z-30 max-w-7xl w-full mx-auto px-6 pt-6 flex items-center justify-between text-xs font-poppins text-[#808490]">
+      <div className="relative z-30 max-w-7xl w-full mx-auto px-6 pt-2 sm:pt-6 flex items-center justify-between text-xs font-poppins text-[#808490]">
         
         {/* Rotation Controls */}
         <div className="flex items-center space-x-3">

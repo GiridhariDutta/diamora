@@ -4,6 +4,7 @@ import {
   LayoutDashboard, 
   Package, 
   ShoppingBag, 
+  MessageSquare,
   Users, 
   UserCheck,
   FolderTree,
@@ -24,7 +25,8 @@ import {
   Sparkles,
   RefreshCw,
   Menu,
-  X
+  X,
+  SlidersHorizontal
 } from 'lucide-react';
 import api from '../api/axios';
 import { setCookie, removeCookie } from '../utils/cookies';
@@ -105,29 +107,39 @@ export default function AdminLayout() {
     navigate('/');
   };
 
-  const navItems = [
-    { id: 'overview', label: 'DASHBOARD', icon: LayoutDashboard, path: '/admin' },
-    { id: 'admin_users', label: 'ADMIN USERS', icon: UserCheck, path: '/admin/users' },
-    { id: 'categories', label: 'CATEGORIES', icon: FolderTree, path: '/admin/categories' },
-    { id: 'collections', label: 'COLLECTIONS', icon: Boxes, path: '/admin/collections' },
+  const fieldSetupSubItems = [
+    { id: 'categories', label: 'CATEGORY', icon: FolderTree, path: '/admin/categories' },
+    { id: 'collections', label: 'COLLECTION', icon: Boxes, path: '/admin/collections' },
     { id: 'colors', label: 'GOLD COLOR', icon: Palette, path: '/admin/colors' },
     { id: 'purities', label: 'PURITY', icon: Award, path: '/admin/purities' },
     { id: 'diamond_qualities', label: 'DIAMOND QUALITY', icon: Gem, path: '/admin/diamond-qualities' },
-    { id: 'stones', label: 'GEMSTONES', icon: Sparkles, path: '/admin/stones' },
+    { id: 'stones', label: 'GEMSTONE', icon: Sparkles, path: '/admin/stones' },
+  ];
+
+  const navItems = [
+    { id: 'overview', label: 'DASHBOARD', icon: LayoutDashboard, path: '/admin' },
+    { id: 'admin_users', label: 'ADMIN USERS', icon: UserCheck, path: '/admin/users' },
+    { id: 'field_setup', label: 'FIELD SETUP', icon: SlidersHorizontal, isDropdown: true },
     { id: 'inventory', label: 'INVENTORY', icon: Package, path: '/admin/inventory' },
-    { id: 'orders', label: 'ORDERS / ENQUIRIES', icon: ShoppingBag, path: '/admin/orders' },
+    { id: 'orders', label: 'PAID ORDERS', icon: ShoppingBag, path: '/admin/orders' },
+    { id: 'inquiries', label: 'PRODUCT INQUIRIES', icon: MessageSquare, path: '/admin/inquiries' },
     { id: 'customers', label: 'CLIENT DIRECTORY', icon: Users, path: '/admin/customers' },
-    { id: 'settings', label: 'SETTINGS', icon: Settings, path: '/admin/settings' },
+    { id: 'settings', label: 'SETTINGS', icon: Settings, isDropdown: true },
   ];
 
   const currentPath = location.pathname;
+  const isFieldSetupActive = fieldSetupSubItems.some(sub => currentPath.startsWith(sub.path));
+  const [fieldSetupOpen, setFieldSetupOpen] = useState(isFieldSetupActive);
   const [settingsOpen, setSettingsOpen] = useState(currentPath.startsWith('/admin/settings'));
 
   useEffect(() => {
+    if (isFieldSetupActive) {
+      setFieldSetupOpen(true);
+    }
     if (currentPath.startsWith('/admin/settings')) {
       setSettingsOpen(true);
     }
-  }, [currentPath]);
+  }, [currentPath, isFieldSetupActive]);
 
   const activeTabItem = navItems.find(item => item.path === currentPath) || navItems[0];
 
@@ -203,8 +215,54 @@ export default function AdminLayout() {
           <nav className="space-y-1">
             {navItems.map((item) => {
               const Icon = item.icon;
+              const isFieldSetup = item.id === 'field_setup';
               const isSettings = item.id === 'settings';
               const isSettingsActive = currentPath.startsWith('/admin/settings');
+
+              // FIELD SETUP DROPDOWN
+              if (isFieldSetup) {
+                return (
+                  <div key={item.id} className="space-y-1">
+                    <button
+                      onClick={() => setFieldSetupOpen(!fieldSetupOpen)}
+                      className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-[4px] text-[11px] font-semibold tracking-wider transition-all uppercase ${
+                        isFieldSetupActive 
+                          ? 'bg-amber-50 text-amber-900 border border-amber-300/80 shadow-2xs' 
+                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100 border border-transparent'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 truncate">
+                        <Icon className={`w-3.5 h-3.5 shrink-0 ${isFieldSetupActive ? 'text-amber-700' : 'text-slate-400'}`} />
+                        <span className="truncate">{item.label}</span>
+                      </div>
+                      {fieldSetupOpen ? <ChevronDown className="w-3.5 h-3.5 text-slate-600" /> : <ChevronRight className="w-3.5 h-3.5 text-slate-400" />}
+                    </button>
+
+                    {fieldSetupOpen && (
+                      <div className="pl-4 space-y-1 border-l border-amber-200 ml-3.5 my-1">
+                        {fieldSetupSubItems.map((sub) => {
+                          const SubIcon = sub.icon;
+                          const isSubActive = currentPath === sub.path;
+                          return (
+                            <button
+                              key={sub.id}
+                              onClick={() => handleNavigate(sub.path)}
+                              className={`w-full text-left px-2.5 py-1.5 rounded-[4px] text-[10.5px] font-semibold tracking-wider uppercase transition-all flex items-center gap-1.5 ${
+                                isSubActive
+                                  ? 'bg-amber-100/90 text-amber-950 border border-amber-300/90'
+                                  : 'text-slate-600 hover:text-slate-950 hover:bg-slate-100'
+                              }`}
+                            >
+                              <SubIcon className={`w-3 h-3 shrink-0 ${isSubActive ? 'text-amber-700' : 'text-slate-400'}`} />
+                              <span className="truncate">{sub.label}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+                );
+              }
 
               // SETTINGS DROPDOWN
               if (isSettings) {
@@ -326,7 +384,8 @@ export default function AdminLayout() {
                currentPath === '/admin/diamond-qualities' ? 'Diamond Quality Management' :
                currentPath === '/admin/stones' ? 'Gemstone Management' :
                currentPath === '/admin/inventory' ? 'Inventory Management' :
-               currentPath === '/admin/orders' ? 'Orders & Customer Enquiries' :
+               currentPath === '/admin/orders' ? 'Paid Razorpay Orders' :
+               currentPath === '/admin/inquiries' ? 'Product Consultations & Inquiries' :
                currentPath === '/admin/customers' ? 'Client Directory' :
                'Dashboard'}
             </h2>

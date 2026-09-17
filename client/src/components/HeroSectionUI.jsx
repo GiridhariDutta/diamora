@@ -43,7 +43,7 @@ export default function HeroSectionUI({ onOpenShop, onOpenSignup }) {
   ];
 
   return (
-    <div className="open-sans relative w-full min-h-screen lg:h-screen bg-[#0C0D10] text-[#F5F5F0] overflow-hidden flex flex-col justify-between select-none">
+    <div className="open-sans relative w-full min-h-0 lg:h-screen bg-[#0C0D10] text-[#F5F5F0] overflow-hidden flex flex-col justify-start lg:justify-between select-none">
       
       {/* Background Hairline Gridlines */}
       <div className="absolute inset-0 hairline-grid pointer-events-none opacity-25 z-0" />
@@ -159,10 +159,10 @@ export default function HeroSectionUI({ onOpenShop, onOpenSignup }) {
       <div className="h-14 sm:h-16 shrink-0 pointer-events-none" />
 
       {/* HERO MAIN CONTENT SECTION (PERFECTLY CENTERED IN REMAINING VIEWPORT) */}
-      <main className="relative z-20 max-w-7xl w-full mx-auto px-6 sm:px-12 my-auto grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-center pt-1 pb-1">
+      <main className="relative z-20 max-w-7xl w-full mx-auto px-6 sm:px-12 my-auto grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-center pt-2 pb-6 lg:py-1">
         
-        {/* Left Side Content (Span 6) */}
-        <div className="lg:col-span-6 flex flex-col justify-center space-y-3.5 max-w-xl">
+        {/* Left Side Content (Span 6 on desktop, order 2 on mobile) */}
+        <div className="lg:col-span-6 flex flex-col justify-center items-center lg:items-start text-center lg:text-left space-y-3.5 max-w-xl mx-auto lg:mx-0 order-2 lg:order-1">
           
           {/* Eyebrow Header */}
           <span className="font-poppins text-xs sm:text-sm font-medium tracking-[0.28em] text-[#E0B094] uppercase">
@@ -170,7 +170,7 @@ export default function HeroSectionUI({ onOpenShop, onOpenSignup }) {
           </span>
 
           {/* Main Headline */}
-          <h1 className="font-cinzel text-5xl sm:text-6xl lg:text-7xl font-normal leading-[1.08] tracking-[0.08em]">
+          <h1 className="font-cinzel text-4xl sm:text-6xl lg:text-7xl font-normal leading-[1.1] sm:leading-[1.08] tracking-[0.08em]">
             <span className="block drop-shadow-[0_2px_15px_rgba(212,175,55,0.3)]"><span className="text-white">A</span> <span className="bg-gradient-to-r from-[#F7E09A] via-[#D4AF37] to-[#C59B27] bg-clip-text text-transparent">PROMISE</span></span>
             <span className="text-white block">FOREVER</span>
           </h1>
@@ -185,12 +185,12 @@ export default function HeroSectionUI({ onOpenShop, onOpenSignup }) {
           </div>
 
           {/* Description Subtext */}
-          <p className="font-open-sans text-sm sm:text-base text-[#B0B3BC] leading-relaxed max-w-md font-normal">
+          <p className="font-open-sans text-xs sm:text-base text-[#B0B3BC] leading-relaxed max-w-md font-normal">
             Exquisite solitaire diamonds crafted with precision. Made for life&apos;s most precious moments.
           </p>
 
           {/* CTA Button */}
-          <div className="pt-1 flex items-center">
+          <div className="pt-2 flex items-center justify-center lg:justify-start">
             <button
               onClick={handleExploreCollection}
               className="group font-poppins px-7 py-3.5 border border-[#E0B094]/70 hover:border-[#E0B094] bg-black/40 hover:bg-[#E0B094]/10 text-[#E0B094] font-semibold text-xs tracking-[0.22em] uppercase transition-all duration-300 flex items-center gap-3 shadow-[0_4px_25px_rgba(0,0,0,0.5)] shrink-0 w-fit cursor-pointer"
@@ -202,14 +202,14 @@ export default function HeroSectionUI({ onOpenShop, onOpenSignup }) {
 
         </div>
 
-        {/* Right Side Content (Span 6) — REAL 3D GOLD RING & JEWELLERY FRAME */}
-        <div className="lg:col-span-6 relative flex items-center justify-center h-[390px] sm:h-[490px] lg:h-[570px] transform-gpu">
+        {/* Right Side Content (Span 6 on desktop, order 1 on mobile) — REAL 3D GOLD RING & JEWELLERY FRAME */}
+        <div className="lg:col-span-6 relative flex items-center justify-center h-[280px] sm:h-[450px] lg:h-[570px] transform-gpu order-1 lg:order-2">
           
-          {/* Ambient Glow Halo Ring Backdrop behind 3D Model (+12-15% Scaled) */}
-          <div className="absolute w-[350px] sm:w-[450px] lg:w-[520px] h-[350px] sm:h-[450px] lg:h-[520px] rounded-full bg-gradient-to-tr from-[#D4AF37]/10 via-[#F7E09A]/8 to-transparent blur-[70px] pointer-events-none z-0 animate-pulse transform-gpu" />
+          {/* Ambient Glow Halo Ring Backdrop behind 3D Model */}
+          <div className="absolute w-[280px] sm:w-[450px] lg:w-[520px] h-[280px] sm:h-[450px] lg:h-[520px] rounded-full bg-gradient-to-tr from-[#D4AF37]/10 via-[#F7E09A]/8 to-transparent blur-[60px] sm:blur-[70px] pointer-events-none z-0 animate-pulse transform-gpu" />
 
-          {/* 3D Canvas Frame — Proportionally enlarged (+12-15%) */}
-          <div className="relative z-10 w-[430px] sm:w-[540px] lg:w-[610px] h-[430px] sm:h-[540px] lg:h-[610px] transform-gpu">
+          {/* 3D Canvas Frame */}
+          <div className="relative z-10 w-[300px] sm:w-[500px] lg:w-[610px] h-[300px] sm:h-[500px] lg:h-[610px] transform-gpu">
             <Ring3DCanvas activeId="public_ring_model" />
 
             {/* Pulsing Hotspot Dots */}

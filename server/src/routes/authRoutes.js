@@ -29,5 +29,6 @@ router.post('/admin-users', authenticateToken, requireAdminRole, validateBody(cr
 router.put('/admin-users/:uid', authenticateToken, requireAdminRole, validateBody(updateAdminSchema), AuthController.updateAdminUser);
 router.delete('/admin-users/:uid', authenticateToken, requireAdminRole, AuthController.deleteAdminUser);
 router.post('/clean-temp-storage', authenticateToken, requireAdminRole, AuthController.cleanTempStorage);
+router.get('/customers', authenticateToken, requireAdminRole, AuthController.getCustomers);
 
 export default router;
