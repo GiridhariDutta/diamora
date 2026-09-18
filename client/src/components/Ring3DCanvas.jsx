@@ -45,7 +45,7 @@ export default function Ring3DCanvas() {
       id: 'ring3_design',
       name: 'RING 3 DESIGN',
       url: 'https://firebasestorage.googleapis.com/v0/b/diamora-508307.firebasestorage.app/o/models%2Fring_ornament_3.glb?alt=media&token=3fc2b221-3654-48c3-8f1c-4b89aac57d50',
-      explicitScale: 0.09,
+      explicitScale: 0.078,
       positionY: -0.18,
       rawRotation: [-Math.PI / 2, 0, Math.PI / 2]
     }
@@ -1000,7 +1000,7 @@ export default function Ring3DCanvas() {
         <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
           <div className="flex items-center gap-2 px-3 py-1 rounded-full glass-panel border border-[#D4AF37]/40 text-[10px] font-mono text-[#D4AF37] animate-pulse">
             <span className="w-1.5 h-1.5 rounded-full bg-[#D4AF37] animate-ping" />
-            <span>LOADING 3D GOLD RING...</span>
+            <span>LOADING DIAMOND JEWELLERY...</span>
           </div>
         </div>
       )}
