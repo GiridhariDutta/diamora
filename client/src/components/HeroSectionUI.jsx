@@ -97,9 +97,9 @@ export default function HeroSectionUI({ onOpenShop, onOpenSignup }) {
         {/* 1. Subtle, Compact Top-Right Stage Light Emitter Glow (Does not wash out Navbar icons) */}
         <div className="absolute -top-6 -right-6 w-28 h-28 rounded-full bg-gradient-to-br from-white/40 via-[#eaf2ff]/20 to-transparent blur-[16px] opacity-70" />
 
-        {/* 2. Crisp, Refined Volumetric Diagonal Light Beam Cone targeting the 3D Ring */}
+        {/* Crisp, Refined Volumetric Diagonal Light Beam Cone targeting the 3D Ring (Desktop) */}
         <svg 
-          className="absolute inset-0 w-full h-full pointer-events-none opacity-50 sm:opacity-60"
+          className="absolute inset-0 w-full h-full pointer-events-none opacity-50 sm:opacity-60 hidden sm:block"
           viewBox="0 0 1200 900" 
           fill="none" 
           xmlns="http://www.w3.org/2000/svg"
@@ -139,9 +139,30 @@ export default function HeroSectionUI({ onOpenShop, onOpenSignup }) {
           <polygon points="1190,0 1145,0 620,880 1060,880" fill="url(#screenCoreGrad)" filter="url(#coreFeatherBlur)" />
         </svg>
 
-        {/* 3. Luminous Elliptical Stage Light Pool / Floor Highlight Blur beneath the 3D Ring (Centered under Ring Base) */}
-        <div className="absolute bottom-3 sm:bottom-6 lg:bottom-7 right-[8%] sm:right-[11%] lg:right-[13%] w-[380px] sm:w-[480px] lg:w-[540px] h-[75px] sm:h-[95px] rounded-[100%] bg-gradient-to-r from-transparent via-[#dbe8fc]/25 to-transparent blur-[24px]" />
-        <div className="absolute bottom-5 sm:bottom-9 lg:bottom-10 right-[13%] sm:right-[16%] lg:right-[18%] w-[200px] sm:w-[260px] lg:w-[320px] h-[30px] sm:h-[42px] rounded-[100%] bg-gradient-to-r from-transparent via-white/45 to-transparent blur-[12px]" />
+        {/* Mobile Volumetric Diagonal Light Beam Cone targeting the 3D Ring */}
+        <svg 
+          className="absolute inset-0 w-full h-full pointer-events-none opacity-40 sm:hidden block"
+          viewBox="0 0 400 800" 
+          fill="none" 
+          xmlns="http://www.w3.org/2000/svg"
+          preserveAspectRatio="none"
+        >
+          <defs>
+            <linearGradient id="mobileBeamGrad" x1="400" y1="0" x2="200" y2="450" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.42" />
+              <stop offset="25%" stopColor="#E0ECFC" stopOpacity="0.22" />
+              <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
+            </linearGradient>
+            <linearGradient id="mobileCoreGrad" x1="400" y1="0" x2="250" y2="420" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stopColor="#FFFFFF" stopOpacity="0.55" />
+              <stop offset="30%" stopColor="#F0F5FF" stopOpacity="0.30" />
+              <stop offset="100%" stopColor="#FFFFFF" stopOpacity="0" />
+            </linearGradient>
+          </defs>
+          <polygon points="400,0 350,0 100,500 400,500" fill="url(#mobileBeamGrad)" filter="url(#beamFeatherBlur)" />
+          <polygon points="400,0 380,0 150,480 320,480" fill="url(#mobileCoreGrad)" filter="url(#coreFeatherBlur)" />
+        </svg>
+
       </div>
 
       {/* FLOATING 3D SPHERES (Proportionally Scaled +12-15%, Hardware Accelerated) */}
@@ -203,13 +224,17 @@ export default function HeroSectionUI({ onOpenShop, onOpenSignup }) {
         </div>
 
         {/* Right Side Content (Span 6 on desktop, order 1 on mobile) — REAL 3D GOLD RING & JEWELLERY FRAME */}
-        <div className="lg:col-span-6 relative flex items-center justify-center h-[280px] sm:h-[450px] lg:h-[570px] transform-gpu order-1 lg:order-2">
+        <div className="lg:col-span-6 relative flex items-center justify-center h-[280px] sm:h-[450px] lg:h-[480px] transform-gpu order-1 lg:order-2">
           
+          {/* Luminous Elliptical Stage Light Pool / Floor Highlight Blur beneath the 3D Ring */}
+          <div className="absolute -bottom-4 sm:bottom-2 lg:bottom-4 w-[280px] sm:w-[420px] lg:w-[480px] h-[45px] sm:h-[75px] rounded-[100%] bg-gradient-to-r from-transparent via-[#dbe8fc]/25 to-transparent blur-[16px] sm:blur-[24px] pointer-events-none z-0" />
+          <div className="absolute -bottom-2 sm:bottom-5 lg:bottom-7 w-[160px] sm:w-[220px] lg:w-[280px] h-[20px] sm:h-[30px] rounded-[100%] bg-gradient-to-r from-transparent via-white/45 to-transparent blur-[8px] sm:blur-[12px] pointer-events-none z-0" />
+
           {/* Ambient Glow Halo Ring Backdrop behind 3D Model */}
-          <div className="absolute w-[280px] sm:w-[450px] lg:w-[520px] h-[280px] sm:h-[450px] lg:h-[520px] rounded-full bg-gradient-to-tr from-[#D4AF37]/10 via-[#F7E09A]/8 to-transparent blur-[60px] sm:blur-[70px] pointer-events-none z-0 animate-pulse transform-gpu" />
+          <div className="absolute w-[280px] sm:w-[450px] lg:w-[480px] h-[280px] sm:h-[450px] lg:h-[480px] rounded-full bg-gradient-to-tr from-[#D4AF37]/10 via-[#F7E09A]/8 to-transparent blur-[60px] sm:blur-[70px] pointer-events-none z-0 animate-pulse transform-gpu" />
 
           {/* 3D Canvas Frame */}
-          <div className="relative z-10 w-[300px] sm:w-[500px] lg:w-[610px] h-[300px] sm:h-[500px] lg:h-[610px] transform-gpu">
+          <div className="relative z-10 w-[300px] sm:w-[500px] lg:w-[520px] h-[300px] sm:h-[500px] lg:h-[520px] transform-gpu">
             <Ring3DCanvas activeId="public_ring_model" />
 
             {/* Pulsing Hotspot Dots */}
@@ -246,7 +271,7 @@ export default function HeroSectionUI({ onOpenShop, onOpenSignup }) {
       </main>
 
       {/* BOTTOM BAR (WITH CLEAN BOTTOM GAP ABOVE NEXT SECTION) */}
-      <footer className="relative z-30 max-w-7xl w-full mx-auto px-6 sm:px-12 pt-1 pb-6 shrink-0 flex items-center justify-between text-[#808490]">
+      <footer className="relative z-30 max-w-7xl w-full mx-auto px-6 sm:px-12 pt-1 pb-10 sm:pb-6 shrink-0 flex items-center justify-between text-[#808490]">
         <div className="flex items-center space-x-6 text-white/80">
           <a href="#" className="hover:text-[#D4AF37] transition-colors" title="Twitter">
             <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">

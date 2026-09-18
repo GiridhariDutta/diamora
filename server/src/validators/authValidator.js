@@ -110,6 +110,11 @@ export const updateProfileSchema = z.object({
     .regex(/^[0-9]{12}$/, 'Aadhaar number must be exactly 12 digits')
     .or(z.literal(''))
     .optional(),
+  panCard: z
+    .string()
+    .regex(/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/, 'Invalid PAN Card format (e.g., ABCDE1234F)')
+    .or(z.literal(''))
+    .optional(),
   address: z.string().max(100, 'Address must not exceed 100 characters').optional(),
   landmark: z.string().max(100, 'Landmark must not exceed 100 characters').optional(),
   city: z.string().max(100, 'City must not exceed 100 characters').optional(),

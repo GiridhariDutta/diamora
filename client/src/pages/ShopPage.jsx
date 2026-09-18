@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams, useOutletContext, useNavigate } from 'react-router-dom';
-import { Sparkles, ShoppingBag, SlidersHorizontal, Loader2, ChevronDown } from 'lucide-react';
+import { Sparkles, ShoppingBag, SlidersHorizontal, Loader2, ChevronDown, X } from 'lucide-react';
 import api from '../api/axios';
 import { addToCart, showCartAlert } from '../utils/cartManager';
 
@@ -53,6 +53,18 @@ export default function ShopPage() {
 
   const sentinelRef = useRef(null);
   const BATCH_LIMIT = 12;
+
+  // Lock body scrolling when mobile filter drawer is open
+  useEffect(() => {
+    if (mobileFilterOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [mobileFilterOpen]);
 
   // Sync state with URL search parameters
   useEffect(() => {
@@ -195,6 +207,241 @@ export default function ShopPage() {
     return 'DIAMORA JEWELLERY COLLECTION';
   };
 
+  // Reusable Filter Content Renderer
+  const renderFilterContent = (isMobileView = false) => (
+    <>
+      <div className={`flex items-center justify-between border-b border-white/10 pb-3 ${isMobileView ? 'sticky top-0 bg-[#16181F] z-20 pt-4 -mx-5 px-5 shadow-md' : ''}`}>
+        <span className="text-xs font-semibold tracking-[0.2em] text-[#E0B094] uppercase flex items-center gap-2">
+          <SlidersHorizontal className="w-3.5 h-3.5" />
+          FILTER BY
+        </span>
+
+        <div className="flex items-center gap-3">
+          {(selectedCategory || selectedCollection || selectedColor || selectedPurity || selectedPriceRange) && (
+            <button
+              onClick={clearAllFilters}
+              className="text-[10px] text-[#E0B094] hover:text-white underline uppercase tracking-wider font-medium cursor-pointer"
+            >
+              Reset All
+            </button>
+          )}
+
+          {isMobileView && (
+            <button
+              onClick={() => setMobileFilterOpen(false)}
+              className="p-1 rounded-full text-[#C5C8D0] hover:text-white bg-white/10 hover:bg-white/20 transition-colors cursor-pointer"
+              title="Close Filters"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* DYNAMIC JEWELLERY CATEGORY FILTER */}
+      <div>
+        <button
+          type="button"
+          onClick={() => toggleSection('category')}
+          className="flex items-center justify-between w-full py-1 text-left group cursor-pointer"
+        >
+          <span className="text-[11px] font-semibold tracking-[0.18em] text-[#F5F5F0] group-hover:text-[#E0B094] transition-colors uppercase">
+            JEWELLERY TYPE {selectedCategory ? `(${selectedCategory})` : ''}
+          </span>
+          <ChevronDown className={`w-3.5 h-3.5 text-[#E0B094] transition-transform duration-300 ${openSections.category ? 'rotate-180' : ''}`} />
+        </button>
+        
+        {openSections.category && (
+          <div className="space-y-1.5 text-xs font-light text-[#C5C8D0] pt-2 animate-fadeIn">
+            {masterLoading ? (
+              <div className="space-y-2 animate-pulse py-1">
+                <div className="h-3.5 bg-white/10 rounded w-28" />
+                <div className="h-3.5 bg-white/10 rounded w-36" />
+                <div className="h-3.5 bg-white/10 rounded w-24" />
+              </div>
+            ) : categories.length === 0 ? (
+              <span className="text-xs text-[#C5C8D0]/60 italic block py-1 font-normal">No categories created</span>
+            ) : (
+              categories.map(cat => (
+                <button
+                  key={cat.id || cat.title}
+                  onClick={() => updateFilter('category', selectedCategory === cat.title ? '' : cat.title)}
+                  className={`block w-full text-left py-1 tracking-wide transition-colors rounded px-2 cursor-pointer ${
+                    selectedCategory.toLowerCase() === cat.title.toLowerCase()
+                      ? 'text-[#E0B094] bg-[#E0B094]/15 font-semibold border-l-2 border-[#E0B094]'
+                      : 'hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  {cat.title}
+                </button>
+              ))
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* DYNAMIC COLLECTIONS FILTER */}
+      <div className="pt-3 border-t border-white/10">
+        <button
+          type="button"
+          onClick={() => toggleSection('collection')}
+          className="flex items-center justify-between w-full py-1 text-left group cursor-pointer"
+        >
+          <span className="text-[11px] font-semibold tracking-[0.18em] text-[#F5F5F0] group-hover:text-[#E0B094] transition-colors uppercase">
+            COLLECTIONS {selectedCollection ? `(${selectedCollection})` : ''}
+          </span>
+          <ChevronDown className={`w-3.5 h-3.5 text-[#E0B094] transition-transform duration-300 ${openSections.collection ? 'rotate-180' : ''}`} />
+        </button>
+
+        {openSections.collection && (
+          <div className="space-y-1.5 text-xs font-light text-[#C5C8D0] pt-2 animate-fadeIn">
+            {masterLoading ? (
+              <div className="space-y-2 animate-pulse py-1">
+                <div className="h-3.5 bg-white/10 rounded w-32" />
+                <div className="h-3.5 bg-white/10 rounded w-24" />
+              </div>
+            ) : collections.length === 0 ? (
+              <span className="text-xs text-[#C5C8D0]/60 italic block py-1 font-normal">No collections created</span>
+            ) : (
+              collections.map(col => (
+                <button
+                  key={col.id || col.title}
+                  onClick={() => updateFilter('collection', selectedCollection === col.title ? '' : col.title)}
+                  className={`block w-full text-left py-1 tracking-wide transition-colors rounded px-2 cursor-pointer ${
+                    selectedCollection.toLowerCase() === col.title.toLowerCase()
+                      ? 'text-[#E0B094] bg-[#E0B094]/15 font-semibold border-l-2 border-[#E0B094]'
+                      : 'hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  {col.title}
+                </button>
+              ))
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* GOLD COLOR FILTER */}
+      <div className="pt-3 border-t border-white/10">
+        <button
+          type="button"
+          onClick={() => toggleSection('color')}
+          className="flex items-center justify-between w-full py-1 text-left group cursor-pointer"
+        >
+          <span className="text-[11px] font-semibold tracking-[0.18em] text-[#F5F5F0] group-hover:text-[#E0B094] transition-colors uppercase">
+            GOLD COLOR {selectedColor ? `(${selectedColor})` : ''}
+          </span>
+          <ChevronDown className={`w-3.5 h-3.5 text-[#E0B094] transition-transform duration-300 ${openSections.color ? 'rotate-180' : ''}`} />
+        </button>
+
+        {openSections.color && (
+          <div className="space-y-1.5 text-xs font-light text-[#C5C8D0] pt-2 animate-fadeIn">
+            {masterLoading ? (
+              <div className="space-y-2 animate-pulse py-1">
+                <div className="h-3.5 bg-white/10 rounded w-28" />
+                <div className="h-3.5 bg-white/10 rounded w-24" />
+              </div>
+            ) : colors.length === 0 ? (
+              <span className="text-xs text-[#C5C8D0]/60 italic block py-1 font-normal">No colors available</span>
+            ) : (
+              colors.map(clr => (
+                <button
+                  key={clr.id || clr.title}
+                  onClick={() => updateFilter('color', selectedColor === clr.title ? '' : clr.title)}
+                  className={`block w-full text-left py-1 tracking-wide transition-colors rounded px-2 cursor-pointer ${
+                    selectedColor.toLowerCase() === clr.title.toLowerCase()
+                      ? 'text-[#E0B094] bg-[#E0B094]/15 font-semibold border-l-2 border-[#E0B094]'
+                      : 'hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  {clr.title}
+                </button>
+              ))
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* PURITY FILTER */}
+      <div className="pt-3 border-t border-white/10">
+        <button
+          type="button"
+          onClick={() => toggleSection('purity')}
+          className="flex items-center justify-between w-full py-1 text-left group cursor-pointer"
+        >
+          <span className="text-[11px] font-semibold tracking-[0.18em] text-[#F5F5F0] group-hover:text-[#E0B094] transition-colors uppercase">
+            PURITY {selectedPurity ? `(${selectedPurity})` : ''}
+          </span>
+          <ChevronDown className={`w-3.5 h-3.5 text-[#E0B094] transition-transform duration-300 ${openSections.purity ? 'rotate-180' : ''}`} />
+        </button>
+
+        {openSections.purity && (
+          <div className="space-y-1.5 text-xs font-light text-[#C5C8D0] pt-2 animate-fadeIn">
+            {masterLoading ? (
+              <div className="space-y-2 animate-pulse py-1">
+                <div className="h-3.5 bg-white/10 rounded w-24" />
+                <div className="h-3.5 bg-white/10 rounded w-28" />
+              </div>
+            ) : purities.length === 0 ? (
+              <span className="text-xs text-[#C5C8D0]/60 italic block py-1 font-normal">No purities available</span>
+            ) : (
+              purities.map(pur => (
+                <button
+                  key={pur.id || pur.title}
+                  onClick={() => updateFilter('purity', selectedPurity === pur.title ? '' : pur.title)}
+                  className={`block w-full text-left py-1 tracking-wide transition-colors rounded px-2 cursor-pointer ${
+                    selectedPurity.toLowerCase() === pur.title.toLowerCase()
+                      ? 'text-[#E0B094] bg-[#E0B094]/15 font-semibold border-l-2 border-[#E0B094]'
+                      : 'hover:text-white hover:bg-white/5'
+                  }`}
+                >
+                  {pur.title}
+                </button>
+              ))
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* EXACT PRICE RANGE FILTER */}
+      <div className="pt-3 border-t border-white/10">
+        <button
+          type="button"
+          onClick={() => toggleSection('price')}
+          className="flex items-center justify-between w-full py-1 text-left group cursor-pointer"
+        >
+          <span className="text-[11px] font-semibold tracking-[0.18em] text-[#F5F5F0] group-hover:text-[#E0B094] transition-colors uppercase">
+            PRICE RANGE
+          </span>
+          <ChevronDown className={`w-3.5 h-3.5 text-[#E0B094] transition-transform duration-300 ${openSections.price ? 'rotate-180' : ''}`} />
+        </button>
+
+        {openSections.price && (
+          <div className="space-y-1.5 text-xs font-light text-[#C5C8D0] pt-2 animate-fadeIn">
+            {[
+              { label: 'Under ₹50,000', value: 'under-50k' },
+              { label: '₹50,000 - ₹75,000', value: '50k-75k' },
+              { label: '₹75,000 - ₹100,000', value: '75k-100k' },
+              { label: 'Above ₹100,000', value: 'above-100k' }
+            ].map(pItem => (
+              <button
+                key={pItem.value}
+                onClick={() => updateFilter('price', selectedPriceRange === pItem.value ? '' : pItem.value)}
+                className={`block w-full text-left py-1 tracking-wide transition-colors rounded px-2 cursor-pointer ${
+                  selectedPriceRange === pItem.value
+                    ? 'text-[#E0B094] bg-[#E0B094]/15 font-semibold border-l-2 border-[#E0B094]'
+                    : 'hover:text-white hover:bg-white/5'
+                }`}
+              >
+                {pItem.label}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    </>
+  );
+
   return (
     <div className="min-h-screen bg-[#0C0D10] text-[#F5F5F0] pt-24 pb-16 font-poppins">
       
@@ -215,11 +462,11 @@ export default function ShopPage() {
         </p>
       </div>
 
-      {/* MOBILE FILTER TOGGLE */}
-      <div className="lg:hidden w-[95vw] max-w-[1700px] mx-auto px-4 py-2 border-b border-white/10 flex items-center justify-between">
+      {/* MOBILE FILTER TOGGLE (STICKY FLUSH BENEATH NAVBAR ON MOBILE VIEW) */}
+      <div className="lg:hidden sticky top-[60px] sm:top-[68px] z-30 w-full bg-[#0C0D10]/95 backdrop-blur-md px-4 py-2.5 border-b border-white/15 flex items-center justify-between shadow-lg">
         <button
-          onClick={() => setMobileFilterOpen(!mobileFilterOpen)}
-          className="flex items-center gap-2 text-xs font-semibold tracking-widest text-[#E0B094] uppercase"
+          onClick={() => setMobileFilterOpen(true)}
+          className="flex items-center gap-2 text-xs font-semibold tracking-widest text-[#E0B094] uppercase cursor-pointer"
         >
           <SlidersHorizontal className="w-4 h-4 text-[#E0B094]" />
           <span>Filter Catalog</span>
@@ -228,7 +475,7 @@ export default function ShopPage() {
         {(selectedCategory || selectedCollection || selectedColor || selectedPurity || selectedPriceRange) && (
           <button
             onClick={clearAllFilters}
-            className="text-[11px] text-[#E0B094] underline tracking-wider font-medium uppercase"
+            className="text-[11px] text-[#E0B094] underline tracking-wider font-medium uppercase cursor-pointer"
           >
             Reset Filters
           </button>
@@ -237,238 +484,34 @@ export default function ShopPage() {
 
       <div className="w-[95vw] max-w-[1700px] mx-auto px-4 sm:px-6 pt-4 grid grid-cols-1 lg:grid-cols-12 gap-6">
 
-        {/* LEFT FILTER SIDEBAR (STRICTLY STICKY WITHOUT INTERNAL SCROLLBAR) */}
-        <aside className={`lg:col-span-3 sticky top-28 self-start z-30 ${mobileFilterOpen ? 'block' : 'hidden lg:block'}`}>
-          <div className="bg-[#16181F]/90 border border-white/15 rounded-lg p-4 sm:p-5 space-y-4 text-[#F5F5F0] backdrop-blur-3xl shadow-2xl">
-            
-            <div className="flex items-center justify-between border-b border-white/10 pb-3">
-              <span className="text-xs font-semibold tracking-[0.2em] text-[#E0B094] uppercase flex items-center gap-2">
-                <SlidersHorizontal className="w-3.5 h-3.5" />
-                FILTER BY
-              </span>
-              {(selectedCategory || selectedCollection || selectedColor || selectedPurity || selectedPriceRange) && (
-                <button
-                  onClick={clearAllFilters}
-                  className="text-[10px] text-[#E0B094] hover:text-white underline uppercase tracking-wider font-medium cursor-pointer"
-                >
-                  Reset All
-                </button>
-              )}
-            </div>
-
-            {/* DYNAMIC JEWELLERY CATEGORY FILTER */}
-            <div>
-              <button
-                type="button"
-                onClick={() => toggleSection('category')}
-                className="flex items-center justify-between w-full py-1 text-left group cursor-pointer"
-              >
-                <span className="text-[11px] font-semibold tracking-[0.18em] text-[#F5F5F0] group-hover:text-[#E0B094] transition-colors uppercase">
-                  JEWELLERY TYPE {selectedCategory ? `(${selectedCategory})` : ''}
-                </span>
-                <ChevronDown className={`w-3.5 h-3.5 text-[#E0B094] transition-transform duration-300 ${openSections.category ? 'rotate-180' : ''}`} />
-              </button>
-              
-              {openSections.category && (
-                <div className="space-y-1.5 text-xs font-light text-[#C5C8D0] pt-2 animate-fadeIn">
-                  {masterLoading ? (
-                    <div className="space-y-2 animate-pulse py-1">
-                      <div className="h-3.5 bg-white/10 rounded w-28" />
-                      <div className="h-3.5 bg-white/10 rounded w-36" />
-                      <div className="h-3.5 bg-white/10 rounded w-24" />
-                    </div>
-                  ) : categories.length === 0 ? (
-                    <span className="text-xs text-[#C5C8D0]/60 italic block py-1 font-normal">No categories created</span>
-                  ) : (
-                    categories.map(cat => (
-                      <button
-                        key={cat.id || cat.title}
-                        onClick={() => updateFilter('category', selectedCategory === cat.title ? '' : cat.title)}
-                        className={`block w-full text-left py-1 tracking-wide transition-colors rounded px-2 ${
-                          selectedCategory.toLowerCase() === cat.title.toLowerCase()
-                            ? 'text-[#E0B094] bg-[#E0B094]/15 font-semibold border-l-2 border-[#E0B094]'
-                            : 'hover:text-white hover:bg-white/5'
-                        }`}
-                      >
-                        {cat.title}
-                      </button>
-                    ))
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* DYNAMIC COLLECTIONS FILTER */}
-            <div className="pt-3 border-t border-white/10">
-              <button
-                type="button"
-                onClick={() => toggleSection('collection')}
-                className="flex items-center justify-between w-full py-1 text-left group cursor-pointer"
-              >
-                <span className="text-[11px] font-semibold tracking-[0.18em] text-[#F5F5F0] group-hover:text-[#E0B094] transition-colors uppercase">
-                  COLLECTIONS {selectedCollection ? `(${selectedCollection})` : ''}
-                </span>
-                <ChevronDown className={`w-3.5 h-3.5 text-[#E0B094] transition-transform duration-300 ${openSections.collection ? 'rotate-180' : ''}`} />
-              </button>
-
-              {openSections.collection && (
-                <div className="space-y-1.5 text-xs font-light text-[#C5C8D0] pt-2 animate-fadeIn">
-                  {masterLoading ? (
-                    <div className="space-y-2 animate-pulse py-1">
-                      <div className="h-3.5 bg-white/10 rounded w-32" />
-                      <div className="h-3.5 bg-white/10 rounded w-24" />
-                    </div>
-                  ) : collections.length === 0 ? (
-                    <span className="text-xs text-[#C5C8D0]/60 italic block py-1 font-normal">No collections created</span>
-                  ) : (
-                    collections.map(col => (
-                      <button
-                        key={col.id || col.title}
-                        onClick={() => updateFilter('collection', selectedCollection === col.title ? '' : col.title)}
-                        className={`block w-full text-left py-1 tracking-wide transition-colors rounded px-2 ${
-                          selectedCollection.toLowerCase() === col.title.toLowerCase()
-                            ? 'text-[#E0B094] bg-[#E0B094]/15 font-semibold border-l-2 border-[#E0B094]'
-                            : 'hover:text-white hover:bg-white/5'
-                        }`}
-                      >
-                        {col.title}
-                      </button>
-                    ))
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* GOLD COLOR FILTER */}
-            <div className="pt-3 border-t border-white/10">
-              <button
-                type="button"
-                onClick={() => toggleSection('color')}
-                className="flex items-center justify-between w-full py-1 text-left group cursor-pointer"
-              >
-                <span className="text-[11px] font-semibold tracking-[0.18em] text-[#F5F5F0] group-hover:text-[#E0B094] transition-colors uppercase">
-                  GOLD COLOR {selectedColor ? `(${selectedColor})` : ''}
-                </span>
-                <ChevronDown className={`w-3.5 h-3.5 text-[#E0B094] transition-transform duration-300 ${openSections.color ? 'rotate-180' : ''}`} />
-              </button>
-
-              {openSections.color && (
-                <div className="space-y-1.5 text-xs font-light text-[#C5C8D0] pt-2 animate-fadeIn">
-                  {masterLoading ? (
-                    <div className="space-y-2 animate-pulse py-1">
-                      <div className="h-3.5 bg-white/10 rounded w-28" />
-                      <div className="h-3.5 bg-white/10 rounded w-24" />
-                    </div>
-                  ) : colors.length === 0 ? (
-                    <span className="text-xs text-[#C5C8D0]/60 italic block py-1 font-normal">No colors available</span>
-                  ) : (
-                    colors.map(clr => (
-                      <button
-                        key={clr.id || clr.title}
-                        onClick={() => updateFilter('color', selectedColor === clr.title ? '' : clr.title)}
-                        className={`block w-full text-left py-1 tracking-wide transition-colors rounded px-2 ${
-                          selectedColor.toLowerCase() === clr.title.toLowerCase()
-                            ? 'text-[#E0B094] bg-[#E0B094]/15 font-semibold border-l-2 border-[#E0B094]'
-                            : 'hover:text-white hover:bg-white/5'
-                        }`}
-                      >
-                        {clr.title}
-                      </button>
-                    ))
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* PURITY FILTER */}
-            <div className="pt-3 border-t border-white/10">
-              <button
-                type="button"
-                onClick={() => toggleSection('purity')}
-                className="flex items-center justify-between w-full py-1 text-left group cursor-pointer"
-              >
-                <span className="text-[11px] font-semibold tracking-[0.18em] text-[#F5F5F0] group-hover:text-[#E0B094] transition-colors uppercase">
-                  PURITY {selectedPurity ? `(${selectedPurity})` : ''}
-                </span>
-                <ChevronDown className={`w-3.5 h-3.5 text-[#E0B094] transition-transform duration-300 ${openSections.purity ? 'rotate-180' : ''}`} />
-              </button>
-
-              {openSections.purity && (
-                <div className="space-y-1.5 text-xs font-light text-[#C5C8D0] pt-2 animate-fadeIn">
-                  {masterLoading ? (
-                    <div className="space-y-2 animate-pulse py-1">
-                      <div className="h-3.5 bg-white/10 rounded w-24" />
-                      <div className="h-3.5 bg-white/10 rounded w-28" />
-                    </div>
-                  ) : purities.length === 0 ? (
-                    <span className="text-xs text-[#C5C8D0]/60 italic block py-1 font-normal">No purities available</span>
-                  ) : (
-                    purities.map(pur => (
-                      <button
-                        key={pur.id || pur.title}
-                        onClick={() => updateFilter('purity', selectedPurity === pur.title ? '' : pur.title)}
-                        className={`block w-full text-left py-1 tracking-wide transition-colors rounded px-2 ${
-                          selectedPurity.toLowerCase() === pur.title.toLowerCase()
-                            ? 'text-[#E0B094] bg-[#E0B094]/15 font-semibold border-l-2 border-[#E0B094]'
-                            : 'hover:text-white hover:bg-white/5'
-                        }`}
-                      >
-                        {pur.title}
-                      </button>
-                    ))
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* EXACT PRICE RANGE FILTER */}
-            <div className="pt-3 border-t border-white/10">
-              <button
-                type="button"
-                onClick={() => toggleSection('price')}
-                className="flex items-center justify-between w-full py-1 text-left group cursor-pointer"
-              >
-                <span className="text-[11px] font-semibold tracking-[0.18em] text-[#F5F5F0] group-hover:text-[#E0B094] transition-colors uppercase">
-                  PRICE RANGE
-                </span>
-                <ChevronDown className={`w-3.5 h-3.5 text-[#E0B094] transition-transform duration-300 ${openSections.price ? 'rotate-180' : ''}`} />
-              </button>
-
-              {openSections.price && (
-                <div className="space-y-1.5 text-xs font-light text-[#C5C8D0] pt-2 animate-fadeIn">
-                  {[
-                    { label: 'Under ₹50,000', value: 'under-50k' },
-                    { label: '₹50,000 - ₹75,000', value: '50k-75k' },
-                    { label: '₹75,000 - ₹100,000', value: '75k-100k' },
-                    { label: 'Above ₹100,000', value: 'above-100k' }
-                  ].map(pItem => (
-                    <button
-                      key={pItem.value}
-                      onClick={() => updateFilter('price', selectedPriceRange === pItem.value ? '' : pItem.value)}
-                      className={`block w-full text-left py-1 tracking-wide transition-colors rounded px-2 ${
-                        selectedPriceRange === pItem.value
-                          ? 'text-[#E0B094] bg-[#E0B094]/15 font-semibold border-l-2 border-[#E0B094]'
-                          : 'hover:text-white hover:bg-white/5'
-                      }`}
-                    >
-                      {pItem.label}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
+        {/* DESKTOP FILTER SIDEBAR */}
+        <aside className="hidden lg:block lg:col-span-3 sticky top-28 self-start z-30">
+          <div className="bg-[#16181F]/90 border border-white/15 rounded-lg p-5 space-y-4 text-[#F5F5F0] backdrop-blur-3xl shadow-2xl">
+            {renderFilterContent(false)}
           </div>
         </aside>
+
+        {/* MOBILE FILTER MODAL DRAWER OVERLAY (WITH BODY SCROLL LOCK & INTERNAL SCROLL) */}
+        {mobileFilterOpen && (
+          <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md lg:hidden flex flex-col justify-end animate-fadeIn">
+            {/* Backdrop Click Handler */}
+            <div className="absolute inset-0" onClick={() => setMobileFilterOpen(false)} />
+
+            {/* Slide-over Filter Panel */}
+            <div className="relative w-full max-h-[85vh] bg-[#16181F] border-t border-white/20 rounded-t-2xl px-5 pb-5 pt-0 space-y-4 text-[#F5F5F0] overflow-y-auto shadow-2xl z-10">
+              {renderFilterContent(true)}
+            </div>
+          </div>
+        )}
 
         {/* PRODUCT CATALOG GRID */}
         <main className="lg:col-span-9 space-y-8">
           {loadingInitial ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-6">
               {[1, 2, 3, 4, 5, 6].map(i => (
-                <div key={i} className="animate-pulse space-y-3 bg-[#16181F]/70 backdrop-blur-2xl p-4 rounded-lg border border-white/15">
+                <div key={i} className="animate-pulse space-y-3 bg-[#16181F]/70 backdrop-blur-2xl p-3 sm:p-4 rounded-lg border border-white/15">
                   <div className="aspect-square bg-white/5 rounded-md" />
-                  <div className="h-4 bg-white/10 rounded w-3/4 mx-auto mt-2" />
+                  <div className="h-3.5 bg-white/10 rounded w-3/4 mx-auto mt-2" />
                   <div className="h-3 bg-white/10 rounded w-1/2 mx-auto mt-1" />
                 </div>
               ))}
@@ -491,7 +534,7 @@ export default function ShopPage() {
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5 sm:gap-6">
+              <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-6">
                 {products.map((product, index) => {
                   const primaryImage = product.media && product.media.length > 0 
                     ? product.media[0].url 
@@ -508,7 +551,7 @@ export default function ShopPage() {
                       className="group bg-[#16181F]/80 backdrop-blur-2xl border border-white/15 hover:border-[#E0B094]/60 rounded-lg overflow-hidden flex flex-col justify-between transition-all duration-500 ease-out hover:shadow-[0_0_30px_rgba(224,176,148,0.2)] animate-fadeInUp cursor-pointer"
                     >
                       {/* PRODUCT IMAGE CONTAINER WITH DUAL-IMAGE CROSS-FADE */}
-                      <div className="aspect-square bg-slate-950/60 backdrop-blur-md overflow-hidden relative flex items-center justify-center p-4">
+                      <div className="aspect-square bg-slate-950/60 backdrop-blur-md overflow-hidden relative flex items-center justify-center p-1 sm:p-4">
                         {/* Primary Image */}
                         <img 
                           src={primaryImage} 
@@ -524,20 +567,20 @@ export default function ShopPage() {
                           <img 
                             src={secondaryImage} 
                             alt={`${product.title} Cover`} 
-                            className="absolute inset-0 w-full h-full object-contain p-4 filter drop-shadow-[0_4px_10px_rgba(0,0,0,0.6)] opacity-0 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500 ease-out"
+                            className="absolute inset-0 w-full h-full object-contain p-1 sm:p-4 filter drop-shadow-[0_4px_10px_rgba(0,0,0,0.6)] opacity-0 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500 ease-out"
                             loading="lazy"
                           />
                         )}
                       </div>
 
                       {/* PRODUCT CARD DETAILS */}
-                      <div className="p-3.5 flex items-center justify-between gap-2 border-t border-white/10">
+                      <div className="p-2.5 sm:p-3.5 flex items-center justify-between gap-1.5 border-t border-white/10">
                         <div className="text-left flex-1 min-w-0">
-                          <h3 className="font-poppins text-xs font-medium tracking-wide text-[#F5F5F0] uppercase line-clamp-2 leading-tight group-hover:text-[#E0B094] transition-colors" title={product.title}>
+                          <h3 className="font-poppins text-[11px] sm:text-xs font-medium tracking-wide text-[#F5F5F0] uppercase line-clamp-2 leading-tight group-hover:text-[#E0B094] transition-colors" title={product.title}>
                             {product.title}
                           </h3>
 
-                          <p className="font-mono text-xs font-semibold text-[#E0B094] mt-0.5">
+                          <p className="font-mono text-[10px] sm:text-xs font-semibold text-[#E0B094] mt-0.5">
                             RS. {formattedPrice}
                           </p>
                         </div>
@@ -549,10 +592,10 @@ export default function ShopPage() {
                             addToCart(product, 1);
                             showCartAlert(product, navigate);
                           }}
-                          className="p-2 rounded-lg bg-black/60 hover:bg-[#E0B094] text-[#E0B094] hover:text-[#0C0D10] border border-[#E0B094]/40 hover:border-[#E0B094] transition-all duration-300 shadow-md shrink-0 cursor-pointer"
+                          className="p-1.5 sm:p-2 rounded-lg bg-black/60 hover:bg-[#E0B094] text-[#E0B094] hover:text-[#0C0D10] border border-[#E0B094]/40 hover:border-[#E0B094] transition-all duration-300 shadow-md shrink-0 cursor-pointer"
                           title="Add to Shopping Cart"
                         >
-                          <ShoppingBag className="w-4 h-4" />
+                          <ShoppingBag className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                         </button>
                       </div>
 
@@ -563,11 +606,11 @@ export default function ShopPage() {
 
               {/* LAZY LOAD SKELETON PLACEHOLDERS */}
               {loadingMore && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 pt-4">
-                  {[1, 2, 3].map(i => (
-                    <div key={`lazy-skel-${i}`} className="animate-pulse space-y-3 bg-[#16181F]/70 backdrop-blur-2xl p-4 rounded-lg border border-white/15">
+                <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-6 pt-4">
+                  {[1, 2, 3, 4].map(i => (
+                    <div key={`lazy-skel-${i}`} className="animate-pulse space-y-3 bg-[#16181F]/70 backdrop-blur-2xl p-3 sm:p-4 rounded-lg border border-white/15">
                       <div className="aspect-square bg-white/5 rounded-md" />
-                      <div className="h-4 bg-white/10 rounded w-3/4 mx-auto mt-2" />
+                      <div className="h-3.5 bg-white/10 rounded w-3/4 mx-auto mt-2" />
                       <div className="h-3 bg-white/10 rounded w-1/2 mx-auto mt-1" />
                     </div>
                   ))}

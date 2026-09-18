@@ -71,7 +71,7 @@ export default function OurServicesSection() {
         </div>
 
         {/* MAIN SPLIT 2-COLUMN STAGE (FIXED CARD HEIGHT — IMAGE ADAPTS TO CARD HEIGHT) */}
-        <div className="bg-[#12131A] border border-white/10 rounded-3xl overflow-hidden shadow-[0_15px_45px_rgba(0,0,0,0.85)] mb-10 h-[500px] sm:h-[480px] lg:h-[420px] relative">
+        <div className="bg-[#12131A] border border-white/10 rounded-3xl overflow-hidden shadow-[0_15px_45px_rgba(0,0,0,0.85)] mb-10 h-auto lg:h-[420px] relative">
           <AnimatePresence mode="wait">
             <motion.div
               key={activeService.id}
@@ -79,20 +79,19 @@ export default function OurServicesSection() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.35 }}
-              className="grid grid-cols-1 lg:grid-cols-12 h-full w-full"
+              className="flex flex-col lg:flex-row h-full w-full"
             >
               {/* Left Image Column — Fixed to Left 50%, Image depends strictly on Card Height */}
-              <div className="lg:col-span-6 relative h-48 sm:h-60 lg:h-full w-full overflow-hidden bg-black shrink-0">
+              <div className="lg:w-1/2 relative h-48 sm:h-60 lg:h-full w-full overflow-hidden bg-black shrink-0">
                 <img
                   src={activeService.image}
                   alt={activeService.title}
                   className="absolute inset-0 w-full h-full object-cover filter brightness-105 contrast-110"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#12131A] via-transparent to-transparent lg:hidden" />
               </div>
 
               {/* Right Content Column — Vertically Centered inside Fixed Card Height */}
-              <div className="lg:col-span-6 p-6 sm:p-10 lg:p-12 flex flex-col justify-center bg-[#12131A] h-full overflow-hidden">
+              <div className="lg:w-1/2 flex-1 p-6 sm:p-10 lg:p-12 flex flex-col justify-center bg-[#12131A] overflow-hidden">
                 {/* Eyebrow */}
                 <span className="font-poppins text-xs font-semibold tracking-[0.28em] text-[#E0B094] uppercase block mb-2 sm:mb-3">
                   OUR SERVICES

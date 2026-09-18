@@ -209,19 +209,32 @@ export default function Footer({ onOpenTickets }) {
           <span>© 2026 Diamora Diamond Jewellery. All Rights Reserved.</span>
 
           {/* Payment Badges (VISA, Mastercard, AMEX, UPI) */}
-          <div className="flex items-center gap-3">
-            <span className="px-2.5 py-1 rounded bg-[#14151D] border border-white/10 text-[10px] font-bold text-white tracking-widest uppercase">
-              VISA
-            </span>
-            <span className="px-2.5 py-1 rounded bg-[#14151D] border border-white/10 text-[10px] font-bold text-amber-400 tracking-widest uppercase">
-              MC
-            </span>
-            <span className="px-2.5 py-1 rounded bg-[#14151D] border border-white/10 text-[10px] font-bold text-blue-400 tracking-widest uppercase">
-              AMEX
-            </span>
-            <span className="px-2.5 py-1 rounded bg-[#14151D] border border-white/10 text-[10px] font-bold text-emerald-400 tracking-widest uppercase">
-              UPI
-            </span>
+          <div className="flex items-center gap-2">
+            {/* VISA */}
+            <div className="w-10 h-6 rounded bg-white flex items-center justify-center shadow-sm">
+              <span className="text-[#1434CB] font-[Arial] font-black italic tracking-tighter text-[11px] leading-none pt-[2px] pr-[1px]">VISA</span>
+            </div>
+            {/* MASTERCARD */}
+            <div className="w-10 h-6 rounded bg-white flex items-center justify-center shadow-sm">
+              <svg viewBox="0 0 36 24" className="h-[14px] w-auto" fill="none">
+                <circle cx="12" cy="12" r="10" fill="#EB001B"/>
+                <circle cx="24" cy="12" r="10" fill="#F79E1B" fillOpacity="0.9"/>
+              </svg>
+            </div>
+            {/* AMEX */}
+            <div className="w-10 h-6 rounded bg-[#2E77BC] flex items-center justify-center text-white shadow-sm">
+              <span className="text-[8px] font-black tracking-widest pt-[2px] block">AMEX</span>
+            </div>
+            {/* UPI */}
+            <div className="w-10 h-6 rounded bg-white flex items-center justify-center shadow-sm">
+              <div className="flex items-center gap-[1px]">
+                <svg width="11" height="8" viewBox="0 0 14 10" fill="none" className="shrink-0 mt-[1px]">
+                  <path d="M6 5L2 9V6H0V4H2V1L6 5Z" fill="#E67B27"/>
+                  <path d="M12 5L8 9V6H6V4H8V1L12 5Z" fill="#149A43"/>
+                </svg>
+                <span className="text-[#282C3F] font-black italic tracking-tight text-[9px] font-[Arial] leading-none pt-[2px]">UPI</span>
+              </div>
+            </div>
           </div>
         </div>
 
