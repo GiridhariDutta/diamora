@@ -18,12 +18,14 @@ import AdminDiamondQualityPage from '../pages/admin/AdminDiamondQualityPage';
 import AdminStonesPage from '../pages/admin/AdminStonesPage';
 import AdminInventoryPage from '../pages/admin/AdminInventoryPage';
 import AdminOrdersPage from '../pages/admin/AdminOrdersPage';
+import AdminInquiriesPage from '../pages/admin/AdminInquiriesPage';
 import AdminSettingsPage from '../pages/admin/AdminSettingsPage';
 import AdminDynamicPageEditor from '../pages/admin/AdminDynamicPageEditor';
 import ProductDetailPage from '../pages/ProductDetailPage';
 import ProfilePage from '../pages/ProfilePage';
 import CartPage from '../pages/CartPage';
 import OrderPage from '../pages/OrderPage';
+import ContactPage from '../pages/ContactPage';
 
 export const router = createBrowserRouter([
   {
@@ -42,6 +44,8 @@ export const router = createBrowserRouter([
       { path: 'about-us', element: <AboutPage pageKey="about_us" /> },
       { path: 'privacy-policy', element: <AboutPage pageKey="privacy_policy" /> },
       { path: 'terms-conditions', element: <AboutPage pageKey="terms_conditions" /> },
+      { path: 'contact', element: <ContactPage /> },
+      { path: 'contact-us', element: <ContactPage /> },
       { path: '*', element: <Navigate to="/" replace /> }
     ]
   },
@@ -66,6 +70,7 @@ export const router = createBrowserRouter([
       { path: 'customers', element: <AdminCustomersPage /> },
       { path: 'inventory', element: <AdminInventoryPage /> },
       { path: 'orders', element: <AdminOrdersPage /> },
+      { path: 'inquiries', element: <AdminInquiriesPage /> },
       { path: 'settings', element: <Navigate to="/admin/settings/about-us" replace /> },
       { path: 'settings/about-us', element: <AdminDynamicPageEditor pageKey="about_us" defaultTitle="About Us" /> },
       { path: 'settings/privacy-policy', element: <AdminDynamicPageEditor pageKey="privacy_policy" defaultTitle="Privacy Policy" /> },

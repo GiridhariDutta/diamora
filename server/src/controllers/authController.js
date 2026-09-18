@@ -275,4 +275,29 @@ export class AuthController {
       });
     }
   }
+
+  /**
+   * Fetch Paginated Customers List
+   */
+  static async getCustomers(req, res) {
+    try {
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 10;
+      const search = (req.query.search || '').trim();
+
+      const result = await AuthService.getCustomers({ page, limit, search });
+
+      return res.status(200).json({
+        success: true,
+        data: result.data,
+        pagination: result.pagination
+      });
+    } catch (error) {
+      console.error('Error in AuthController.getCustomers:', error);
+      return res.status(500).json({
+        success: false,
+        message: error.message || 'Failed to fetch customer directory.'
+      });
+    }
+  }
 }

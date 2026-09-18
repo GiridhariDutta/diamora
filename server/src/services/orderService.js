@@ -146,6 +146,13 @@ export class OrderService {
 
     const nowIso = new Date().toISOString();
 
+    const initialStatus = 'pending';
+    const initialHistory = [{
+      status: initialStatus,
+      updatedAt: nowIso,
+      note: 'Order placed & payment verified via Razorpay'
+    }];
+
     const orderData = {
       customerName: (shippingDetails.customerName || '').trim(),
       customerPhone: (shippingDetails.customerPhone || '').trim(),
@@ -163,7 +170,9 @@ export class OrderService {
       paymentStatus: 'Paid',
       razorpayOrderId: razorpay_order_id,
       razorpayPaymentId: razorpay_payment_id,
-      status: 'Paid Order',
+      status: initialStatus,
+      statusHistory: initialHistory,
+      orderType: 'paid_order',
       createdAt: nowIso,
       updatedAt: nowIso
     };
@@ -177,7 +186,7 @@ export class OrderService {
   }
 
   /**
-   * Create a new product inquiry / order
+   * Create a new product inquiry
    */
   static async createOrder(data = {}) {
     if (!db) {
@@ -199,7 +208,7 @@ export class OrderService {
       userId = '',
       items = [],
       totalAmount = 0,
-      paymentMethod = 'Razorpay Online',
+      paymentMethod = '',
       shippingAddress = '',
       city = '',
       state = '',
@@ -215,6 +224,12 @@ export class OrderService {
     }
 
     const nowIso = new Date().toISOString();
+    const initialStatus = 'new';
+    const initialHistory = [{
+      status: initialStatus,
+      updatedAt: nowIso,
+      note: 'Product inquiry submitted by client'
+    }];
 
     const orderData = {
       customerName: customerName.trim(),
@@ -222,7 +237,7 @@ export class OrderService {
       customerEmail: customerEmail ? customerEmail.trim() : '',
       notes: notes ? notes.trim() : '',
       productId: productId || (items.length > 0 ? items[0].productId : ''),
-      productTitle: productTitle || (items.length > 0 ? items.map(i => i.title).join(', ') : 'Haute Joaillerie Order'),
+      productTitle: productTitle || (items.length > 0 ? items.map(i => i.title).join(', ') : 'Haute Joaillerie Inquiry'),
       productSku: productSku || '',
       productPrice: productPrice || totalAmount || 0,
       productImage: productImage || (items.length > 0 ? items[0].image : ''),
@@ -231,12 +246,15 @@ export class OrderService {
       userId: userId || '',
       items: items || [],
       totalAmount: totalAmount || productPrice || 0,
-      paymentMethod: paymentMethod || 'Razorpay Online',
+      paymentMethod: paymentMethod || 'Inquiry Only',
+      paymentStatus: 'Unpaid / Inquiry',
       shippingAddress: shippingAddress || '',
       city: city || '',
       state: state || '',
       pincode: pincode || '',
-      status: 'Paid Order',
+      status: initialStatus,
+      statusHistory: initialHistory,
+      orderType: 'inquiry',
       createdAt: nowIso,
       updatedAt: nowIso
     };
@@ -250,9 +268,9 @@ export class OrderService {
   }
 
   /**
-   * Update order status (e.g. 'New' -> 'Viewed')
+   * Update order status and append status transition timestamp history
    */
-  static async updateOrderStatus(id, { status }) {
+  static async updateOrderStatus(id, { status, note = '' }) {
     if (!db) {
       throw new Error('Firestore database is not initialized');
     }
@@ -264,16 +282,39 @@ export class OrderService {
       throw new Error('Order not found');
     }
 
+    const currentData = docSnap.data() || {};
+    const nowIso = new Date().toISOString();
+
+    const existingHistory = Array.isArray(currentData.statusHistory) ? [...currentData.statusHistory] : [];
+
+    // If legacy order had no statusHistory array, push initial entry
+    if (existingHistory.length === 0 && currentData.status) {
+      existingHistory.push({
+        status: currentData.status,
+        updatedAt: currentData.createdAt || currentData.updatedAt || nowIso,
+        note: 'Order/Inquiry Created'
+      });
+    }
+
+    const newHistoryEntry = {
+      status: status,
+      updatedAt: nowIso,
+      note: note || `Status updated to ${status}`
+    };
+
+    const updatedHistory = [...existingHistory, newHistoryEntry];
+
     const updateData = {
-      status: status || 'Viewed',
-      updatedAt: new Date().toISOString()
+      status: status,
+      statusHistory: updatedHistory,
+      updatedAt: nowIso
     };
 
     await docRef.update(updateData);
 
     return {
       id,
-      ...docSnap.data(),
+      ...currentData,
       ...updateData
     };
   }

@@ -95,7 +95,7 @@ export default function Footer({ onOpenTickets }) {
               <li><a href="/#collection" className="hover:text-[#E0B094] transition-colors">Collection</a></li>
               <li><Link to="/shop" className="hover:text-[#E0B094] transition-colors">Shop</Link></li>
               <li><a href="/#whydiamora" className="hover:text-[#E0B094] transition-colors">Why Diamora</a></li>
-              <li><a href="/#contact" className="hover:text-[#E0B094] transition-colors">Contact Us</a></li>
+              <li><Link to="/contact" className="hover:text-[#E0B094] transition-colors">Contact Us</Link></li>
               <li><a href="/#contact" className="hover:text-[#E0B094] transition-colors">FAQs</a></li>
             </ul>
           </div>

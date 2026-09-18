@@ -32,6 +32,30 @@ export default function Navbar({
   const [isShopHovered, setIsShopHovered] = useState(false);
   const hoverTimerRef = useRef(null);
 
+  // Touch Swipe Gesture to Close Mobile Drawer
+  const touchStartY = useRef(null);
+  const touchMoveY = useRef(null);
+
+  const handleTouchStart = (e) => {
+    touchStartY.current = e.touches[0].clientY;
+  };
+
+  const handleTouchMove = (e) => {
+    if (touchStartY.current === null) return;
+    touchMoveY.current = e.touches[0].clientY;
+  };
+
+  const handleTouchEnd = () => {
+    if (touchStartY.current !== null && touchMoveY.current !== null) {
+      const deltaY = touchMoveY.current - touchStartY.current;
+      if (deltaY < -35) {
+        setMobileMenuOpen(false);
+      }
+    }
+    touchStartY.current = null;
+    touchMoveY.current = null;
+  };
+
   const isHomePage = location.pathname === '/';
   const isCompact = scrolled || isShopHovered || !isHomePage;
 
@@ -44,12 +68,12 @@ export default function Navbar({
     { id: 'HOME', label: 'HOME', href: '/', isRoute: true },
     { id: 'COLLECTION', label: 'COLLECTION', href: '#collection', isRoute: false },
     { id: 'ABOUT US', label: 'ABOUT US', href: '/about', isRoute: true },
+    { id: 'SHOP', label: 'SHOP', href: '/shop', isRoute: true },
   ];
 
   const rightNavItems = [
-    { id: 'SHOP', label: 'SHOP', href: '/shop', isRoute: true },
     { id: 'WHY DIAMORA', label: 'WHY DIAMORA', href: '#whydiamora', isRoute: false },
-    { id: 'CONTACT', label: 'CONTACT', href: '#contact', isRoute: false },
+    { id: 'CONTACT', label: 'CONTACT', href: '/contact', isRoute: true },
   ];
 
   const getUserDisplayName = (usr) => {
@@ -182,31 +206,37 @@ export default function Navbar({
       <div className="max-w-7xl mx-auto px-4 sm:px-8 flex items-center justify-between relative h-12">
 
         {/* LEFT NAV MENU (DESKTOP) */}
-        <nav className="hidden md:flex items-center space-x-6 lg:space-x-10 flex-1 justify-start">
+        <nav className="hidden md:flex items-center space-x-4 lg:space-x-8 flex-1 justify-start">
           {leftNavItems.map((item) => {
             const isActive = activeTab === item.id;
+            const isShop = item.id === 'SHOP';
             return (
-              <a
+              <div
                 key={item.id}
-                href={item.href}
-                onMouseEnter={handleCloseShop}
-                onClick={(e) => { e.preventDefault(); handleNavClick(item); }}
-                className={`relative py-1 text-xs font-medium tracking-[0.2em] transition-colors duration-300 uppercase ${
-                  isActive ? 'text-[#E0B094]' : 'text-[#C5C8D0] hover:text-[#E0B094]'
-                }`}
+                className="relative py-1"
+                onMouseEnter={isShop ? handleMouseEnterShop : handleCloseShop}
+                onMouseLeave={isShop ? handleMouseLeaveShop : undefined}
               >
-                {item.label}
-                {isActive && (
+                <a
+                  href={item.href}
+                  onClick={(e) => { e.preventDefault(); handleNavClick(item); }}
+                  className={`text-xs font-medium tracking-[0.2em] transition-colors duration-300 uppercase block ${
+                    isActive || (isShop && isShopHovered) ? 'text-[#E0B094]' : 'text-[#C5C8D0] hover:text-[#E0B094]'
+                  }`}
+                >
+                  {item.label}
+                </a>
+                {(isActive || (isShop && isShopHovered)) && (
                   <span className="absolute -bottom-1 left-0 w-full h-[1.5px] bg-[#E0B094] shadow-[0_0_8px_rgba(224,176,148,0.6)]" />
                 )}
-              </a>
+              </div>
             );
           })}
         </nav>
 
-        {/* CENTER LOGO */}
+        {/* CENTER LOGO (DESKTOP) */}
         <div
-          className="absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 z-30 pointer-events-auto transition-all duration-300 ease-in-out"
+          className="hidden md:block absolute left-1/2 -translate-x-1/2 top-1/2 -translate-y-1/2 z-30 pointer-events-auto transition-all duration-300 ease-in-out"
           onMouseEnter={handleCloseShop}
         >
           <a
@@ -234,9 +264,9 @@ export default function Navbar({
         </div>
 
         {/* RIGHT NAV MENU & UTILITY ICONS (DESKTOP) */}
-        <div className="hidden md:flex items-center justify-end flex-1 space-x-6 lg:space-x-8">
+        <div className="hidden md:flex items-center justify-end flex-1 space-x-4 lg:space-x-8">
 
-          <nav className="flex items-center space-x-6 lg:space-x-8">
+          <nav className="flex items-center space-x-4 lg:space-x-8">
             {rightNavItems.map((item) => {
               const isActive = activeTab === item.id;
               const isShop = item.id === 'SHOP';
@@ -366,30 +396,58 @@ export default function Navbar({
 
         </div>
 
-        {/* MOBILE MENU TOGGLE */}
-        <div className="md:hidden flex items-center space-x-3">
-          <button
-            onClick={() => navigate('/cart')}
-            className={`relative p-1.5 transition-colors ${
-              isCartPage ? 'text-[#E0B094]' : 'text-[#F5F5F0] hover:text-[#E0B094]'
-            }`}
+        {/* MOBILE VIEW BAR (LOGO ON LEFT, CART ICON & 3-LINE MENU TOGGLE ON RIGHT) */}
+        <div className="flex md:hidden items-center justify-between w-full h-full">
+          {/* LEFT: LOGO */}
+          <a
+            href="/"
+            onClick={(e) => { e.preventDefault(); navigate('/'); }}
+            className="flex items-center"
           >
-            <ShoppingBag className="w-5 h-5" />
-            {isCartPage && (
-              <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-4 h-[1.5px] bg-[#E0B094] shadow-[0_0_8px_rgba(224,176,148,0.6)]" />
-            )}
-            <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#E0B094] text-[#0C0D10] text-[9px] font-extrabold flex items-center justify-center">
-              {cartCount}
+            <img
+              src="/diamora_logo.png"
+              alt="Diamora Logo"
+              className={`w-auto object-contain transition-all duration-300 ease-in-out filter drop-shadow-[0_4px_12px_rgba(0,0,0,0.5)] ${
+                isCompact ? 'h-9 max-w-[130px]' : 'h-11 max-w-[150px]'
+              }`}
+              onError={(e) => {
+                e.target.style.display = 'none';
+                e.target.nextSibling.style.display = 'block';
+              }}
+            />
+            <span className="font-cinzel text-base font-bold tracking-[0.2em] text-[#D4AF37] hidden uppercase">
+              DIAMORA
             </span>
-          </button>
+          </a>
 
+          {/* RIGHT: CART ICON & 3-LINE HAMBURGER MENU */}
+          <div className="flex items-center space-x-3">
+            <button
+              onClick={() => navigate('/cart')}
+              className={`relative p-1.5 transition-colors ${
+                isCartPage ? 'text-[#E0B094]' : 'text-[#F5F5F0] hover:text-[#E0B094]'
+              }`}
+              title="Shopping Cart"
+            >
+              <ShoppingBag className="w-5 h-5" />
+              {isCartPage && (
+                <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-4 h-[1.5px] bg-[#E0B094] shadow-[0_0_8px_rgba(224,176,148,0.6)]" />
+              )}
+              {cartCount > 0 && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-[#E0B094] text-[#0C0D10] text-[9px] font-extrabold flex items-center justify-center">
+                  {cartCount}
+                </span>
+              )}
+            </button>
 
-          <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="p-2 rounded-lg text-[#F5F5F0] hover:text-[#E0B094] focus:outline-none"
-          >
-            {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-          </button>
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="p-1.5 rounded-lg text-[#F5F5F0] hover:text-[#E0B094] focus:outline-none"
+              title="Toggle Menu"
+            >
+              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            </button>
+          </div>
         </div>
 
       </div>
@@ -475,89 +533,107 @@ export default function Navbar({
         </div>
 
 
-      {/* MOBILE DRAWER */}
-      {mobileMenuOpen && (
-        <div className="md:hidden bg-[#0C0D10]/95 backdrop-blur-xl border-t border-white/10 px-6 py-6 mt-3 shadow-2xl space-y-5 animate-fadeIn max-h-[80vh] overflow-y-auto">
-          <div className="flex flex-col space-y-3">
-            {[...leftNavItems, ...rightNavItems].map((item) => (
-              <a
-                key={item.id}
-                href={item.href}
-                onClick={(e) => { e.preventDefault(); handleNavClick(item); }}
-                className={`text-left text-xs font-semibold tracking-[0.2em] py-2 border-b border-white/5 uppercase ${
-                  activeTab === item.id ? 'text-[#E0B094]' : 'text-[#C5C8D0]'
-                }`}
-              >
-                {item.label}
-              </a>
-            ))}
-          </div>
+      {/* BACKDROP OVERLAY FOR MOBILE MENU */}
+      <div 
+        onClick={() => setMobileMenuOpen(false)}
+        className={`fixed inset-0 bg-black/60 z-40 md:hidden transition-opacity duration-300 ease-in-out ${
+          mobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        }`}
+      />
 
-          <div className="pt-2 space-y-2 border-t border-white/10">
-            <span className="text-[10px] font-semibold tracking-[0.2em] text-[#E0B094] uppercase block">
-              DYNAMIC CATEGORIES
-            </span>
-            <div className="grid grid-cols-2 gap-2 text-xs text-[#C5C8D0]">
-              {loadingNav ? (
-                <>
-                  <div className="h-7 bg-white/10 rounded-lg animate-pulse col-span-1" />
-                  <div className="h-7 bg-white/10 rounded-lg animate-pulse col-span-1" />
-                  <div className="h-7 bg-white/10 rounded-lg animate-pulse col-span-1" />
-                  <div className="h-7 bg-white/10 rounded-lg animate-pulse col-span-1" />
-                </>
-              ) : categories.length === 0 ? (
-                <span className="text-xs text-[#C5C8D0]/60 italic col-span-2">No categories available</span>
-              ) : (
-                categories.map(cat => (
-                  <button
-                    key={`mcat-${cat.id || cat.title}`}
-                    onClick={() => handleCategoryClick('category', cat.title)}
-                    className="text-left py-1.5 px-2.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-200 transition-colors"
-                  >
-                    {cat.title}
-                  </button>
-                ))
-              )}
-            </div>
-          </div>
+      {/* MOBILE DRAWER WITH SMOOTH SLIDE DOWN/UP ANIMATION & SWIPE-UP TO CLOSE */}
+      <div
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        className={`relative z-50 md:hidden bg-[#0C0D10] border-t border-white/10 px-6 shadow-2xl space-y-5 transition-all duration-300 ease-in-out transform origin-top overflow-y-auto ${
+          mobileMenuOpen
+            ? 'max-h-[85vh] py-6 opacity-100 translate-y-0 pointer-events-auto'
+            : 'max-h-0 py-0 opacity-0 -translate-y-4 pointer-events-none overflow-hidden'
+        }`}
+      >
+        {/* PULL HANDLE BAR INDICATING SWIPE UP */}
+        <div className="w-12 h-1 bg-white/20 hover:bg-[#E0B094]/50 rounded-full mx-auto -mt-2 mb-3 cursor-grab transition-colors" title="Swipe up to close" />
 
-          <div className="flex items-center justify-around pt-3 border-t border-white/10 text-[#F5F5F0]">
-            <button
-              onClick={() => { setMobileMenuOpen(false); navigate('/shop'); }}
-              className="flex items-center gap-2 text-xs text-[#E0B094] hover:text-white font-semibold"
+        <div className="flex flex-col space-y-3">
+          {[...leftNavItems, ...rightNavItems].map((item) => (
+            <a
+              key={item.id}
+              href={item.href}
+              onClick={(e) => { e.preventDefault(); handleNavClick(item); }}
+              className={`text-left text-xs font-semibold tracking-[0.2em] py-2 border-b border-white/5 uppercase transition-colors ${
+                activeTab === item.id ? 'text-[#E0B094]' : 'text-[#C5C8D0] hover:text-[#E0B094]'
+              }`}
             >
-              <Search className="w-4 h-4" />
-              <span>ALL JEWELLERY</span>
-            </button>
-            {user ? (
+              {item.label}
+            </a>
+          ))}
+        </div>
+
+        <div className="pt-2 space-y-2 border-t border-white/10">
+          <span className="text-[10px] font-semibold tracking-[0.2em] text-[#E0B094] uppercase block">
+            DYNAMIC CATEGORIES
+          </span>
+          <div className="grid grid-cols-2 gap-2 text-xs text-[#C5C8D0]">
+            {loadingNav ? (
               <>
-                <button
-                  onClick={() => { setMobileMenuOpen(false); navigate('/profile?tab=orders'); }}
-                  className="flex items-center gap-1.5 text-xs text-[#E0B094] hover:text-white font-semibold"
-                >
-                  <ShoppingBag className="w-4 h-4" />
-                  <span>MY ORDERS</span>
-                </button>
-                <button
-                  onClick={onLogout}
-                  className="flex items-center gap-1.5 text-xs text-red-400 hover:text-red-300"
-                >
-                  <User className="w-4 h-4" />
-                  <span>LOGOUT</span>
-                </button>
+                <div className="h-7 bg-white/10 rounded-lg animate-pulse col-span-1" />
+                <div className="h-7 bg-white/10 rounded-lg animate-pulse col-span-1" />
+                <div className="h-7 bg-white/10 rounded-lg animate-pulse col-span-1" />
+                <div className="h-7 bg-white/10 rounded-lg animate-pulse col-span-1" />
               </>
+            ) : categories.length === 0 ? (
+              <span className="text-xs text-[#C5C8D0]/60 italic col-span-2">No categories available</span>
             ) : (
-              <button
-                onClick={() => { setMobileMenuOpen(false); if (onOpenAuthModal) onOpenAuthModal(); }}
-                className="flex items-center gap-2 text-xs text-[#C5C8D0] hover:text-[#E0B094]"
-              >
-                <User className="w-4 h-4" />
-                <span>ACCOUNT</span>
-              </button>
+              categories.map(cat => (
+                <button
+                  key={`mcat-${cat.id || cat.title}`}
+                  onClick={() => handleCategoryClick('category', cat.title)}
+                  className="text-left py-1.5 px-2.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-200 transition-colors"
+                >
+                  {cat.title}
+                </button>
+              ))
             )}
           </div>
         </div>
-      )}
+
+        <div className="flex items-center justify-around pt-3 border-t border-white/10 text-[#F5F5F0]">
+          <button
+            onClick={() => { setMobileMenuOpen(false); navigate('/shop'); }}
+            className="flex items-center gap-2 text-xs text-[#E0B094] hover:text-white font-semibold"
+          >
+            <Search className="w-4 h-4" />
+            <span>ALL JEWELLERY</span>
+          </button>
+          {user ? (
+            <>
+              <button
+                onClick={() => { setMobileMenuOpen(false); navigate('/profile?tab=orders'); }}
+                className="flex items-center gap-1.5 text-xs text-[#E0B094] hover:text-white font-semibold"
+              >
+                <ShoppingBag className="w-4 h-4" />
+                <span>MY ORDERS</span>
+              </button>
+              <button
+                onClick={onLogout}
+                className="flex items-center gap-1.5 text-xs text-red-400 hover:text-red-300"
+              >
+                <User className="w-4 h-4" />
+                <span>LOGOUT</span>
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={() => { setMobileMenuOpen(false); if (onOpenAuthModal) onOpenAuthModal(); }}
+              className="flex items-center gap-2 text-xs text-[#C5C8D0] hover:text-[#E0B094]"
+            >
+              <User className="w-4 h-4" />
+              <span>ACCOUNT</span>
+            </button>
+          )}
+        </div>
+      </div>
 
     </header>
   );

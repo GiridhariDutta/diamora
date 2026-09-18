@@ -429,4 +429,136 @@ export class AuthService {
 
     return this.getUserProfile(uid);
   }
+
+  /**
+   * Fetch Paginated Customers List with order statistics (total spent, total orders, last order date)
+   */
+  static async getCustomers({ page = 1, limit = 10, search = '' }) {
+    if (!db) {
+      throw new Error('Firestore database is not initialized');
+    }
+
+    const pageNum = Math.max(1, parseInt(page) || 1);
+    const limitNum = Math.max(1, parseInt(limit) || 10);
+    const searchTerm = (search || '').trim().toLowerCase();
+
+    // 1. Fetch all non-admin users from Firestore users collection
+    const usersSnapshot = await db.collection('users').get();
+    const customerMap = new Map();
+
+    usersSnapshot.forEach(doc => {
+      const data = doc.data();
+      const role = (data.role || 'customer').toLowerCase();
+      if (role !== 'admin') {
+        const key = (data.email || data.phone || doc.id).toLowerCase();
+        customerMap.set(key, {
+          id: doc.id,
+          uid: doc.id,
+          name: data.name || data.displayName || 'Customer',
+          email: data.email || '',
+          phone: data.phone || '',
+          role: data.role || 'customer',
+          city: data.city || '',
+          state: data.state || '',
+          joined: data.createdAt || data.lastSignInAt || new Date().toISOString(),
+          ordersCount: 0,
+          totalSpent: 0,
+          lastOrderDate: null
+        });
+      }
+    });
+
+    // 2. Fetch all orders to compute customer stats (total spent, order count) & discover non-registered buyers
+    try {
+      const ordersSnapshot = await db.collection('orders').get();
+      ordersSnapshot.forEach(doc => {
+        const order = doc.data();
+        const emailKey = (order.customerEmail || '').toLowerCase();
+        const phoneKey = (order.customerPhone || '').toLowerCase();
+        const userIdKey = (order.userId || '').toLowerCase();
+
+        // Match with existing customer in map
+        let key = null;
+        if (userIdKey && customerMap.has(userIdKey)) {
+          key = userIdKey;
+        } else if (emailKey && customerMap.has(emailKey)) {
+          key = emailKey;
+        } else if (phoneKey && customerMap.has(phoneKey)) {
+          key = phoneKey;
+        }
+
+        const orderAmount = Number(order.totalAmount || order.productPrice || 0);
+        const isPaid = order.paymentStatus === 'Paid' || order.orderType === 'paid_order' || !!order.razorpayPaymentId;
+
+        if (key) {
+          const cust = customerMap.get(key);
+          cust.ordersCount += 1;
+          if (isPaid) {
+            cust.totalSpent += orderAmount;
+          }
+          if (!cust.phone && order.customerPhone) cust.phone = order.customerPhone;
+          if (!cust.city && order.city) cust.city = order.city;
+          if (!cust.state && order.state) cust.state = order.state;
+          if (!cust.lastOrderDate || new Date(order.createdAt) > new Date(cust.lastOrderDate)) {
+            cust.lastOrderDate = order.createdAt;
+          }
+        } else if (emailKey || phoneKey || order.customerName) {
+          const newKey = emailKey || phoneKey || doc.id;
+          customerMap.set(newKey, {
+            id: doc.id,
+            uid: order.userId || doc.id,
+            name: order.customerName || 'Guest Buyer',
+            email: order.customerEmail || '',
+            phone: order.customerPhone || '',
+            role: 'customer',
+            city: order.city || '',
+            state: order.state || '',
+            joined: order.createdAt || new Date().toISOString(),
+            ordersCount: 1,
+            totalSpent: isPaid ? orderAmount : 0,
+            lastOrderDate: order.createdAt || null
+          });
+        }
+      });
+    } catch (err) {
+      console.warn('Orders aggregation warning in getCustomers:', err.message);
+    }
+
+    let allCustomers = Array.from(customerMap.values());
+
+    // 3. Search Filter
+    if (searchTerm) {
+      allCustomers = allCustomers.filter(c => 
+        (c.name && c.name.toLowerCase().includes(searchTerm)) ||
+        (c.email && c.email.toLowerCase().includes(searchTerm)) ||
+        (c.phone && c.phone.toLowerCase().includes(searchTerm)) ||
+        (c.city && c.city.toLowerCase().includes(searchTerm)) ||
+        (c.state && c.state.toLowerCase().includes(searchTerm))
+      );
+    }
+
+    // 4. Sort (Highest spent first, then newest joined)
+    allCustomers.sort((a, b) => {
+      if (b.totalSpent !== a.totalSpent) {
+        return b.totalSpent - a.totalSpent;
+      }
+      return new Date(b.joined || 0) - new Date(a.joined || 0);
+    });
+
+    // 5. Backend Pagination
+    const totalCount = allCustomers.length;
+    const totalPages = Math.ceil(totalCount / limitNum) || 1;
+    const startIndex = (pageNum - 1) * limitNum;
+    const paginatedCustomers = allCustomers.slice(startIndex, startIndex + limitNum);
+
+    return {
+      data: paginatedCustomers,
+      pagination: {
+        totalCount,
+        totalPages,
+        page: pageNum,
+        limit: limitNum
+      }
+    };
+  }
 }
