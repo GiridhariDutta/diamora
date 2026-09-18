@@ -27,6 +27,7 @@ import CartPage from '../pages/CartPage';
 import OrderPage from '../pages/OrderPage';
 import MyOrdersPage from '../pages/MyOrdersPage';
 import ContactPage from '../pages/ContactPage';
+import WhyDiamoraPage from '../pages/WhyDiamoraPage';
 
 export const router = createBrowserRouter([
   {
@@ -48,6 +49,7 @@ export const router = createBrowserRouter([
       { path: 'terms-conditions', element: <AboutPage pageKey="terms_conditions" /> },
       { path: 'contact', element: <ContactPage /> },
       { path: 'contact-us', element: <ContactPage /> },
+      { path: 'why-diamora', element: <WhyDiamoraPage /> },
       { path: '*', element: <Navigate to="/" replace /> }
     ]
   },

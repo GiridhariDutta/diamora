@@ -209,19 +209,33 @@ export default function Footer({ onOpenTickets }) {
           <span>© 2026 Diamora Diamond Jewellery. All Rights Reserved.</span>
 
           {/* Payment Badges (VISA, Mastercard, AMEX, UPI) */}
-          <div className="flex items-center gap-3">
-            <span className="px-2.5 py-1 rounded bg-[#14151D] border border-white/10 text-[10px] font-bold text-white tracking-widest uppercase">
-              VISA
-            </span>
-            <span className="px-2.5 py-1 rounded bg-[#14151D] border border-white/10 text-[10px] font-bold text-amber-400 tracking-widest uppercase">
-              MC
-            </span>
-            <span className="px-2.5 py-1 rounded bg-[#14151D] border border-white/10 text-[10px] font-bold text-blue-400 tracking-widest uppercase">
-              AMEX
-            </span>
-            <span className="px-2.5 py-1 rounded bg-[#14151D] border border-white/10 text-[10px] font-bold text-emerald-400 tracking-widest uppercase">
-              UPI
-            </span>
+          <div className="flex items-center gap-2">
+            {/* VISA */}
+            <div className="w-10 h-6 rounded bg-white flex items-center justify-center text-[#1434CB] shadow-sm">
+              <svg viewBox="0 0 38 12" className="h-2.5 w-auto" fill="currentColor">
+                <path d="M15.42 0.38L13.14 11.23h-3.66l2.28-10.85h3.66zm14.62 10.58c-0.04-1.19-1.89-1.85-1.9-2.67 0-0.24 0.25-0.51 0.74-0.58 0.24-0.03 0.9-0.06 1.77 0.34l0.31-1.48c-0.47-0.17-1.24-0.34-2.16-0.34-3.32 0-5.67 1.75-5.69 4.25-0.02 1.86 1.68 2.88 2.95 3.5 1.3.61 1.74 1.01 1.74 1.55 0 0.83-1 1.21-1.94 1.21-1.09 0-1.72-0.17-2.65-0.56l-0.36 1.73c0.48 0.22 1.37 0.42 2.31 0.43 3.53 0 5.84-1.73 5.87-4.4 0.02-1.18-0.69-2.17-2.79-3.16-1.21-0.58-1.91-0.97-1.91-1.58 0-0.56 0.63-1.14 1.83-1.14 0.92 0 1.6 0.19 1.89 0.34l0.31-1.46v0.04zm-17.43-10.58l-3.32 7.38-0.36-1.84c-0.63-2.09-2.6-4.35-4.81-5.53l3.09 10.84h3.58l5.33-10.85h-3.53v-0.01zm-10.02 0l-3.53 10.85h3.58l0.72-2.12h4.37l0.41 2.12h3.6l-5.4-10.85H2.6z"/>
+              </svg>
+            </div>
+            {/* MASTERCARD */}
+            <div className="w-10 h-6 rounded bg-white flex items-center justify-center shadow-sm">
+              <svg viewBox="0 0 36 24" className="h-[14px] w-auto" fill="none">
+                <circle cx="12" cy="12" r="10" fill="#EB001B"/>
+                <circle cx="24" cy="12" r="10" fill="#F79E1B" fillOpacity="0.9"/>
+              </svg>
+            </div>
+            {/* AMEX */}
+            <div className="w-10 h-6 rounded bg-[#2E77BC] flex items-center justify-center text-white shadow-sm">
+              <span className="text-[8px] font-black tracking-widest pt-[1px] block">AMEX</span>
+            </div>
+            {/* UPI */}
+            <div className="w-10 h-6 rounded bg-white flex items-center justify-center text-[#282C3F] shadow-sm">
+              <div className="flex items-center gap-[2px] font-extrabold text-[8px] tracking-wider pt-[1px] italic">
+                <svg viewBox="0 0 24 24" className="h-[9px] w-[9px] stroke-[3.5]" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 19V5M5 12l7-7 7 7"/>
+                </svg>
+                UPI
+              </div>
+            </div>
           </div>
         </div>
 

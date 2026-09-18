@@ -32,6 +32,22 @@ export default function Navbar({
   const [isShopHovered, setIsShopHovered] = useState(false);
   const hoverTimerRef = useRef(null);
 
+  // Profile Hover State
+  const [isProfileHovered, setIsProfileHovered] = useState(false);
+  const profileTimerRef = useRef(null);
+
+  const handleMouseEnterProfile = () => {
+    if (profileTimerRef.current) clearTimeout(profileTimerRef.current);
+    setIsProfileHovered(true);
+  };
+
+  const handleMouseLeaveProfile = () => {
+    if (profileTimerRef.current) clearTimeout(profileTimerRef.current);
+    profileTimerRef.current = setTimeout(() => {
+      setIsProfileHovered(false);
+    }, 500);
+  };
+
   // Touch Swipe Gesture to Close Mobile Drawer
   const touchStartY = useRef(null);
   const touchMoveY = useRef(null);
@@ -84,7 +100,7 @@ export default function Navbar({
   ];
 
   const rightNavItems = [
-    { id: 'WHY DIAMORA', label: 'WHY DIAMORA', href: '#whydiamora', isRoute: false },
+    { id: 'WHY DIAMORA', label: 'WHY DIAMORA', href: '/why-diamora', isRoute: true },
     { id: 'CONTACT', label: 'CONTACT', href: '/contact', isRoute: true },
   ];
 
@@ -319,9 +335,13 @@ export default function Navbar({
             </button>
 
             {user ? (
-              <div className="relative group">
+              <div 
+                className="relative"
+                onMouseEnter={handleMouseEnterProfile}
+                onMouseLeave={handleMouseLeaveProfile}
+              >
                 <button
-                  onClick={() => navigate('/profile')}
+                  onClick={() => { setIsProfileHovered(false); navigate('/profile'); }}
                   className="p-1.5 text-[#E0B094] hover:text-white transition-colors focus:outline-none flex items-center gap-1.5 text-xs cursor-pointer"
                   title={`Logged in as ${getUserDisplayName(user)}`}
                 >
@@ -331,7 +351,11 @@ export default function Navbar({
                   </span>
                 </button>
 
-                <div className="absolute right-0 top-full mt-2 w-52 bg-[#0C0D10]/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl p-3 hidden group-hover:block transition-all z-50">
+                <div 
+                  className={`absolute right-0 top-full mt-2 w-52 bg-[#0C0D10]/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl p-3 transition-all duration-300 z-50 ${
+                    isProfileHovered ? 'opacity-100 visible translate-y-0' : 'opacity-0 invisible -translate-y-2 pointer-events-none'
+                  }`}
+                >
                   <div className="px-2 py-1.5 border-b border-white/10 mb-2">
                     <p className="text-xs font-semibold text-[#F5F5F0] truncate">{getUserDisplayName(user)}</p>
                     <p className="text-[10px] text-[#C5C8D0] truncate">{user.email}</p>
@@ -343,7 +367,7 @@ export default function Navbar({
                   </div>
 
                   <button
-                    onClick={() => navigate('/profile')}
+                    onClick={() => { setIsProfileHovered(false); navigate('/profile'); }}
                     className="w-full text-left px-2 py-1.5 text-xs text-[#F5F5F0] hover:bg-white/5 rounded-md transition-colors font-medium mb-1 flex items-center justify-between"
                   >
                     <span>My Profile</span>
@@ -351,7 +375,7 @@ export default function Navbar({
                   </button>
 
                   <button
-                    onClick={() => navigate('/my-order')}
+                    onClick={() => { setIsProfileHovered(false); navigate('/my-order'); }}
                     className="w-full text-left px-2 py-1.5 text-xs text-[#E0B094] hover:bg-white/5 rounded-md transition-colors font-medium mb-1 flex items-center justify-between"
                   >
                     <span>My Orders & Purchases</span>
@@ -360,7 +384,7 @@ export default function Navbar({
 
                   {user.role === 'admin' && onNavigateToAdmin && (
                     <button
-                      onClick={onNavigateToAdmin}
+                      onClick={() => { setIsProfileHovered(false); onNavigateToAdmin(); }}
                       className="w-full text-left px-2 py-1.5 text-xs text-[#E0B094] hover:bg-white/5 rounded-md transition-colors font-medium mb-1 flex items-center justify-between"
                     >
                       <span>Admin Dashboard</span>
@@ -369,8 +393,8 @@ export default function Navbar({
                   )}
 
                   <button
-                    onClick={onLogout}
-                    className="w-full text-left px-2 py-1.5 text-xs text-red-400 hover:text-red-300 hover:bg-white/5 rounded-md transition-colors"
+                    onClick={() => { setIsProfileHovered(false); onLogout(); }}
+                    className="w-full text-left px-2 py-1.5 text-xs text-red-400 hover:bg-red-500/10 hover:text-red-300 rounded-md transition-colors font-medium mt-1 pt-2 border-t border-white/5"
                   >
                     Log Out
                   </button>
@@ -548,7 +572,9 @@ export default function Navbar({
       {/* BACKDROP OVERLAY FOR MOBILE MENU */}
       <div 
         onClick={() => setMobileMenuOpen(false)}
-        className={`fixed top-0 left-0 w-screen h-[100dvh] bg-black/50 backdrop-blur-md z-40 md:hidden transition-all duration-300 ease-in-out ${
+        className={`fixed left-0 w-screen h-[100dvh] bg-black/50 backdrop-blur-md z-40 md:hidden transition-all duration-300 ease-in-out ${
+          isCompact ? 'top-[64px]' : 'top-[72px]'
+        } ${
           mobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
         }`}
       />
