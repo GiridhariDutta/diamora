@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Outlet, useNavigate } from 'react-router-dom';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import AmbientAudioPlayer from '../components/AmbientAudioPlayer';
@@ -16,6 +16,12 @@ export default function UserLayout() {
   const [user, setUser] = useState(null);
   const [audioPlaying, setAudioPlaying] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Scroll to top on route navigation
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
 
   useEffect(() => {
     // Load stored user session if available
@@ -73,7 +79,8 @@ export default function UserLayout() {
           onOpenInquiry: (prod) => handleOpenInquiry(prod),
           onOpenSignup: () => setIsAuthModalOpen(true),
           onOpenAuthModal: () => setIsAuthModalOpen(true),
-          user
+          user,
+          setUser
         }} />
       </main>
 

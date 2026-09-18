@@ -178,12 +178,14 @@ export default function OrderPage() {
     const email = (user?.email || shippingDetails.customerEmail || '').trim();
     const phone = (user?.phone || shippingDetails.customerPhone || '').replace(/\D/g, '');
     const aadhaar = (user?.aadhaar || '').replace(/\D/g, '');
+    const panCard = (user?.panCard || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
 
     const missing = [];
     if (!name || name.length < 2) missing.push('Full Legal Name');
     if (!email || !email.includes('@')) missing.push('Email Address');
     if (phone.length !== 10) missing.push('10-digit Phone Number');
     if (aadhaar.length !== 12) missing.push('12-digit Aadhaar Card Number');
+    if (!/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(panCard)) missing.push('Valid PAN Card Number');
 
     return {
       isComplete: missing.length === 0,
@@ -483,12 +485,12 @@ export default function OrderPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0C0D10] text-[#F5F5F0] pt-24 sm:pt-28 pb-16 px-4 sm:px-8 lg:px-12 font-open-sans select-none">
+    <div className="min-h-screen bg-[#0C0D10] text-[#F5F5F0] pt-24 sm:pt-28 pb-24 sm:pb-16 px-3 sm:px-8 lg:px-12 font-open-sans select-none">
       <div className="max-w-6xl mx-auto space-y-8">
         
         {/* BREADCRUMB */}
-        <div className="flex items-center justify-between pb-3 border-b border-white/10">
-          <div className="flex items-center gap-2 text-xs text-[#C5C8D0] uppercase tracking-wider font-light">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-2 pb-3 border-b border-white/10">
+          <div className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs text-[#C5C8D0] uppercase tracking-wider font-light shrink-0">
             <Link to="/" className="hover:text-[#E0B094]">HOME</Link>
             <span>/</span>
             <Link to="/cart" className="hover:text-[#E0B094]">CART</Link>
@@ -498,9 +500,9 @@ export default function OrderPage() {
 
           <Link
             to="/cart"
-            className="flex items-center gap-2 text-xs text-[#E0B094] hover:text-white uppercase tracking-wider transition-colors"
+            className="flex items-center justify-end gap-1.5 text-[11px] sm:text-xs text-[#E0B094] hover:text-white uppercase tracking-wider transition-colors w-full sm:w-auto text-right shrink-0"
           >
-            <ArrowLeft className="w-3.5 h-3.5" />
+            <ArrowLeft className="w-3.5 h-3.5 shrink-0" />
             <span>Return to Shopping Cart</span>
           </Link>
         </div>
@@ -597,45 +599,45 @@ export default function OrderPage() {
             {/* STEP 1: PRODUCT & PRICE BREAKDOWN CONFIRMATION */}
             {currentStep === 1 && (
               <div className="lg:col-span-8 space-y-5">
-                <div className="bg-[#12131A] border border-white/10 rounded-xl p-6 sm:p-7 space-y-5 shadow-xl">
+                <div className="bg-[#12131A] border border-white/10 rounded-xl p-3.5 sm:p-7 space-y-5 shadow-xl">
                   
                   <div className="border-b border-white/10 pb-4">
                     <span className="text-xs font-mono text-[#E0B094] uppercase tracking-widest block">
                       STEP 1 OF 3
                     </span>
-                    <h2 className="font-cinzel text-xl font-bold text-white mt-1">
+                    <h2 className="font-cinzel text-lg sm:text-xl font-bold text-white mt-1">
                       Confirm Product & Price Breakdown
                     </h2>
                   </div>
 
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     {cartItems.map((item) => (
                       <div 
                         key={item.cartItemId || item.productId}
-                        className="bg-[#0C0D10] border border-white/10 rounded-xl p-4 flex items-center gap-4"
+                        className="bg-[#0C0D10] border border-white/10 rounded-xl py-3 px-2 sm:p-4 flex items-center gap-2 sm:gap-4"
                       >
-                        <div className="w-20 h-20 rounded-xl bg-[#161822] border border-white/10 overflow-hidden shrink-0 flex items-center justify-center p-1">
+                        <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg sm:rounded-xl bg-[#161822] border border-white/10 overflow-hidden shrink-0 flex items-center justify-center p-1">
                           <img src={item.image} alt={item.title} className="w-full h-full object-contain" />
                         </div>
 
-                        <div className="flex-1 min-w-0 space-y-1 text-left">
+                        <div className="flex-1 min-w-0 space-y-0.5 text-left">
                           <span className="text-[9px] font-mono text-[#E0B094] uppercase tracking-wider block">
                             {item.categoryTitle}
                           </span>
-                          <h3 className="font-serif text-sm sm:text-base font-medium text-white truncate">
+                          <h3 className="font-serif text-xs sm:text-base font-medium text-white line-clamp-2 leading-tight" title={item.title}>
                             {item.title}
                           </h3>
                           {(item.options?.purityTitle || item.options?.colorTitle) && (
-                            <div className="flex items-center gap-2 text-[10px] text-[#C5C8D0]">
-                              {item.options.purityTitle && <span>Purity: {item.options.purityTitle}</span>}
-                              {item.options.colorTitle && <span>Color: {item.options.colorTitle}</span>}
+                            <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] text-[#C5C8D0] pt-0.5">
+                              {item.options.purityTitle && <span>Purity: <strong className="text-white font-normal">{item.options.purityTitle}</strong></span>}
+                              {item.options.colorTitle && <span>Color: <strong className="text-white font-normal">{item.options.colorTitle}</strong></span>}
                             </div>
                           )}
                         </div>
 
-                        <div className="text-right">
-                          <span className="text-[10px] text-[#C5C8D0] block">Qty: {item.quantity}</span>
-                          <span className="font-mono text-sm font-semibold text-[#E0B094]">
+                        <div className="text-right shrink-0 pl-1">
+                          <span className="text-[10px] text-[#C5C8D0] block font-mono">Qty: {item.quantity}</span>
+                          <span className="font-mono text-xs sm:text-sm font-semibold text-[#E0B094]">
                             ₹{item.subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </span>
                         </div>
@@ -643,7 +645,7 @@ export default function OrderPage() {
                     ))}
                   </div>
 
-                  <div className="pt-4 border-t border-white/10 flex justify-end">
+                  <div className="pt-4 border-t border-white/10 hidden sm:flex justify-end">
                     <button
                       onClick={handleStep1Submit}
                       className="px-8 py-3.5 bg-gradient-to-r from-[#F7E09A] via-[#D4AF37] to-[#C59B27] text-[#0C0D10] font-bold text-xs tracking-[0.2em] uppercase rounded-xl hover:brightness-110 transition-all shadow-[0_4px_20px_rgba(212,175,55,0.3)] flex items-center gap-2.5 cursor-pointer"
@@ -660,13 +662,13 @@ export default function OrderPage() {
             {/* STEP 2: USER DATA & DETAILS CONFIRMATION */}
             {currentStep === 2 && (
               <div className="lg:col-span-8 space-y-5">
-                <form onSubmit={handleStep2Submit} className="bg-[#12131A] border border-white/10 rounded-xl p-6 sm:p-7 space-y-6 shadow-xl">
+                <form onSubmit={handleStep2Submit} className="bg-[#12131A] border border-white/10 rounded-xl p-3.5 sm:p-7 space-y-6 shadow-xl">
                   
                   <div className="border-b border-white/10 pb-4">
                     <span className="text-xs font-mono text-[#E0B094] uppercase tracking-widest block">
                       STEP 2 OF 3
                     </span>
-                    <h2 className="font-cinzel text-xl font-bold text-white mt-1">
+                    <h2 className="font-cinzel text-lg sm:text-xl font-bold text-white mt-1">
                       Shipping Address & Contact Details
                     </h2>
                   </div>
@@ -861,11 +863,11 @@ export default function OrderPage() {
 
                   </div>
 
-                  <div className="pt-4 border-t border-white/10 flex items-center justify-between">
+                  <div className="pt-4 border-t border-white/10 hidden sm:flex items-center justify-between">
                     <button
                       type="button"
                       onClick={() => setCurrentStep(1)}
-                      className="px-5 py-3 text-xs font-semibold text-[#C5C8D0] hover:text-white uppercase tracking-wider"
+                      className="px-5 py-3 text-xs font-semibold text-[#C5C8D0] hover:text-white uppercase tracking-wider cursor-pointer"
                     >
                       ← Back to Items
                     </button>
@@ -886,13 +888,13 @@ export default function OrderPage() {
             {/* STEP 3: PAYMENT METHOD & FINAL CONFIRMATION */}
             {currentStep === 3 && (
               <div className="lg:col-span-8 space-y-5">
-                <div className="bg-[#12131A] border border-white/10 rounded-xl p-6 sm:p-7 space-y-6 shadow-xl">
+                <div className="bg-[#12131A] border border-white/10 rounded-xl p-3.5 sm:p-7 space-y-6 shadow-xl">
                   
                   <div className="border-b border-white/10 pb-4">
                     <span className="text-xs font-mono text-[#E0B094] uppercase tracking-widest block">
                       STEP 3 OF 3
                     </span>
-                    <h2 className="font-cinzel text-xl font-bold text-white mt-1">
+                    <h2 className="font-cinzel text-lg sm:text-xl font-bold text-white mt-1">
                       Select Payment Method
                     </h2>
                   </div>
@@ -901,12 +903,12 @@ export default function OrderPage() {
                   <div className="space-y-4">
                     
                     {/* Razorpay Online Payment Option */}
-                    <div className="p-5 rounded-xl border border-[#E0B094] bg-[#E0B094]/10 shadow-[0_0_25px_rgba(224,176,148,0.2)] flex items-start gap-4">
-                      <div className="p-3 rounded-lg bg-black border border-[#E0B094]/50 text-[#E0B094] shrink-0">
-                        <CreditCard className="w-6 h-6" />
+                    <div className="p-4 sm:p-5 rounded-xl border border-[#E0B094] bg-[#E0B094]/10 shadow-[0_0_25px_rgba(224,176,148,0.2)] flex items-start gap-3 sm:gap-4">
+                      <div className="p-2.5 sm:p-3 rounded-lg bg-black border border-[#E0B094]/50 text-[#E0B094] shrink-0">
+                        <CreditCard className="w-5 h-5 sm:w-6 sm:h-6" />
                       </div>
-                      <div className="space-y-1.5 text-left">
-                        <div className="flex items-center gap-2">
+                      <div className="space-y-1 text-left min-w-0">
+                        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                           <h4 className="font-semibold text-xs text-white uppercase tracking-wider">
                             Razorpay Secure Online Gateway
                           </h4>
@@ -914,7 +916,7 @@ export default function OrderPage() {
                             RECOMMENDED
                           </span>
                         </div>
-                        <p className="text-[11px] text-[#C5C8D0] leading-relaxed font-light">
+                        <p className="text-[10px] sm:text-[11px] text-[#C5C8D0] leading-relaxed font-light">
                           Supports all Credit Cards, Debit Cards, UPI (GPay, PhonePe, Paytm), NetBanking, and Wallets with 256-Bit SSL encryption.
                         </p>
                       </div>
@@ -923,22 +925,22 @@ export default function OrderPage() {
                   </div>
 
                   {/* Summary Snippet */}
-                  <div className="bg-[#0C0D10] border border-white/10 rounded-xl p-4 text-xs space-y-2 font-light">
+                  <div className="bg-[#0C0D10] border border-white/10 rounded-xl p-3.5 sm:p-4 text-xs space-y-2 font-light">
                     <div className="flex justify-between items-center text-[#C5C8D0]">
                       <span>Delivering to:</span>
-                      <strong className="text-white">{shippingDetails.customerName} ({shippingDetails.customerPhone})</strong>
+                      <strong className="text-white truncate max-w-[180px] sm:max-w-xs">{shippingDetails.customerName} ({shippingDetails.customerPhone})</strong>
                     </div>
                     <div className="flex justify-between items-center text-[#C5C8D0]">
                       <span>Shipping Address:</span>
-                      <span className="text-white truncate max-w-xs">{shippingDetails.shippingAddress}, {shippingDetails.city}</span>
+                      <span className="text-white truncate max-w-[180px] sm:max-w-xs">{shippingDetails.shippingAddress}, {shippingDetails.city}</span>
                     </div>
                   </div>
 
-                  <div className="pt-4 border-t border-white/10 flex items-center justify-between">
+                  <div className="pt-4 border-t border-white/10 hidden sm:flex items-center justify-between">
                     <button
                       type="button"
                       onClick={() => setCurrentStep(2)}
-                      className="px-5 py-3 text-xs font-semibold text-[#C5C8D0] hover:text-white uppercase tracking-wider"
+                      className="px-5 py-3 text-xs font-semibold text-[#C5C8D0] hover:text-white uppercase tracking-wider cursor-pointer"
                     >
                       ← Back to Address
                     </button>
@@ -1040,6 +1042,74 @@ export default function OrderPage() {
         )}
 
       </div>
+
+      {/* MOBILE STICKY BOTTOM ACTION BAR */}
+      {cartItems.length > 0 && !orderSuccess && (
+        <div className="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#12131A]/95 backdrop-blur-xl border-t border-white/20 p-3 pb-6 shadow-[0_-10px_30px_rgba(0,0,0,0.95)]">
+          {currentStep === 1 && (
+            <button
+              type="button"
+              onClick={handleStep1Submit}
+              className="w-full py-3.5 bg-gradient-to-r from-[#F7E09A] via-[#D4AF37] to-[#C59B27] text-[#0C0D10] font-bold text-xs tracking-[0.1em] uppercase rounded-xl hover:brightness-110 transition-all shadow-[0_4px_20px_rgba(212,175,55,0.35)] flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <span>PROCEED TO ADDRESS</span>
+              <ArrowRight className="w-4 h-4 shrink-0" />
+            </button>
+          )}
+
+          {currentStep === 2 && (
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setCurrentStep(1)}
+                className="px-3.5 py-3 rounded-xl bg-white/5 border border-white/15 text-xs font-semibold text-[#C5C8D0] uppercase tracking-wider shrink-0 cursor-pointer"
+              >
+                ← Back
+              </button>
+              <button
+                type="button"
+                onClick={handleStep2Submit}
+                className="flex-1 py-3.5 bg-gradient-to-r from-[#F7E09A] via-[#D4AF37] to-[#C59B27] text-[#0C0D10] font-bold text-[11px] tracking-[0.1em] uppercase rounded-xl hover:brightness-110 transition-all shadow-[0_4px_20px_rgba(212,175,55,0.35)] flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <span className="whitespace-nowrap">CONTINUE TO PAYMENT</span>
+                <ArrowRight className="w-4 h-4 shrink-0" />
+              </button>
+            </div>
+          )}
+
+          {currentStep === 3 && (
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setCurrentStep(2)}
+                className="px-3.5 py-3 rounded-xl bg-white/5 border border-white/15 text-xs font-semibold text-[#C5C8D0] uppercase tracking-wider shrink-0 cursor-pointer"
+              >
+                ← Back
+              </button>
+              <button
+                type="button"
+                onClick={handleRazorpayPayment}
+                disabled={submitting}
+                className="flex-1 py-3.5 bg-gradient-to-r from-[#F7E09A] via-[#D4AF37] to-[#C59B27] text-[#0C0D10] font-bold text-[11px] tracking-[0.08em] uppercase rounded-xl hover:brightness-110 transition-all shadow-[0_4px_20px_rgba(212,175,55,0.35)] flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+              >
+                {submitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin shrink-0" />
+                    <span>VERIFYING...</span>
+                  </>
+                ) : (
+                  <>
+                    <CreditCard className="w-3.5 h-3.5 shrink-0" />
+                    <span className="whitespace-nowrap">PAY NOW</span>
+                    <span className="opacity-40 shrink-0">|</span>
+                    <span className="font-mono font-bold text-xs truncate">₹{formattedTotal}</span>
+                  </>
+                )}
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* MANDATORY PROFILE COMPLETENESS MODAL */}
       {showProfileModal && (

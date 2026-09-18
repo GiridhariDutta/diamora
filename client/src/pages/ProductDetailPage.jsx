@@ -270,8 +270,8 @@ export default function ProductDetailPage() {
         {/* MAIN PRODUCT GRID */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           
-          {/* LEFT COLUMN: STICKY MEDIA GALLERY WITH THUMBNAILS ON LEFT SIDE */}
-          <div className="lg:col-span-6 sticky top-28 self-start flex flex-col-reverse sm:flex-row gap-3 items-start z-20">
+          {/* LEFT COLUMN: MEDIA GALLERY (STICKY ON DESKTOP ONLY, SCROLLS ON MOBILE) */}
+          <div className="lg:col-span-6 lg:sticky lg:top-28 lg:self-start flex flex-col-reverse sm:flex-row gap-3 items-start z-20">
             
             {/* Vertical Thumbnail Navigation Column (Left Side) */}
             {mediaList.length > 1 && (
@@ -441,33 +441,34 @@ export default function ProductDetailPage() {
                 </div>
               )}
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-                {/* 1. INQUIRE BUTTON */}
+              <div className="space-y-2 sm:space-y-0 sm:grid sm:grid-cols-3 gap-2.5">
+                {/* 1. INQUIRE BUTTON (Full Width on Mobile) */}
                 <button
                   onClick={() => handleInquireClick()}
-                  className="py-3 px-3 bg-white/5 hover:bg-white/10 border border-[#E0B094]/40 hover:border-[#E0B094] text-[#E0B094] font-medium text-[11px] sm:text-xs tracking-[0.1em] uppercase rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-md"
+                  className="w-full py-3 px-3 bg-white/5 hover:bg-white/10 border border-[#E0B094]/40 hover:border-[#E0B094] text-[#E0B094] font-medium text-[11px] sm:text-xs tracking-[0.1em] uppercase rounded-lg transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-md"
                 >
                   <ShoppingBag className="w-3.5 h-3.5 shrink-0 text-[#E0B094]" />
                   <span className="truncate">Inquire</span>
                 </button>
 
-                {/* 2. ADD TO CART BUTTON */}
-                <button
-                  onClick={handleAddToCart}
-                  className="py-3 px-3 bg-[#E0B094] hover:bg-[#d5a082] text-[#0C0D10] font-bold text-[11px] sm:text-xs tracking-[0.12em] uppercase rounded-lg shadow-lg transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
-                >
-                  <ShoppingBag className="w-3.5 h-3.5 shrink-0" />
-                  <span className="truncate">Add to Cart</span>
-                </button>
+                {/* 2 & 3. ADD TO CART and BUY NOW BUTTONS (Side-by-Side in 1 Row on Mobile) */}
+                <div className="grid grid-cols-2 gap-2.5 sm:contents">
+                  <button
+                    onClick={handleAddToCart}
+                    className="w-full py-3 px-2 sm:px-3 bg-[#E0B094] hover:bg-[#d5a082] text-[#0C0D10] font-bold text-[10px] sm:text-xs tracking-[0.08em] sm:tracking-[0.12em] uppercase rounded-lg shadow-lg transition-colors flex items-center justify-center gap-1 sm:gap-1.5 cursor-pointer"
+                  >
+                    <ShoppingBag className="w-3.5 h-3.5 shrink-0" />
+                    <span className="truncate">Add to Cart</span>
+                  </button>
 
-                {/* 3. BUY NOW BUTTON */}
-                <button
-                  onClick={handleBuyNow}
-                  className="py-3 px-3 bg-gradient-to-r from-[#F7E09A] via-[#D4AF37] to-[#C59B27] hover:brightness-110 text-[#0C0D10] font-extrabold text-[11px] sm:text-xs tracking-[0.14em] uppercase rounded-lg shadow-[0_4px_20px_rgba(212,175,55,0.35)] transition-all flex items-center justify-center gap-1.5 cursor-pointer"
-                >
-                  <Zap className="w-3.5 h-3.5 fill-current shrink-0" />
-                  <span className="truncate">Buy Now</span>
-                </button>
+                  <button
+                    onClick={handleBuyNow}
+                    className="w-full py-3 px-2 sm:px-3 bg-gradient-to-r from-[#F7E09A] via-[#D4AF37] to-[#C59B27] hover:brightness-110 text-[#0C0D10] font-extrabold text-[10px] sm:text-xs tracking-[0.1em] sm:tracking-[0.14em] uppercase rounded-lg shadow-[0_4px_20px_rgba(212,175,55,0.35)] transition-all flex items-center justify-center gap-1 sm:gap-1.5 cursor-pointer"
+                  >
+                    <Zap className="w-3.5 h-3.5 fill-current shrink-0" />
+                    <span className="truncate">Buy Now</span>
+                  </button>
+                </div>
               </div>
 
               {/* SECONDARY COLLECTION LINK */}

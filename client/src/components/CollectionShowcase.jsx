@@ -81,25 +81,25 @@ export default function CollectionShowcase({ onOpenShop }) {
           </h2>
         </div>
 
-        {/* FLEXBOX PRODUCT GRID - CENTERED FOR PARTIAL BOTTOM ROWS */}
+        {/* 2-COLUMN GRID ON MOBILE, 4-COLUMN ON DESKTOP */}
         {loading ? (
-          <div className="flex flex-wrap justify-center gap-6 sm:gap-8 mb-16">
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 lg:gap-8 mb-12 sm:mb-16">
             {[...Array(8)].map((_, idx) => (
-              <div key={`skel-${idx}`} className="flex flex-col items-center w-full sm:w-[calc(50%-1.5rem)] lg:w-[calc(25%-1.75rem)] max-w-[280px] shrink-0">
-                <div className="w-full aspect-square rounded-2xl overflow-hidden bg-[#12131A] border border-white/10 p-2.5 shadow-[0_12px_35px_rgba(0,0,0,0.5)]">
-                  <div className="w-full h-full rounded-xl bg-white/5 animate-pulse flex items-center justify-center">
-                    <div className="w-8 h-8 rounded-full bg-white/10 animate-pulse" />
+              <div key={`skel-${idx}`} className="flex flex-col items-center w-full">
+                <div className="w-full aspect-square rounded-xl sm:rounded-2xl overflow-hidden bg-[#12131A] border border-white/10 p-1 sm:p-2 shadow-[0_12px_35px_rgba(0,0,0,0.5)]">
+                  <div className="w-full h-full rounded-lg sm:rounded-xl bg-white/5 animate-pulse flex items-center justify-center">
+                    <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-white/10 animate-pulse" />
                   </div>
                 </div>
-                <div className="mt-3.5 text-center px-2 w-full flex flex-col items-center gap-1.5">
-                  <div className="h-3.5 w-3/4 rounded bg-white/10 animate-pulse" />
-                  <div className="h-3 w-1/2 rounded bg-[#E0B094]/20 animate-pulse" />
+                <div className="mt-2 sm:mt-3.5 text-center px-2 w-full flex flex-col items-center gap-1.5">
+                  <div className="h-3 w-3/4 rounded bg-white/10 animate-pulse" />
+                  <div className="h-2.5 w-1/2 rounded bg-[#E0B094]/20 animate-pulse" />
                 </div>
               </div>
             ))}
           </div>
         ) : (
-          <div className="flex flex-wrap justify-center gap-6 sm:gap-8 mb-16">
+          <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 lg:gap-8 mb-12 sm:mb-16">
             {products.map((item, idx) => (
               <motion.div
                 key={item.id}
@@ -108,11 +108,11 @@ export default function CollectionShowcase({ onOpenShop }) {
                 viewport={{ once: true, margin: '-40px' }}
                 transition={{ duration: 0.4, delay: idx * 0.08 }}
                 onClick={() => navigate(`/product/${item.id}`)}
-                className="group cursor-pointer flex flex-col items-center w-full sm:w-[calc(50%-1.5rem)] lg:w-[calc(25%-1.75rem)] max-w-[280px] shrink-0"
+                className="group cursor-pointer flex flex-col items-center w-full"
               >
-                {/* Square Product Image Frame */}
-                <div className="relative w-full aspect-square rounded-2xl overflow-hidden bg-[#12131A] border border-white/10 p-2.5 transition-all duration-300 group-hover:border-[#E0B094]/70 group-hover:shadow-[0_12px_35px_rgba(0,0,0,0.85)]">
-                  <div className="w-full h-full rounded-xl overflow-hidden bg-black relative">
+                {/* Square Product Image Frame with Sleek Thin Border */}
+                <div className="relative w-full aspect-square rounded-xl sm:rounded-2xl overflow-hidden bg-[#12131A] border border-white/15 p-1 sm:p-2 transition-all duration-300 group-hover:border-[#E0B094]/70 group-hover:shadow-[0_12px_35px_rgba(0,0,0,0.85)]">
+                  <div className="w-full h-full rounded-lg sm:rounded-xl overflow-hidden bg-black relative">
                     
                     {/* Primary Thumbnail Image with Zoom */}
                     <img
@@ -133,18 +133,18 @@ export default function CollectionShowcase({ onOpenShop }) {
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-40 group-hover:opacity-20 transition-opacity z-10" />
                     
                     {/* Quick Preview Badge */}
-                    <div className="absolute bottom-3 right-3 p-2 rounded-full bg-black/75 border border-white/20 text-[#E0B094] opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20">
-                      <Eye className="w-4 h-4" />
+                    <div className="absolute bottom-2 right-2 sm:bottom-3 sm:right-3 p-1.5 sm:p-2 rounded-full bg-black/75 border border-white/20 text-[#E0B094] opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20">
+                      <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     </div>
                   </div>
                 </div>
 
                 {/* Product Title & Price */}
-                <div className="mt-3.5 text-center px-1 w-full">
-                  <h3 className="font-cinzel font-semibold text-xs sm:text-[13px] tracking-[0.1em] text-[#F5F5F0] uppercase truncate group-hover:text-[#E0B094] transition-colors leading-tight mb-1" title={item.title}>
+                <div className="mt-2 sm:mt-3.5 text-center px-1 w-full">
+                  <h3 className="font-cinzel font-semibold text-[11px] sm:text-[13px] tracking-[0.06em] sm:tracking-[0.1em] text-[#F5F5F0] uppercase truncate group-hover:text-[#E0B094] transition-colors leading-tight mb-0.5 sm:mb-1" title={item.title}>
                     {item.title}
                   </h3>
-                  <p className="font-poppins font-medium text-xs sm:text-[13px] text-[#E0B094] tracking-wider">
+                  <p className="font-poppins font-medium text-[10px] sm:text-[13px] text-[#E0B094] tracking-wider">
                     {item.price}
                   </p>
                 </div>
@@ -157,10 +157,9 @@ export default function CollectionShowcase({ onOpenShop }) {
         <div className="flex justify-center items-center">
           <button
             onClick={() => {
-              if (onOpenShop) onOpenShop();
               navigate('/shop');
             }}
-            className="group font-poppins px-9 py-4 rounded-full border border-[#E0B094]/80 hover:border-[#E0B094] bg-black/80 hover:bg-[#E0B094]/15 text-[#E0B094] font-semibold text-xs sm:text-sm tracking-[0.22em] uppercase transition-all duration-300 flex items-center gap-3 shadow-[0_4px_30px_rgba(0,0,0,0.8)]"
+            className="group font-poppins px-9 py-4 rounded-full border border-[#E0B094]/80 hover:border-[#E0B094] bg-black/80 hover:bg-[#E0B094]/15 text-[#E0B094] font-semibold text-xs sm:text-sm tracking-[0.22em] uppercase transition-all duration-300 flex items-center gap-3 shadow-[0_4px_30px_rgba(0,0,0,0.8)] cursor-pointer"
           >
             <span>VIEW ALL PRODUCTS</span>
             <ArrowRight className="w-4 h-4 group-hover:translate-x-1.5 transition-transform" />

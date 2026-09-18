@@ -93,6 +93,7 @@ export default function CartPage() {
   };
 
   useEffect(() => {
+    window.scrollTo(0, 0);
     loadCartData();
 
     const handleCartUpdate = () => {
@@ -153,11 +154,87 @@ export default function CartPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#0C0D10] text-[#F5F5F0] pt-32 pb-16 flex flex-col items-center justify-center space-y-4">
-        <Loader2 className="w-10 h-10 text-[#E0B094] animate-spin" />
-        <p className="text-xs font-mono text-[#C5C8D0] uppercase tracking-widest">
-          Fetching Live Jewelry Pricing & Details...
-        </p>
+      <div className="min-h-screen bg-[#0C0D10] text-[#F5F5F0] pt-24 sm:pt-28 pb-16 px-4 sm:px-8 lg:px-12 font-open-sans select-none">
+        <div className="max-w-7xl mx-auto space-y-8">
+          
+          {/* BREADCRUMB SKELETON */}
+          <div className="flex items-center justify-between pb-3 border-b border-white/10 animate-pulse">
+            <div className="h-3 w-40 bg-white/10 rounded" />
+            <div className="h-3 w-32 bg-white/10 rounded" />
+          </div>
+
+          {/* PAGE TITLE SKELETON */}
+          <div className="flex items-baseline justify-between animate-pulse">
+            <div className="space-y-2">
+              <div className="h-3 w-28 bg-[#E0B094]/30 rounded" />
+              <div className="h-8 w-48 bg-white/10 rounded" />
+            </div>
+            <div className="h-3 w-16 bg-white/10 rounded" />
+          </div>
+
+          {/* CART CONTENT GRID SKELETON */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            
+            {/* LEFT COLUMN: SKELETON CART ITEMS (SPAN 8) */}
+            <div className="lg:col-span-8 space-y-4">
+              {[1, 2].map((i) => (
+                <div 
+                  key={`cart-skel-${i}`}
+                  className="bg-[#12131A] border border-white/10 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-center gap-5 animate-pulse shadow-xl"
+                >
+                  {/* Thumbnail Skeleton */}
+                  <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-xl bg-white/5 border border-white/10 shrink-0" />
+
+                  {/* Product Info Skeleton */}
+                  <div className="flex-1 space-y-3 text-center sm:text-left w-full">
+                    <div className="h-3 w-24 bg-[#E0B094]/30 rounded mx-auto sm:mx-0" />
+                    <div className="h-5 w-3/4 bg-white/10 rounded mx-auto sm:mx-0" />
+                    <div className="h-4 w-32 bg-white/5 rounded mx-auto sm:mx-0" />
+                  </div>
+
+                  {/* Controls Skeleton */}
+                  <div className="flex items-center justify-between sm:justify-end gap-6 w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-t-0 border-white/10">
+                    <div className="h-9 w-24 bg-white/10 rounded-lg" />
+                    <div className="h-5 w-20 bg-white/10 rounded hidden sm:block" />
+                    <div className="h-8 w-8 bg-white/5 rounded-lg" />
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* RIGHT COLUMN: SKELETON ORDER SUMMARY (SPAN 4) */}
+            <div className="lg:col-span-4 bg-[#12131A] border border-[#E0B094]/20 rounded-xl p-6 sm:p-7 space-y-6 shadow-2xl animate-pulse">
+              <div className="border-b border-white/10 pb-4 space-y-2">
+                <div className="h-3 w-20 bg-[#E0B094]/30 rounded" />
+                <div className="h-6 w-36 bg-white/10 rounded" />
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <div className="h-3.5 w-24 bg-white/10 rounded" />
+                  <div className="h-3.5 w-16 bg-white/10 rounded" />
+                </div>
+                <div className="flex justify-between items-center">
+                  <div className="h-3.5 w-36 bg-white/10 rounded" />
+                  <div className="h-3.5 w-24 bg-white/10 rounded" />
+                </div>
+                <div className="flex justify-between items-center">
+                  <div className="h-3.5 w-40 bg-white/10 rounded" />
+                  <div className="h-3.5 w-16 bg-white/10 rounded" />
+                </div>
+              </div>
+
+              <div className="border-t border-white/10 pt-4 flex justify-between items-center">
+                <div className="h-4 w-28 bg-white/10 rounded" />
+                <div className="h-7 w-24 bg-[#E0B094]/30 rounded" />
+              </div>
+
+              <div className="h-12 w-full bg-[#E0B094]/20 rounded-xl" />
+            </div>
+
+          </div>
+
+        </div>
       </div>
     );
   }

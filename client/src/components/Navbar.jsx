@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Search, User, ShoppingBag, Menu, X, Award, ShieldCheck, Sparkles, Gem } from 'lucide-react';
+import { Search, User, ShoppingBag, Menu, X, Award, ShieldCheck, Sparkles, Gem, LogOut } from 'lucide-react';
 import api from '../api/axios';
 import { getCartCount } from '../utils/cartManager';
 
@@ -55,6 +55,18 @@ export default function Navbar({
     touchStartY.current = null;
     touchMoveY.current = null;
   };
+
+  // Prevent background scrolling when mobile menu is open
+  useEffect(() => {
+    if (mobileMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [mobileMenuOpen]);
 
   const isHomePage = location.pathname === '/';
   const isCompact = scrolled || isShopHovered || !isHomePage;
@@ -339,7 +351,7 @@ export default function Navbar({
                   </button>
 
                   <button
-                    onClick={() => navigate('/profile?tab=orders')}
+                    onClick={() => navigate('/my-order')}
                     className="w-full text-left px-2 py-1.5 text-xs text-[#E0B094] hover:bg-white/5 rounded-md transition-colors font-medium mb-1 flex items-center justify-between"
                   >
                     <span>My Orders & Purchases</span>
@@ -536,7 +548,7 @@ export default function Navbar({
       {/* BACKDROP OVERLAY FOR MOBILE MENU */}
       <div 
         onClick={() => setMobileMenuOpen(false)}
-        className={`fixed inset-0 bg-black/60 z-40 md:hidden transition-opacity duration-300 ease-in-out ${
+        className={`fixed top-0 left-0 w-screen h-[100dvh] bg-black/50 backdrop-blur-md z-40 md:hidden transition-all duration-300 ease-in-out ${
           mobileMenuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
         }`}
       />
@@ -599,17 +611,17 @@ export default function Navbar({
         </div>
 
         <div className="flex items-center justify-around pt-3 border-t border-white/10 text-[#F5F5F0]">
-          <button
-            onClick={() => { setMobileMenuOpen(false); navigate('/shop'); }}
-            className="flex items-center gap-2 text-xs text-[#E0B094] hover:text-white font-semibold"
-          >
-            <Search className="w-4 h-4" />
-            <span>ALL JEWELLERY</span>
-          </button>
           {user ? (
             <>
               <button
-                onClick={() => { setMobileMenuOpen(false); navigate('/profile?tab=orders'); }}
+                onClick={() => { setMobileMenuOpen(false); navigate('/profile'); }}
+                className="flex items-center gap-1.5 text-xs text-[#E0B094] hover:text-white font-semibold"
+              >
+                <User className="w-4 h-4" />
+                <span>PROFILE</span>
+              </button>
+              <button
+                onClick={() => { setMobileMenuOpen(false); navigate('/my-order'); }}
                 className="flex items-center gap-1.5 text-xs text-[#E0B094] hover:text-white font-semibold"
               >
                 <ShoppingBag className="w-4 h-4" />
@@ -617,20 +629,29 @@ export default function Navbar({
               </button>
               <button
                 onClick={onLogout}
-                className="flex items-center gap-1.5 text-xs text-red-400 hover:text-red-300"
+                title="Logout"
+                className="flex items-center justify-center p-1.5 rounded-full bg-red-500/10 text-red-400 hover:bg-red-500/20 hover:text-red-300 transition-colors"
               >
-                <User className="w-4 h-4" />
-                <span>LOGOUT</span>
+                <LogOut className="w-4 h-4" />
               </button>
             </>
           ) : (
-            <button
-              onClick={() => { setMobileMenuOpen(false); if (onOpenAuthModal) onOpenAuthModal(); }}
-              className="flex items-center gap-2 text-xs text-[#C5C8D0] hover:text-[#E0B094]"
-            >
-              <User className="w-4 h-4" />
-              <span>ACCOUNT</span>
-            </button>
+            <>
+              <button
+                onClick={() => { setMobileMenuOpen(false); navigate('/shop'); }}
+                className="flex items-center gap-2 text-xs text-[#E0B094] hover:text-white font-semibold"
+              >
+                <Search className="w-4 h-4" />
+                <span>ALL JEWELLERY</span>
+              </button>
+              <button
+                onClick={() => { setMobileMenuOpen(false); if (onOpenAuthModal) onOpenAuthModal(); }}
+                className="flex items-center gap-2 text-xs text-[#C5C8D0] hover:text-[#E0B094]"
+              >
+                <User className="w-4 h-4" />
+                <span>ACCOUNT</span>
+              </button>
+            </>
           )}
         </div>
       </div>

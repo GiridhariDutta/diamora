@@ -7,7 +7,7 @@ import {
 import api from '../api/axios';
 
 export default function ProfilePage() {
-  const { user, onOpenAuthModal } = useOutletContext() || {};
+  const { user, onOpenAuthModal, setUser } = useOutletContext() || {};
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -15,7 +15,8 @@ export default function ProfilePage() {
   const [profileData, setProfileData] = useState({
     name: '',
     phone: '',
-    aadhaar: ''
+    aadhaar: '',
+    panCard: ''
   });
 
   // Addresses State (Array of up to 10 addresses)
@@ -46,47 +47,20 @@ export default function ProfilePage() {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const tabParam = params.get('tab');
-    if (tabParam && ['profile', 'addresses', 'orders'].includes(tabParam)) {
+    if (tabParam && ['profile', 'addresses'].includes(tabParam)) {
       setActiveTab(tabParam);
     }
   }, [location.search]);
 
-  // Orders State
-  const [orders, setOrders] = useState([]);
-  const [ordersLoading, setOrdersLoading] = useState(false);
 
-  // Fetch User Orders
-  const fetchUserOrders = async () => {
-    if (!user) return;
-    setOrdersLoading(true);
-    try {
-      const uIdentifier = user.uid || user.id || user.email;
-      const res = await api.get(`/api/orders?userId=${uIdentifier}`);
-      if (res.data?.success && Array.isArray(res.data.data)) {
-        setOrders(res.data.data);
-      } else {
-        setOrders([]);
-      }
-    } catch (err) {
-      console.error('Fetch user orders error:', err);
-      setOrders([]);
-    } finally {
-      setOrdersLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (activeTab === 'orders' && user) {
-      fetchUserOrders();
-    }
-  }, [activeTab, user]);
 
   useEffect(() => {
     if (user) {
       setProfileData({
         name: user.name || '',
         phone: user.phone || '',
-        aadhaar: user.aadhaar || ''
+        aadhaar: user.aadhaar || '',
+        panCard: user.panCard || ''
       });
 
       if (Array.isArray(user.addresses) && user.addresses.length > 0) {
@@ -113,11 +87,12 @@ export default function ProfilePage() {
   // Helper to calculate Profile Completion Percentage
   const calculateCompletion = () => {
     let completedCount = 0;
-    const totalFields = 4;
+    const totalFields = 5;
 
     if (profileData.name && profileData.name.trim() !== '') completedCount++;
     if (profileData.phone && profileData.phone.trim() !== '') completedCount++;
     if (profileData.aadhaar && profileData.aadhaar.trim().length >= 12) completedCount++;
+    if (profileData.panCard && /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(profileData.panCard)) completedCount++;
     if (addresses.length > 0) completedCount++;
 
     return Math.round((completedCount / totalFields) * 100);
@@ -156,6 +131,8 @@ export default function ProfilePage() {
       value = value.replace(/\D/g, '').slice(0, 10);
     } else if (name === 'aadhaar') {
       value = value.replace(/\D/g, '').slice(0, 12);
+    } else if (name === 'panCard') {
+      value = value.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 10);
     }
     setProfileData({ ...profileData, [name]: value });
     if (errorMessage) setErrorMessage('');
@@ -169,14 +146,23 @@ export default function ProfilePage() {
 
     const cleanPhone = profileData.phone.trim();
     const cleanAadhaar = profileData.aadhaar.trim();
+    const cleanPanCard = profileData.panCard.trim();
 
     if (cleanPhone && cleanPhone.length !== 10) {
       setErrorMessage('Phone number must be exactly 10 digits.');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
 
     if (cleanAadhaar && cleanAadhaar.length !== 12) {
       setErrorMessage('Aadhaar card number must be exactly 12 digits.');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
+    if (cleanPanCard && !/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(cleanPanCard)) {
+      setErrorMessage('Invalid PAN Card format. (e.g., ABCDE1234F)');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
 
@@ -186,7 +172,8 @@ export default function ProfilePage() {
       const payload = {
         name: profileData.name.trim(),
         phone: cleanPhone,
-        aadhaar: cleanAadhaar
+        aadhaar: cleanAadhaar,
+        panCard: cleanPanCard
       };
 
       const res = await api.put('/api/auth/me', payload);
@@ -194,6 +181,7 @@ export default function ProfilePage() {
         setSuccessMessage('Personal profile updated successfully!');
         const updatedUser = res.data.data;
         localStorage.setItem('user', JSON.stringify(updatedUser));
+        if (setUser) setUser(updatedUser);
         
         setTimeout(() => {
           setSuccessMessage('');
@@ -204,6 +192,7 @@ export default function ProfilePage() {
     } catch (err) {
       console.error('Profile save error:', err);
       setErrorMessage(err.response?.data?.message || err.message || 'Failed to update profile.');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } finally {
       setLoading(false);
     }
@@ -324,7 +313,9 @@ export default function ProfilePage() {
       if (res.data?.success) {
         setAddresses(updatedAddresses);
         setSuccessMessage(editingAddressId ? 'Address updated!' : 'New shipping address added!');
-        localStorage.setItem('user', JSON.stringify(res.data.data));
+        const updatedUser = res.data.data;
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+        if (setUser) setUser(updatedUser);
         setIsAddressModalOpen(false);
         setTimeout(() => setSuccessMessage(''), 3000);
       } else {
@@ -367,7 +358,9 @@ export default function ProfilePage() {
       if (res.data?.success) {
         setAddresses(updatedAddresses);
         setSuccessMessage('Address removed.');
-        localStorage.setItem('user', JSON.stringify(res.data.data));
+        const updatedUser = res.data.data;
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+        if (setUser) setUser(updatedUser);
         setTimeout(() => setSuccessMessage(''), 3000);
       }
     } catch (err) {
@@ -400,7 +393,9 @@ export default function ProfilePage() {
       if (res.data?.success) {
         setAddresses(updatedAddresses);
         setSuccessMessage('Default delivery address updated!');
-        localStorage.setItem('user', JSON.stringify(res.data.data));
+        const updatedUser = res.data.data;
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+        if (setUser) setUser(updatedUser);
         setTimeout(() => setSuccessMessage(''), 3000);
       }
     } catch (err) {
@@ -545,14 +540,7 @@ export default function ProfilePage() {
                 {addresses.length}/10
               </span>
             </button>
-            <button
-              onClick={() => setActiveTab('orders')}
-              className={`pb-2 border-b-2 transition-colors cursor-pointer ${
-                activeTab === 'orders' ? 'border-[#E0B094] text-[#E0B094]' : 'border-transparent text-[#C5C8D0] hover:text-[#E0B094]'
-              }`}
-            >
-              My Orders & Inquiries
-            </button>
+
           </div>
 
         </div>
@@ -585,7 +573,7 @@ export default function ProfilePage() {
               </div>
               {completionPercent < 100 && (
                 <span className="text-[11px] text-[#E0B094] italic font-light">
-                  Fill in your phone & 12-digit Aadhaar to complete profile setup.
+                  Fill in your phone, Aadhaar & PAN Card to complete profile setup.
                 </span>
               )}
             </div>
@@ -655,6 +643,23 @@ export default function ProfilePage() {
                   maxLength={12}
                   placeholder="12-digit Aadhaar number"
                   className="w-full bg-[#0C0D10] border border-white/15 focus:border-[#E0B094] rounded-lg px-3.5 py-2.5 text-xs text-white placeholder-white/30 focus:outline-none font-mono transition-colors"
+                />
+              </div>
+
+              {/* PAN Card Number */}
+              <div>
+                <label className="block text-xs font-semibold text-[#E0B094] uppercase tracking-wider mb-1.5 flex items-center justify-between">
+                  <span>PAN Card Number</span>
+                  <span className="text-[10px] text-[#C5C8D0]/50 normal-case">Encrypted for tax</span>
+                </label>
+                <input
+                  type="text"
+                  name="panCard"
+                  value={profileData.panCard}
+                  onChange={handleProfileChange}
+                  maxLength={10}
+                  placeholder="e.g. ABCDE1234F"
+                  className="w-full bg-[#0C0D10] border border-white/15 focus:border-[#E0B094] rounded-lg px-3.5 py-2.5 text-xs text-white placeholder-white/30 focus:outline-none font-mono transition-colors uppercase"
                 />
               </div>
 
@@ -787,151 +792,7 @@ export default function ProfilePage() {
           </div>
         )}
 
-        {/* TAB 3: MY ORDERS & INQUIRIES */}
-        {activeTab === 'orders' && (
-          <div className="bg-[#12131A] border border-white/10 rounded-xl p-5 sm:p-6 space-y-4 shadow-xl">
-            
-            <div className="flex items-center justify-between border-b border-white/10 pb-3">
-              <div className="flex items-center gap-2.5">
-                <ShoppingBag className="w-4 h-4 text-[#E0B094]" />
-                <h2 className="font-cinzel text-base font-bold text-white tracking-wide">
-                  My Orders & Atelier Purchases ({orders.length})
-                </h2>
-              </div>
-              <button
-                onClick={fetchUserOrders}
-                className="text-xs text-[#E0B094] hover:underline flex items-center gap-1 font-semibold uppercase tracking-wider"
-              >
-                Refresh List
-              </button>
-            </div>
 
-            {ordersLoading ? (
-              <div className="p-8 text-center text-xs text-[#C5C8D0]">
-                Loading your order history...
-              </div>
-            ) : orders.length === 0 ? (
-              <div className="p-8 text-center bg-[#0C0D10] border border-dashed border-white/15 rounded-xl space-y-3">
-                <ShoppingBag className="w-8 h-8 text-[#E0B094]/60 mx-auto" />
-                <h3 className="font-cinzel text-sm font-semibold text-white">No Orders Found</h3>
-                <p className="text-xs text-[#C5C8D0] max-w-sm mx-auto leading-relaxed">
-                  You haven't placed any diamond orders yet. Browse our atelier collection to discover exquisite creations.
-                </p>
-                <button
-                  onClick={() => navigate('/shop')}
-                  className="px-5 py-2 rounded-lg border border-[#E0B094]/40 hover:border-[#E0B094] bg-white/5 text-[#E0B094] text-xs font-semibold tracking-wider uppercase transition-all"
-                >
-                  Explore Collection
-                </button>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {orders.map((ord) => {
-                  const dateStr = ord.createdAt 
-                    ? new Date(ord.createdAt).toLocaleDateString('en-IN', {
-                        day: '2-digit',
-                        month: 'short',
-                        year: 'numeric',
-                        hour: '2-digit',
-                        minute: '2-digit'
-                      })
-                    : 'Recent Order';
-
-                  const orderItems = Array.isArray(ord.items) && ord.items.length > 0 
-                    ? ord.items 
-                    : [{
-                        title: ord.productTitle || 'Haute Joaillerie Piece',
-                        image: ord.productImage || '',
-                        price: ord.productPrice || ord.totalAmount || 0,
-                        quantity: 1,
-                        metal: ord.selectedMetal,
-                        color: ord.selectedColor
-                      }];
-
-                  return (
-                    <div 
-                      key={ord.id} 
-                      className="bg-[#0C0D10] border border-white/10 hover:border-[#E0B094]/50 rounded-xl p-4 sm:p-5 space-y-4 transition-all"
-                    >
-                      {/* ORDER TOP METADATA */}
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/10 pb-3 text-xs">
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <span className="font-mono text-[#E0B094] font-bold">
-                              Order #{ord.id?.slice(-8)?.toUpperCase() || ord.id}
-                            </span>
-                            <span className="px-2 py-0.5 rounded bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 text-[9.5px] font-bold uppercase tracking-wider">
-                              {ord.paymentStatus || ord.status || 'Paid'}
-                            </span>
-                          </div>
-                          <p className="text-[11px] text-[#C5C8D0]/60 mt-0.5">Placed on {dateStr}</p>
-                        </div>
-
-                        <div className="text-left sm:text-right">
-                          <span className="text-[10px] text-[#C5C8D0]/50 uppercase tracking-wider block">Total Amount</span>
-                          <span className="font-mono text-base font-bold text-emerald-400">
-                            ₹{Number(ord.totalAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* ITEMS LIST */}
-                      <div className="space-y-3">
-                        {orderItems.map((item, idx) => (
-                          <div key={idx} className="flex items-center justify-between gap-3 text-xs">
-                            <div className="flex items-center gap-3">
-                              {item.image ? (
-                                <img 
-                                  src={item.image} 
-                                  alt={item.title} 
-                                  className="w-12 h-12 rounded-lg object-cover border border-white/10 shrink-0" 
-                                />
-                              ) : (
-                                <div className="w-12 h-12 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center shrink-0 text-[#E0B094]">
-                                  <ShoppingBag className="w-5 h-5" />
-                                </div>
-                              )}
-                              <div>
-                                <h4 className="font-semibold text-white text-xs">{item.title}</h4>
-                                <div className="text-[11px] text-[#C5C8D0]/70 flex items-center gap-2">
-                                  <span>Qty: <strong className="text-white">{item.quantity || 1}</strong></span>
-                                  {item.metal && <span>• Metal: {item.metal}</span>}
-                                  {item.color && <span>• Color: {item.color}</span>}
-                                </div>
-                              </div>
-                            </div>
-
-                            <span className="font-mono font-medium text-white text-xs">
-                              ₹{(Number(item.price || 0) * (Number(item.quantity) || 1)).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-
-                      {/* PAYMENT & SHIPPING FOOTER */}
-                      <div className="pt-3 border-t border-white/10 grid grid-cols-1 sm:grid-cols-2 gap-3 text-[11px] text-[#C5C8D0]/80">
-                        <div>
-                          <span className="text-[10px] uppercase font-semibold text-[#E0B094] block mb-0.5">Shipping Address</span>
-                          <p className="text-white">{ord.customerName} ({ord.customerPhone})</p>
-                          <p className="line-clamp-2">{ord.shippingAddress} {ord.landmark ? `(Near ${ord.landmark})` : ''}, {ord.city}, {ord.state} - {ord.pincode}</p>
-                        </div>
-                        <div className="sm:text-right">
-                          <span className="text-[10px] uppercase font-semibold text-[#E0B094] block mb-0.5">Payment Reference</span>
-                          <p>Gateway: <strong className="text-white">{ord.paymentMethod || 'Razorpay Online'}</strong></p>
-                          {ord.razorpayPaymentId && (
-                            <p className="font-mono text-[10px] text-white/70">Payment ID: {ord.razorpayPaymentId}</p>
-                          )}
-                        </div>
-                      </div>
-
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-
-          </div>
-        )}
 
       </div>
 
