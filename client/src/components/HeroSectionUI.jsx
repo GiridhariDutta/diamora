@@ -203,13 +203,13 @@ export default function HeroSectionUI({ onOpenShop, onOpenSignup }) {
         </div>
 
         {/* Right Side Content (Span 6 on desktop, order 1 on mobile) — REAL 3D GOLD RING & JEWELLERY FRAME */}
-        <div className="lg:col-span-6 relative flex items-center justify-center h-[280px] sm:h-[450px] lg:h-[570px] transform-gpu order-1 lg:order-2">
+        <div className="lg:col-span-6 relative flex items-center justify-center h-[280px] sm:h-[450px] lg:h-[480px] transform-gpu order-1 lg:order-2">
           
           {/* Ambient Glow Halo Ring Backdrop behind 3D Model */}
-          <div className="absolute w-[280px] sm:w-[450px] lg:w-[520px] h-[280px] sm:h-[450px] lg:h-[520px] rounded-full bg-gradient-to-tr from-[#D4AF37]/10 via-[#F7E09A]/8 to-transparent blur-[60px] sm:blur-[70px] pointer-events-none z-0 animate-pulse transform-gpu" />
+          <div className="absolute w-[280px] sm:w-[450px] lg:w-[480px] h-[280px] sm:h-[450px] lg:h-[480px] rounded-full bg-gradient-to-tr from-[#D4AF37]/10 via-[#F7E09A]/8 to-transparent blur-[60px] sm:blur-[70px] pointer-events-none z-0 animate-pulse transform-gpu" />
 
           {/* 3D Canvas Frame */}
-          <div className="relative z-10 w-[300px] sm:w-[500px] lg:w-[610px] h-[300px] sm:h-[500px] lg:h-[610px] transform-gpu">
+          <div className="relative z-10 w-[300px] sm:w-[500px] lg:w-[520px] h-[300px] sm:h-[500px] lg:h-[520px] transform-gpu">
             <Ring3DCanvas activeId="public_ring_model" />
 
             {/* Pulsing Hotspot Dots */}
@@ -246,7 +246,7 @@ export default function HeroSectionUI({ onOpenShop, onOpenSignup }) {
       </main>
 
       {/* BOTTOM BAR (WITH CLEAN BOTTOM GAP ABOVE NEXT SECTION) */}
-      <footer className="relative z-30 max-w-7xl w-full mx-auto px-6 sm:px-12 pt-1 pb-6 shrink-0 flex items-center justify-between text-[#808490]">
+      <footer className="relative z-30 max-w-7xl w-full mx-auto px-6 sm:px-12 pt-1 pb-10 sm:pb-6 shrink-0 flex items-center justify-between text-[#808490]">
         <div className="flex items-center space-x-6 text-white/80">
           <a href="#" className="hover:text-[#D4AF37] transition-colors" title="Twitter">
             <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">

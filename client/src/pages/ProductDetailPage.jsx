@@ -366,26 +366,26 @@ export default function ProductDetailPage() {
               <div className="pt-2 border-t border-white/10 grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px]">
                 <div>
                   <span className="text-[9px] text-[#C5C8D0]/80 uppercase block">Gold Weight</span>
-                  <span className="font-mono text-white font-normal">{product.metalWeight || 0}g</span>
+                  <span className="font-mono text-white font-normal">{product.netGoldWeightGrams || 0}g</span>
                 </div>
                 <div>
                   <span className="text-[9px] text-[#C5C8D0]/80 uppercase block">Gold Rate</span>
-                  <span className="font-mono text-white font-normal">₹{product.goldRate || 0}/g</span>
+                  <span className="font-mono text-white font-normal">₹{product.purityRatePerGram || 0}/g</span>
                 </div>
                 <div>
                   <span className="text-[9px] text-[#C5C8D0]/80 uppercase block">Diamond Weight</span>
-                  <span className="font-mono text-white font-normal">{product.diamondWeight || 0} ct</span>
+                  <span className="font-mono text-white font-normal">{product.totalDiamondCarats || 0} ct</span>
                 </div>
                 <div>
-                  <span className="text-[9px] text-[#C5C8D0]/80 uppercase block">GST Tax</span>
-                  <span className="font-mono text-white font-normal">{product.gstPercentage || 3}%</span>
+                  <span className="text-[9px] text-[#C5C8D0]/80 uppercase block">Diamond Rate</span>
+                  <span className="font-mono text-white font-normal">₹{product.diamondRatePerCarat || 0}/ct</span>
                 </div>
               </div>
             </div>
 
             {/* METAL TYPE AND COLOUR OPTIONS (IF PROVIDED) */}
-            {(product.purityTitle || product.colorTitle) && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+            {(product.purityTitle || product.colorTitle || product.diamondQualityTitle || product.hasGemstone) && (
+              <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 pt-1">
                 {product.purityTitle && (
                   <div className="space-y-1.5">
                     <label className="block text-xs text-[#C5C8D0] font-normal tracking-wide">
@@ -404,6 +404,28 @@ export default function ProductDetailPage() {
                     </label>
                     <div className="inline-block px-4 py-2 bg-white/5 border border-white/20 text-[#F5F5F0] text-xs font-normal rounded-md shadow-2xs">
                       {product.colorTitle}
+                    </div>
+                  </div>
+                )}
+
+                {product.diamondQualityTitle && (
+                  <div className="space-y-1.5">
+                    <label className="block text-xs text-[#C5C8D0] font-normal tracking-wide">
+                      Diamond Quality:
+                    </label>
+                    <div className="inline-block px-4 py-2 bg-white/5 border border-white/20 text-[#F5F5F0] text-xs font-normal rounded-md shadow-2xs">
+                      {product.diamondQualityTitle}
+                    </div>
+                  </div>
+                )}
+
+                {(product.hasGemstone && Array.isArray(product.stones) && product.stones.length > 0) && (
+                  <div className="space-y-1.5">
+                    <label className="block text-xs text-[#C5C8D0] font-normal tracking-wide">
+                      Stone Name:
+                    </label>
+                    <div className="inline-block px-4 py-2 bg-white/5 border border-white/20 text-[#F5F5F0] text-xs font-normal rounded-md shadow-2xs">
+                      {product.stones.map(s => s.stoneTitle).filter(Boolean).join(', ') || 'Gemstone'}
                     </div>
                   </div>
                 )}

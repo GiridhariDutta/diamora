@@ -75,7 +75,7 @@ export default function BrandFeaturesBar() {
   ];
 
   return (
-    <section className="relative w-full bg-[#08090C] border-y border-white/10 text-[#F5F5F0] py-5 sm:py-7 px-4 sm:px-8 select-none z-20">
+    <section className="relative w-full bg-[#08090C] border-y border-white/10 text-[#F5F5F0] py-5 sm:py-7 px-0 sm:px-2 select-none z-20">
       
       {/* SVG Gradient Definitions */}
       <svg className="absolute w-0 h-0 pointer-events-none" aria-hidden="true">
@@ -96,7 +96,7 @@ export default function BrandFeaturesBar() {
         {features.map((item, index) => (
           <div 
             key={item.id}
-            className={`flex flex-col items-center text-center px-1 sm:px-4 py-1 transition-transform duration-300 hover:-translate-y-0.5 ${
+            className={`flex flex-col items-center text-center px-1.5 sm:px-4 py-1 transition-transform duration-300 hover:-translate-y-0.5 ${
               index !== features.length - 1 ? 'border-r border-white/10' : ''
             }`}
           >
@@ -108,14 +108,9 @@ export default function BrandFeaturesBar() {
             </div>
 
             {/* Feature Title using Cinzel Font */}
-            <h3 className="font-cinzel font-semibold text-[9px] sm:text-xs lg:text-[13px] tracking-[0.05em] sm:tracking-[0.16em] text-[#E0B094] uppercase mb-0.5 sm:mb-1 leading-tight">
+            <h3 className="font-cinzel font-semibold text-[8px] sm:text-xs lg:text-[13px] tracking-normal sm:tracking-[0.16em] text-[#E0B094] uppercase mb-0.5 sm:mb-1 leading-tight break-words hyphens-auto w-full">
               {item.title}
             </h3>
-
-            {/* Feature Subtitle */}
-            <p className="font-open-sans text-[8px] sm:text-[11px] lg:text-xs text-[#9B9EA7] font-normal leading-tight sm:leading-normal max-w-[210px]">
-              {item.subtitle}
-            </p>
           </div>
         ))}
       </div>

@@ -14,7 +14,6 @@ export default function RotatingArcShowcase({ onOpenShop }) {
   const [loadingMore, setLoadingMore] = useState(false);
 
   const [rotationAngle, setRotationAngle] = useState(0);
-  const [isPaused, setIsPaused] = useState(false);
   const [isSectionInView, setIsSectionInView] = useState(false);
   const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' ? window.innerWidth < 640 : false);
   const [activeItem, setActiveItem] = useState(null);
@@ -22,6 +21,14 @@ export default function RotatingArcShowcase({ onOpenShop }) {
   const animRef = useRef(null);
   const sectionRef = useRef(null);
   const fetchedPages = useRef(new Set());
+  
+  const interactionState = useRef({
+    isDragging: false,
+    startX: 0,
+    lastX: 0,
+    pauseUntil: 0,
+    targetRotation: null
+  });
 
   // Listen to window resize for responsive arch radii without layout thrashing on frame updates
   useEffect(() => {
@@ -142,9 +149,27 @@ export default function RotatingArcShowcase({ onOpenShop }) {
     const updateRotation = (currentTime) => {
       const deltaTime = currentTime - lastTime;
       lastTime = currentTime;
+      
+      const state = interactionState.current;
 
-      // Only auto-scroll if section is visible in viewport AND user is not hovering
-      if (isSectionInView && !isPaused && products.length > 0) {
+      if (state.targetRotation !== null) {
+        setRotationAngle((prev) => {
+          const diff = state.targetRotation - prev;
+          // Snap perfectly when very close to fix 'crooked' issue and speed up the end
+          if (Math.abs(diff) < 0.5) {
+            const finalTarget = state.targetRotation;
+            state.targetRotation = null;
+            return finalTarget;
+          }
+          // Faster lerp (0.15 instead of 0.08) for snappier, less laggy feel
+          return prev + diff * 0.15 * (deltaTime / 16);
+        });
+      } else if (
+        isSectionInView && 
+        !state.isDragging && 
+        currentTime > state.pauseUntil && 
+        products.length > 0
+      ) {
         setRotationAngle((prev) => prev + (deltaTime * 0.012));
       }
 
@@ -153,17 +178,23 @@ export default function RotatingArcShowcase({ onOpenShop }) {
 
     animRef.current = requestAnimationFrame(updateRotation);
     return () => cancelAnimationFrame(animRef.current);
-  }, [isSectionInView, isPaused, products.length]);
+  }, [isSectionInView, products.length]);
 
   // Manual rotation controls
   const handlePrev = () => {
     if (products.length === 0) return;
-    setRotationAngle((prev) => prev - (360 / products.length));
+    const offset = rotationAngle - (arcSpanDeg / 2);
+    const targetOffset = Math.round(offset / angleStep) * angleStep;
+    interactionState.current.targetRotation = targetOffset + (arcSpanDeg / 2) - angleStep;
+    interactionState.current.pauseUntil = performance.now() + 5000;
   };
 
   const handleNext = () => {
     if (products.length === 0) return;
-    setRotationAngle((prev) => prev + (360 / products.length));
+    const offset = rotationAngle - (arcSpanDeg / 2);
+    const targetOffset = Math.round(offset / angleStep) * angleStep;
+    interactionState.current.targetRotation = targetOffset + (arcSpanDeg / 2) + angleStep;
+    interactionState.current.pauseUntil = performance.now() + 5000;
   };
 
   const skeletonAngles = [-60, -30, 0, 30, 60];
@@ -180,7 +211,48 @@ export default function RotatingArcShowcase({ onOpenShop }) {
 
         {/* 1. ROTATING CLOCKWISE TOP ARCH CAROUSEL STAGE */}
         <div 
-          className="relative w-full h-[195px] sm:h-[450px] flex items-center justify-center pt-1 sm:pt-10"
+          className="relative w-full h-[195px] sm:h-[450px] flex items-center justify-center pt-1 sm:pt-10 touch-pan-y"
+          onPointerDown={(e) => {
+            interactionState.current.isDragging = true;
+            interactionState.current.startX = e.clientX;
+            interactionState.current.lastX = e.clientX;
+            interactionState.current.targetRotation = null;
+            interactionState.current.pauseUntil = performance.now() + 5000;
+            e.currentTarget.setPointerCapture(e.pointerId);
+          }}
+          onPointerMove={(e) => {
+            if (!interactionState.current.isDragging) return;
+            const currentX = e.clientX;
+            const diff = currentX - interactionState.current.lastX;
+            interactionState.current.lastX = currentX;
+            setRotationAngle(prev => prev + diff * (isMobile ? 0.3 : 0.15));
+            interactionState.current.pauseUntil = performance.now() + 5000;
+          }}
+          onPointerUp={(e) => {
+            const state = interactionState.current;
+            state.isDragging = false;
+            e.currentTarget.releasePointerCapture(e.pointerId);
+            
+            // Auto-snap to nearest center when finger is released
+            setRotationAngle(prev => {
+              const offset = prev - (arcSpanDeg / 2);
+              const targetOffset = Math.round(offset / angleStep) * angleStep;
+              state.targetRotation = targetOffset + (arcSpanDeg / 2);
+              return prev; // Let the rAF loop handle the smooth snap
+            });
+          }}
+          onPointerCancel={(e) => {
+            const state = interactionState.current;
+            state.isDragging = false;
+            e.currentTarget.releasePointerCapture(e.pointerId);
+            
+            setRotationAngle(prev => {
+              const offset = prev - (arcSpanDeg / 2);
+              const targetOffset = Math.round(offset / angleStep) * angleStep;
+              state.targetRotation = targetOffset + (arcSpanDeg / 2);
+              return prev;
+            });
+          }}
         >
 
           {/* SKELETON LOADING STATE FOR 3D ARC Showcase */}
@@ -275,11 +347,19 @@ export default function RotatingArcShowcase({ onOpenShop }) {
             return (
               <div
                 key={item.id}
-                onClick={() => {
-                  navigate(`/product/${item.id}`);
+                onClick={(e) => {
+                  // If it was a drag, don't trigger click
+                  if (Math.abs(e.clientX - interactionState.current.startX) > 5) {
+                    return;
+                  }
+                  if (isPeakCenter) {
+                    navigate(`/product/${item.id}`);
+                  } else {
+                    interactionState.current.targetRotation = rotationAngle - relAngle;
+                    interactionState.current.pauseUntil = performance.now() + 5000;
+                  }
                 }}
-                onMouseEnter={() => setIsPaused(true)}
-                onMouseLeave={() => setIsPaused(false)}
+                onMouseEnter={() => { interactionState.current.pauseUntil = performance.now() + 5000; }}
                 style={{
                   transform: `translate3d(${x}px, ${y}px, 0px) scale(${scale}) rotate(${cardTilt}deg)`,
                   opacity: opacity,
@@ -342,7 +422,7 @@ export default function RotatingArcShowcase({ onOpenShop }) {
         </div>
 
         {/* 2. CENTER TYPOGRAPHY OVERLAY (SEQUENTIALLY PLACED BELOW CARDS STAGE) */}
-        <div className="relative z-40 text-center max-w-2xl px-4 pointer-events-auto mt-1 sm:mt-6">
+        <div className="relative z-40 text-center max-w-2xl px-4 pointer-events-auto mt-1 sm:-mt-20">
           
           {/* Headline */}
           <h2 className="font-cinzel text-xl sm:text-3xl lg:text-4xl font-bold tracking-[0.14em] text-white leading-tight mb-1.5 sm:mb-2">
@@ -395,9 +475,7 @@ export default function RotatingArcShowcase({ onOpenShop }) {
           <span className="text-[10px] tracking-widest text-[#9B9EA7] uppercase hidden sm:inline">
             {!isSectionInView 
               ? 'PAUSED (OUT OF VIEW)' 
-              : isPaused 
-                ? 'PAUSED (HOVERING CARD)' 
-                : 'AUTOPLAYING CLOCKWISE'}
+              : 'INTERACTIVE 3D CAROUSEL'}
           </span>
         </div>
 
