@@ -185,7 +185,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
         <div className="text-center mb-6">
           <div className="inline-block mb-2">
             <span className="font-cinzel text-xl sm:text-2xl font-bold tracking-[0.25em] text-transparent bg-clip-text bg-gradient-to-r from-[#F5F5F0] via-[#E0B094] to-[#D4AF37] uppercase">
-              DIAMORA
+              DIAMORAS
             </span>
           </div>
           <p className="text-xs text-[#C5C8D0] tracking-wider uppercase">

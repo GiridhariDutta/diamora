@@ -284,7 +284,7 @@ export default function InquiryModal({ isOpen, onClose, product }) {
             {/* Pass details */}
             <div className="p-4 rounded-2xl border border-white/15 bg-white/5 backdrop-blur-md text-left space-y-3 font-mono text-xs">
               <div className="flex justify-between items-center border-b border-white/10 pb-2.5">
-                <span className="text-[#E0B094] font-bold">DIAMORA INQUIRY ORDER</span>
+                <span className="text-[#E0B094] font-bold">DIAMORAS INQUIRY ORDER</span>
                 <span className="text-gray-400">#{submittedOrder?.id?.slice(0, 8).toUpperCase() || 'REF-2026'}</span>
               </div>
 

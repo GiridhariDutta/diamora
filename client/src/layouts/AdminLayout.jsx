@@ -159,7 +159,7 @@ export default function AdminLayout() {
               <Sparkles className="w-3.5 h-3.5 text-amber-700" />
             </div>
           </div>
-          <span className="font-open-sans text-xs font-semibold tracking-widest text-slate-900">DIAMORA ADMIN</span>
+          <span className="font-open-sans text-xs font-semibold tracking-widest text-slate-900">DIAMORAS ADMIN</span>
         </div>
 
         <button
@@ -195,7 +195,7 @@ export default function AdminLayout() {
               </div>
               <div>
                 <h1 className="font-open-sans text-sm font-semibold tracking-[0.14em] text-slate-900 leading-tight uppercase">
-                  DIAMORA
+                  DIAMORAS
                 </h1>
                 <span className="text-[8.5px] tracking-widest text-amber-700 font-semibold uppercase flex items-center gap-1">
                   <ShieldCheck className="w-2.5 h-2.5" /> ADMIN PORTAL

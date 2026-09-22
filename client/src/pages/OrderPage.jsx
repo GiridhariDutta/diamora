@@ -133,7 +133,7 @@ export default function OrderPage() {
         const price = Number(liveProduct?.grandTotal || liveProduct?.computedGoldPrice || liveProduct?.price || 0);
         const img = getProductImage(liveProduct);
         const title = liveProduct?.title || liveProduct?.name || 'Haute Joaillerie Masterpiece';
-        const categoryTitle = liveProduct?.categoryTitle || liveProduct?.category || 'DIAMORA LUXURY';
+        const categoryTitle = liveProduct?.categoryTitle || liveProduct?.category || 'DIAMORAS LUXURY';
 
         return {
           ...item,
@@ -307,7 +307,7 @@ export default function OrderPage() {
         key: keyId,
         amount: amount,
         currency: currency,
-        name: 'DIAMORA Luxury Vault',
+        name: 'DIAMORAS Luxury Vault',
         description: cartItems[0]?.title || 'Certified Diamond Jewelry Purchase',
         image: cartItems[0]?.image || '',
         order_id: razorpayOrderId,
@@ -1023,7 +1023,7 @@ export default function OrderPage() {
               <div className="pt-2 border-t border-white/10 space-y-2.5 text-[11px] text-[#C5C8D0]/70 font-light">
                 <div className="flex items-center gap-2.5">
                   <ShieldCheck className="w-4 h-4 text-[#E0B094] shrink-0" />
-                  <span>100% Certified Natural & Lab-Grown Diamonds</span>
+                  <span>100% Certified Natural Diamonds</span>
                 </div>
 
                 <div className="flex items-center gap-2.5">
@@ -1035,12 +1035,9 @@ export default function OrderPage() {
                   <span>Lifetime Authenticity Guarantee</span>
                 </div>
               </div>
-
             </div>
-
           </div>
         )}
-
       </div>
 
       {/* MOBILE STICKY BOTTOM ACTION BAR */}

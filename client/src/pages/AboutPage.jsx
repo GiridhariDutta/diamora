@@ -38,7 +38,7 @@ export default function AboutPage({ pageKey = 'about_us' }) {
   const getFallbackTitle = () => {
     if (targetKey === 'privacy_policy') return 'PRIVACY POLICY';
     if (targetKey === 'terms_conditions') return 'TERMS & CONDITIONS';
-    return 'ABOUT DIAMORA';
+    return 'ABOUT DIAMORAS';
   };
 
   const cleanHtmlContent = (rawHtml) => {
