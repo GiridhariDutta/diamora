@@ -16,14 +16,14 @@ export default function CustomerReviewsSection() {
       name: 'Ananya S.',
       location: 'Kolkata',
       rating: 5,
-      quote: 'The solitaire ring from Diamora is beyond beautiful. The sparkle, the quality, the packaging - absolutely perfect!'
+      quote: 'The solitaire ring from Diamoras is beyond beautiful. The sparkle, the quality, the packaging - absolutely perfect!'
     },
     {
       id: 'rev-2',
       name: 'Riddhima M.',
       location: 'Mumbai',
       rating: 5,
-      quote: 'Exceptional craftsmanship and such elegant designs. Diamora is now my go-to for every special occasion.'
+      quote: 'Exceptional craftsmanship and such elegant designs. Diamoras is now my go-to for every special occasion.'
     },
     {
       id: 'rev-3',

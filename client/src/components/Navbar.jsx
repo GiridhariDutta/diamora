@@ -100,7 +100,7 @@ export default function Navbar({
   ];
 
   const rightNavItems = [
-    { id: 'WHY DIAMORA', label: 'WHY DIAMORA', href: '/why-diamora', isRoute: true },
+    { id: 'WHY DIAMORAS', label: 'WHY DIAMORAS', href: '/why-diamora', isRoute: true },
     { id: 'CONTACT', label: 'CONTACT', href: '/contact', isRoute: true },
   ];
 
@@ -451,8 +451,8 @@ export default function Navbar({
                 e.target.nextSibling.style.display = 'block';
               }}
             />
-            <span className="font-cinzel text-base font-bold tracking-[0.2em] text-[#D4AF37] hidden uppercase">
-              DIAMORA
+            <span className="font-cinzel text-xl sm:text-2xl tracking-[0.15em] text-[#D4AF37] font-semibold drop-shadow-md hidden">
+              DIAMORAS
             </span>
           </a>
 

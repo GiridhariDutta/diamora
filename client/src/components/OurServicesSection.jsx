@@ -9,7 +9,7 @@ export default function OurServicesSection() {
       id: 'shipping',
       tabLabel: 'Shipping',
       title: 'INSURED GLOBAL DOORSTEP DELIVERY',
-      description: 'Every Diamora piece is shipped in discreet, tamper-evident luxury packaging with full door-to-door transit insurance. Enjoy complementary express delivery with real-time GPS tracking.',
+      description: 'Every Diamoras piece is shipped in discreet, tamper-evident luxury packaging with full door-to-door transit insurance. Enjoy complementary express delivery with real-time GPS tracking.',
       image: '/images/necklace_hero.jpg'
     },
     {
@@ -37,7 +37,7 @@ export default function OurServicesSection() {
       id: 'repairs',
       tabLabel: 'Repairs',
       title: 'REPAIRS, POLISH AND RESIZING',
-      description: "Got a Ring that doesn't fit you?! At Diamora, We are happy to resize Rings purchased from us at no extra cost. We also offer Lifetime Repair and Polish Free of Cost on all our Diamond Jewellery products*.",
+      description: "Got a Ring that doesn't fit you?! At Diamoras, We are happy to resize Rings purchased from us at no extra cost. We also offer Lifetime Repair and Polish Free of Cost on all our Diamond Jewellery products*.",
       image: '/images/craftsmanship_macro.png'
     }
   ];
