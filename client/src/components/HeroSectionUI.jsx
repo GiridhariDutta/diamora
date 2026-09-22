@@ -4,7 +4,7 @@ import { ChevronRight, Sparkles, ShoppingBag, Globe, Share2, MessageCircle, Send
 export default function HeroSectionUI({ onOpenShop, onOpenSignup }) {
   const [promoCode, setPromoCode] = useState('');
   const [promoApplied, setPromoApplied] = useState(false);
-  
+
   // Slider State
   const [mobileSlide, setMobileSlide] = useState(1); // Start at 1 because index 0 is a clone of the last image
   const [isPaused, setIsPaused] = useState(false);
@@ -14,7 +14,7 @@ export default function HeroSectionUI({ onOpenShop, onOpenSignup }) {
 
   const heroImages = [
     '/images/img3.png',
-    '/images/img1.png',
+    '/images/img2.png',
     '/images/img4.png',
   ];
 
@@ -31,6 +31,23 @@ export default function HeroSectionUI({ onOpenShop, onOpenSignup }) {
     }, 4000);
     return () => clearInterval(interval);
   }, [isPaused]);
+
+  // Boundary Snap Logic (Fixes desktop hidden-div issue & mobile seamless loop)
+  useEffect(() => {
+    let snapTimeout;
+    if (mobileSlide === heroImages.length + 1) {
+      snapTimeout = setTimeout(() => {
+        setIsTransitioning(false);
+        setMobileSlide(1);
+      }, 500); // 500ms to match the mobile CSS transition duration
+    } else if (mobileSlide === 0) {
+      snapTimeout = setTimeout(() => {
+        setIsTransitioning(false);
+        setMobileSlide(heroImages.length);
+      }, 500);
+    }
+    return () => clearTimeout(snapTimeout);
+  }, [mobileSlide, heroImages.length]);
 
 
   // Touch Handlers for Swipe
@@ -80,6 +97,13 @@ export default function HeroSectionUI({ onOpenShop, onOpenSignup }) {
 
   return (
     <div className="open-sans relative w-full min-h-0 lg:h-screen bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-[#1C1A16] via-[#0C0D10] to-[#0C0D10] text-[#F5F5F0] overflow-hidden flex flex-col justify-start lg:justify-between select-none">
+
+      {/* Background Texture Layer (Behind Everything) */}
+      <img 
+        src="/images/stecher.jpeg" 
+        alt="Background Texture" 
+        className="absolute inset-0 w-full h-full object-cover z-0 opacity-50 pointer-events-none sm:hidden blur-sm"
+      />
 
 
 
@@ -209,8 +233,8 @@ export default function HeroSectionUI({ onOpenShop, onOpenSignup }) {
         <div className="lg:col-span-6 relative flex items-center justify-center h-auto sm:h-[480px] lg:h-[680px] transform-gpu order-1 lg:order-2 mt-12 sm:mt-0 lg:-mt-4 xl:-mt-6 overflow-hidden">
 
           {/* Image Frame Slider (All Screens) */}
-          <div 
-            className="relative w-full h-[380px] sm:h-full flex justify-center items-end z-10 group" 
+          <div
+            className="relative w-full h-[380px] sm:h-full flex justify-center items-end z-10 group"
             style={{ maskImage: 'linear-gradient(to bottom, black 80%, transparent 100%)', WebkitMaskImage: 'linear-gradient(to bottom, black 80%, transparent 100%)' }}
             onMouseEnter={() => setIsPaused(true)}
             onMouseLeave={() => setIsPaused(false)}
@@ -222,18 +246,9 @@ export default function HeroSectionUI({ onOpenShop, onOpenSignup }) {
             {/* Sliding Image Wrapper (Mobile Only) */}
             <div
               className={`absolute inset-0 flex h-full sm:hidden ${isTransitioning ? 'transition-transform duration-500 ease-[cubic-bezier(0.25,1,0.5,1)]' : 'transition-none'}`}
-              style={{ 
+              style={{
                 width: `${extendedHeroImages.length * 100}%`,
-                transform: `translateX(-${(mobileSlide * 100) / extendedHeroImages.length}%)` 
-              }}
-              onTransitionEnd={() => {
-                if (mobileSlide === 0) {
-                  setIsTransitioning(false);
-                  setMobileSlide(heroImages.length);
-                } else if (mobileSlide === heroImages.length + 1) {
-                  setIsTransitioning(false);
-                  setMobileSlide(1);
-                }
+                transform: `translateX(-${(mobileSlide * 100) / extendedHeroImages.length}%)`
               }}
             >
               {extendedHeroImages.map((src, idx) => (
@@ -254,7 +269,7 @@ export default function HeroSectionUI({ onOpenShop, onOpenSignup }) {
                 let activeDesktopSlide = mobileSlide - 1;
                 if (mobileSlide === 0) activeDesktopSlide = heroImages.length - 1;
                 if (mobileSlide === heroImages.length + 1) activeDesktopSlide = 0;
-                
+
                 return (
                   <img
                     key={idx}
