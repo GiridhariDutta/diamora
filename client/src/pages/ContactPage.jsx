@@ -303,7 +303,7 @@ export default function ContactPage() {
                 allowFullScreen="" 
                 loading="lazy" 
                 referrerPolicy="strict-origin-when-cross-origin"
-                title="Diamora Location"
+                title="Diamoras Location"
                 className="w-full"
               />
             </div>
@@ -346,7 +346,7 @@ export default function ContactPage() {
                   </svg>
                   <div>
                     <span className="text-xs font-semibold text-white block">Instagram</span>
-                    <span className="text-[10px] text-[#9094A0]">@diamora</span>
+                    <span className="text-[10px] text-[#9094A0]">@diamoras</span>
                   </div>
                 </a>
 
@@ -362,7 +362,7 @@ export default function ContactPage() {
                   </svg>
                   <div>
                     <span className="text-xs font-semibold text-white block">Facebook</span>
-                    <span className="text-[10px] text-[#9094A0]">Diamora Jewellery</span>
+                    <span className="text-[10px] text-[#9094A0]">Diamoras Jewellery</span>
                   </div>
                 </a>
 
@@ -378,7 +378,7 @@ export default function ContactPage() {
                   </svg>
                   <div>
                     <span className="text-xs font-semibold text-white block">YouTube</span>
-                    <span className="text-[10px] text-[#9094A0]">@diamora</span>
+                    <span className="text-[10px] text-[#9094A0]">@diamoras</span>
                   </div>
                 </a>
 
@@ -394,7 +394,7 @@ export default function ContactPage() {
                   </svg>
                   <div>
                     <span className="text-xs font-semibold text-white block">Pinterest</span>
-                    <span className="text-[10px] text-[#9094A0]">@diamora</span>
+                    <span className="text-[10px] text-[#9094A0]">@diamoras</span>
                   </div>
                 </a>
               </div>

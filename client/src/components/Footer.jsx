@@ -31,16 +31,12 @@ export default function Footer({ onOpenTickets }) {
             <div className="flex items-center gap-3">
               <img 
                 src="/diamora_logo.png" 
-                alt="Diamora Logo" 
-                className="h-14 sm:h-16 md:h-20 w-auto object-contain" 
-                onError={(e) => {
-                  e.target.style.display = 'none';
-                  e.target.nextSibling.style.display = 'flex';
-                }}
+                alt="Diamoras Logo" 
+                className="w-14 sm:w-16 h-14 sm:h-16 object-contain drop-shadow-[0_0_15px_rgba(212,175,55,0.4)]"
               />
-              <div className="hidden flex-col items-center">
-                <span className="text-xl font-bold tracking-[0.22em] text-[#E0B094]">
-                  DIAMORA
+              <div className="flex flex-col">
+                <span className="font-cinzel text-2xl sm:text-3xl tracking-[0.15em] text-[#D4AF37] font-bold drop-shadow-md">
+                  DIAMORAS
                 </span>
                 <span className="text-[9px] tracking-[0.3em] text-[#808490] uppercase">
                   DIAMOND JEWELLERY
@@ -50,11 +46,11 @@ export default function Footer({ onOpenTickets }) {
 
             {/* Bio Paragraph */}
             <p className="text-xs text-[#9094A0] leading-relaxed max-w-xs">
-              Diamora is a promise of forever. Exquisite diamonds crafted for life&apos;s most precious moments.
+              Diamoras is a promise of forever. Exquisite diamonds crafted for life&apos;s most precious moments.
             </p>
 
             {/* Social Icons */}
-            <div className="flex items-center gap-4 text-[#C5C8D4] pt-1">
+            <div className="flex items-center justify-center lg:justify-start gap-4 text-[#C5C8D4] pt-1 w-full">
               {/* Instagram */}
               <a href="#" className="hover:text-[#E0B094] transition-colors" aria-label="Instagram">
                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
@@ -94,7 +90,7 @@ export default function Footer({ onOpenTickets }) {
               <li><Link to="/about" className="hover:text-[#E0B094] transition-colors">About Us</Link></li>
               <li><a href="/#collection" className="hover:text-[#E0B094] transition-colors">Collection</a></li>
               <li><Link to="/shop" className="hover:text-[#E0B094] transition-colors">Shop</Link></li>
-              <li><a href="/#whydiamora" className="hover:text-[#E0B094] transition-colors">Why Diamora</a></li>
+              <li><a href="/#whydiamora" className="hover:text-[#E0B094] transition-colors">Why Diamoras</a></li>
               <li><Link to="/contact" className="hover:text-[#E0B094] transition-colors">Contact Us</Link></li>
               <li><a href="/#contact" className="hover:text-[#E0B094] transition-colors">FAQs</a></li>
             </ul>
@@ -206,7 +202,7 @@ export default function Footer({ onOpenTickets }) {
 
         {/* BOTTOM BAR (COPYRIGHT & PAYMENT BADGES) */}
         <div className="pt-6 flex flex-col sm:flex-row items-center justify-between text-xs text-[#707480] gap-4">
-          <span>© 2026 Diamora Diamond Jewellery. All Rights Reserved.</span>
+          <span>© 2026 Diamoras Diamond Jewellery. All Rights Reserved.</span>
 
           {/* Payment Badges (VISA, Mastercard, AMEX, UPI) */}
           <div className="flex items-center gap-2">

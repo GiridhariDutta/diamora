@@ -204,7 +204,7 @@ export default function ShopPage() {
   const getHeaderTitle = () => {
     if (selectedCategory) return `DIAMOND ${selectedCategory.toUpperCase()}`;
     if (selectedCollection) return `${selectedCollection.toUpperCase()} COLLECTION`;
-    return 'DIAMORA JEWELLERY COLLECTION';
+    return 'DIAMORAS JEWELLERY COLLECTION';
   };
 
   // Reusable Filter Content Renderer
