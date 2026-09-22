@@ -4,20 +4,62 @@ import { ChevronRight, Sparkles, ShoppingBag, Globe, Share2, MessageCircle, Send
 export default function HeroSectionUI({ onOpenShop, onOpenSignup }) {
   const [promoCode, setPromoCode] = useState('');
   const [promoApplied, setPromoApplied] = useState(false);
-  const [mobileSlide, setMobileSlide] = useState(0);
+  
+  // Slider State
+  const [mobileSlide, setMobileSlide] = useState(1); // Start at 1 because index 0 is a clone of the last image
+  const [isPaused, setIsPaused] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(true);
+  const [touchStart, setTouchStart] = useState(null);
+  const [touchEnd, setTouchEnd] = useState(null);
 
   const heroImages = [
-    '/images/img1.png',
     '/images/img3.png',
+    '/images/img1.png',
     '/images/img4.png',
   ];
 
+  // Extended array for bidirectional seamless scrolling: [cloneLast, img1, img2, img3, cloneFirst]
+  const extendedHeroImages = [heroImages[heroImages.length - 1], ...heroImages, heroImages[0]];
+
+  // Auto Slider Timer
   useEffect(() => {
+    if (isPaused) return;
+
     const interval = setInterval(() => {
-      setMobileSlide((prev) => (prev + 1) % heroImages.length);
+      setIsTransitioning(true);
+      setMobileSlide((prev) => prev + 1);
     }, 4000);
     return () => clearInterval(interval);
-  }, []);
+  }, [isPaused]);
+
+
+  // Touch Handlers for Swipe
+  const onTouchStart = (e) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+    setIsPaused(true);
+  };
+
+  const onTouchMove = (e) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+
+  const onTouchEndHandler = () => {
+    setIsPaused(false);
+    if (!touchStart || !touchEnd) return;
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > 50;
+    const isRightSwipe = distance < -50;
+
+    if (isLeftSwipe && mobileSlide < heroImages.length + 1) {
+      setIsTransitioning(true);
+      setMobileSlide(prev => prev + 1);
+    }
+    if (isRightSwipe && mobileSlide > 0) {
+      setIsTransitioning(true);
+      setMobileSlide(prev => prev - 1);
+    }
+  };
 
   const handleApplyPromo = (e) => {
     e.preventDefault();
@@ -167,17 +209,34 @@ export default function HeroSectionUI({ onOpenShop, onOpenSignup }) {
         <div className="lg:col-span-6 relative flex items-center justify-center h-auto sm:h-[480px] lg:h-[680px] transform-gpu order-1 lg:order-2 mt-12 sm:mt-0 lg:-mt-4 xl:-mt-6 overflow-hidden">
 
           {/* Image Frame Slider (All Screens) */}
-          <div className="relative w-full h-[380px] sm:h-full flex justify-center items-end z-10 group" style={{ maskImage: 'linear-gradient(to bottom, black 80%, transparent 100%)', WebkitMaskImage: 'linear-gradient(to bottom, black 80%, transparent 100%)' }}>
+          <div 
+            className="relative w-full h-[380px] sm:h-full flex justify-center items-end z-10 group" 
+            style={{ maskImage: 'linear-gradient(to bottom, black 80%, transparent 100%)', WebkitMaskImage: 'linear-gradient(to bottom, black 80%, transparent 100%)' }}
+            onMouseEnter={() => setIsPaused(true)}
+            onMouseLeave={() => setIsPaused(false)}
+            onTouchStart={onTouchStart}
+            onTouchMove={onTouchMove}
+            onTouchEnd={onTouchEndHandler}
+          >
 
             {/* Sliding Image Wrapper (Mobile Only) */}
             <div
-              className="absolute inset-0 flex h-full transition-transform duration-1000 ease-[cubic-bezier(0.25,1,0.5,1)] sm:hidden"
+              className={`absolute inset-0 flex h-full sm:hidden ${isTransitioning ? 'transition-transform duration-500 ease-[cubic-bezier(0.25,1,0.5,1)]' : 'transition-none'}`}
               style={{ 
-                width: `${heroImages.length * 100}%`,
-                transform: `translateX(-${(mobileSlide * 100) / heroImages.length}%)` 
+                width: `${extendedHeroImages.length * 100}%`,
+                transform: `translateX(-${(mobileSlide * 100) / extendedHeroImages.length}%)` 
+              }}
+              onTransitionEnd={() => {
+                if (mobileSlide === 0) {
+                  setIsTransitioning(false);
+                  setMobileSlide(heroImages.length);
+                } else if (mobileSlide === heroImages.length + 1) {
+                  setIsTransitioning(false);
+                  setMobileSlide(1);
+                }
               }}
             >
-              {heroImages.map((src, idx) => (
+              {extendedHeroImages.map((src, idx) => (
                 <div key={idx} className="relative w-full h-full flex-shrink-0 flex-1">
                   <img
                     src={src}
@@ -190,15 +249,22 @@ export default function HeroSectionUI({ onOpenShop, onOpenSignup }) {
 
             {/* Fading Image Wrapper (Desktop Only) */}
             <div className="absolute inset-0 hidden sm:block">
-              {heroImages.map((src, idx) => (
-                <img
-                  key={idx}
-                  src={src}
-                  alt={`Diamoras Model ${idx + 1}`}
-                  className={`absolute inset-0 w-full h-full object-cover sm:object-contain object-[center_top] transition-all duration-1000 ease-in-out origin-center ${mobileSlide === idx ? 'opacity-100 scale-100 z-10' : 'opacity-0 scale-105 z-0'
-                    }`}
-                />
-              ))}
+              {heroImages.map((src, idx) => {
+                // Ensure the visual active index on desktop remains correctly mapped to the original 0-indexed array
+                let activeDesktopSlide = mobileSlide - 1;
+                if (mobileSlide === 0) activeDesktopSlide = heroImages.length - 1;
+                if (mobileSlide === heroImages.length + 1) activeDesktopSlide = 0;
+                
+                return (
+                  <img
+                    key={idx}
+                    src={src}
+                    alt={`Diamoras Model ${idx + 1}`}
+                    className={`absolute inset-0 w-full h-full object-cover sm:object-contain object-[center_bottom] transition-all duration-1000 ease-in-out origin-center ${activeDesktopSlide === idx ? 'opacity-100 scale-100 z-10' : 'opacity-0 scale-105 z-0'
+                      }`}
+                  />
+                )
+              })}
             </div>
 
           </div>
