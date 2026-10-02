@@ -1,6 +1,6 @@
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
@@ -12,6 +12,8 @@ import colorRoutes from './src/routes/colorRoutes.js';
 import purityRoutes from './src/routes/purityRoutes.js';
 import diamondQualityRoutes from './src/routes/diamondQualityRoutes.js';
 import stoneRoutes from './src/routes/stoneRoutes.js';
+import shapeRoutes from './src/routes/shapeRoutes.js';
+import settingTypeRoutes from './src/routes/settingTypeRoutes.js';
 import productRoutes from './src/routes/productRoutes.js';
 import settingsRoutes from './src/routes/settingsRoutes.js';
 import orderRoutes from './src/routes/orderRoutes.js';
@@ -19,9 +21,6 @@ import './src/config/firebase.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
-// Load environment variables
-dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -46,6 +45,8 @@ app.use('/api/colors', colorRoutes);
 app.use('/api/purities', purityRoutes);
 app.use('/api/diamond-qualities', diamondQualityRoutes);
 app.use('/api/stones', stoneRoutes);
+app.use('/api/shapes', shapeRoutes);
+app.use('/api/setting-types', settingTypeRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/orders', orderRoutes);

@@ -9,6 +9,115 @@ const formatCertification = (cert) => {
   return cleaned || '100% Certified';
 };
 
+// --- In-Memory Rate Cache ---
+let rateCache = {
+  purities: {},
+  diamondQualities: {},
+  stones: {},
+  lastFetched: 0
+};
+const CACHE_TTL = 60 * 1000; // 1 minute
+
+async function getLiveRates() {
+  const now = Date.now();
+  if (now - rateCache.lastFetched < CACHE_TTL) {
+    return rateCache;
+  }
+  if (!db) return rateCache;
+
+  const [puritiesSnap, diamondSnap, stonesSnap] = await Promise.all([
+    db.collection('purities').get(),
+    db.collection('diamondQualities').get(),
+    db.collection('stones').get()
+  ]);
+
+  const purities = {};
+  puritiesSnap.forEach(doc => { purities[doc.id] = doc.data().ratePerGram || 0; });
+
+  const diamondQualities = {};
+  diamondSnap.forEach(doc => { diamondQualities[doc.id] = doc.data().ratePerCarat || 0; });
+
+  const stones = {};
+  stonesSnap.forEach(doc => { stones[doc.id] = doc.data().ratePerCarat || 0; });
+
+  rateCache = { purities, diamondQualities, stones, lastFetched: now };
+  return rateCache;
+}
+
+// --- Dynamic Price Calculator ---
+function calculateDynamicPrice(product, rates) {
+  // 1. Gold Price
+  const goldRate = rates.purities[product.purityId] || 0;
+  const computedGoldPrice = (product.netGoldWeightGrams || 0) * goldRate;
+
+  // 2. Diamond Price
+  let computedDiamondPrice = 0;
+  let processedDiamonds = [];
+  if (Array.isArray(product.diamonds)) {
+    product.diamonds.forEach(d => {
+      const dRate = rates.diamondQualities[d.diamondQualityId] || 0;
+      const carats = Number(d.totalDiamondCarats) || 0;
+      let rowPrice = 0;
+      if (product.diamondMode === 'manual' && Number(d.customDiamondPrice) > 0) {
+        rowPrice = Number(d.customDiamondPrice);
+      } else {
+        rowPrice = carats * dRate;
+      }
+      computedDiamondPrice += rowPrice;
+      processedDiamonds.push({
+        ...d,
+        diamondRatePerCarat: dRate,
+        rowPrice
+      });
+    });
+  }
+
+  // 3. Gemstone Price
+  let computedStonePrice = 0;
+  let processedStones = [];
+  if (product.hasGemstone && Array.isArray(product.stones)) {
+    product.stones.forEach(s => {
+      const sRate = rates.stones[s.stoneId] || 0;
+      const carats = Number(s.stoneWeightCarats) || 0;
+      let rowPrice = carats * sRate;
+      if (Number(s.customStonePrice) > 0) {
+         rowPrice = Number(s.customStonePrice);
+      }
+      computedStonePrice += rowPrice;
+      processedStones.push({
+        ...s,
+        stoneRatePerCarat: sRate,
+        rowPrice
+      });
+    });
+  }
+
+  // 4. Making Charges
+  const baseMaking = Number(product.makingChargeBase) || 0;
+  const discountPercent = Number(product.makingChargeDiscountPercent) || 0;
+  const discountAmount = (baseMaking * discountPercent) / 100;
+  const computedMakingCharges = Math.max(0, baseMaking - discountAmount);
+
+  // 5. Subtotal & GST
+  const subtotal = computedGoldPrice + computedDiamondPrice + computedStonePrice + computedMakingCharges;
+  const gstPercent = Number(product.gstPercent) || 3;
+  const computedGst = (subtotal * gstPercent) / 100;
+  const grandTotal = Math.round(subtotal + computedGst);
+
+  return {
+    ...product,
+    purityRatePerGram: goldRate,
+    computedGoldPrice,
+    computedDiamondPrice,
+    computedStonePrice,
+    computedMakingCharges,
+    computedGst,
+    grandTotal,
+    diamonds: processedDiamonds,
+    stones: processedStones
+  };
+}
+
 export class ProductService {
   /**
    * Fetch products with optional search, category, collection, color, purity, price, and pagination
@@ -21,11 +130,11 @@ export class ProductService {
     const { page, limit, search, category, collection, color, diamondColor, purity, price, showInCarousel, showInHomepage } = options;
 
     const snapshot = await db.collection('products').get();
-    let products = [];
+    let rawProducts = [];
 
     snapshot.forEach(doc => {
       const data = doc.data();
-      products.push({
+      rawProducts.push({
         id: doc.id,
         ...data,
         certification: formatCertification(data.certification)
@@ -33,7 +142,11 @@ export class ProductService {
     });
 
     // 1. Sort by createdAt descending
-    products.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+    rawProducts.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+
+    // Fetch Live Rates and compute prices dynamically
+    const liveRates = await getLiveRates();
+    let products = rawProducts.map(p => calculateDynamicPrice(p, liveRates));
 
     // 1b. Filter by showInCarousel if provided
     if (showInCarousel !== undefined && showInCarousel !== '') {
@@ -82,7 +195,11 @@ export class ProductService {
       const colorQuery = color.trim().toLowerCase();
       products = products.filter(p => 
         (p.colorId && p.colorId.toLowerCase() === colorQuery) ||
-        (p.colorTitle && p.colorTitle.toLowerCase().includes(colorQuery))
+        (p.colorTitle && p.colorTitle.toLowerCase().includes(colorQuery)) ||
+        (p.colors && Array.isArray(p.colors) && p.colors.some(c => 
+          (c.colorId && c.colorId.toLowerCase() === colorQuery) || 
+          (c.colorTitle && c.colorTitle.toLowerCase().includes(colorQuery))
+        ))
       );
     }
 
@@ -105,11 +222,11 @@ export class ProductService {
       );
     }
 
-    // 7. Filter by price range if provided
+    // 7. Filter by price range if provided (NOW USING DYNAMIC grandTotal)
     if (price && typeof price === 'string' && price.trim() !== '') {
       const priceKey = price.trim().toLowerCase();
       products = products.filter(p => {
-        const itemPrice = Number(p.grandTotal || p.computedGoldPrice || 0);
+        const itemPrice = Number(p.grandTotal || 0);
         if (priceKey === 'under-50k') return itemPrice < 50000;
         if (priceKey === '50k-75k') return itemPrice >= 50000 && itemPrice <= 75000;
         if (priceKey === '75k-100k') return itemPrice > 75000 && itemPrice <= 100000;
@@ -170,16 +287,19 @@ export class ProductService {
       throw new Error('Product not found');
     }
 
-    const data = docSnap.data();
-    return {
+    const data = {
       id: docSnap.id,
-      ...data,
-      certification: formatCertification(data.certification)
+      ...docSnap.data(),
+      certification: formatCertification(docSnap.data().certification)
     };
+
+    // Calculate dynamic price
+    const liveRates = await getLiveRates();
+    return calculateDynamicPrice(data, liveRates);
   }
 
   /**
-   * Create a new product
+   * Create a new product (ONLY saves structural data, no computed prices)
    */
   static async createProduct(data) {
     if (!db) {
@@ -189,6 +309,25 @@ export class ProductService {
     if (!data.title || !data.title.trim()) {
       throw new Error('Product title is required.');
     }
+
+    // Clean up diamonds and stones arrays to strip any computed frontend values if present
+    const cleanDiamonds = Array.isArray(data.diamonds) ? data.diamonds.map(d => ({
+      shape: d.shape || 'Round',
+      settingType: d.settingType || '',
+      diamondQualityId: d.diamondQualityId || '',
+      totalDiamondCarats: Number(d.totalDiamondCarats) || 0,
+      numberOfDiamonds: Number(d.numberOfDiamonds) || 0,
+      customDiamondPrice: Number(d.customDiamondPrice) || 0,
+      diamondQualityTitle: d.diamondQualityTitle || ''
+    })) : [];
+
+    const cleanStones = Array.isArray(data.stones) ? data.stones.map(s => ({
+      stoneId: s.stoneId || '',
+      settingType: s.settingType || '',
+      stoneWeightCarats: Number(s.stoneWeightCarats) || 0,
+      numberOfStones: Number(s.numberOfStones) || 0,
+      customStonePrice: Number(s.customStonePrice) || 0
+    })) : [];
 
     const nowIso = new Date().toISOString();
     const productData = {
@@ -200,33 +339,33 @@ export class ProductService {
       collectionTitle: data.collectionTitle || '',
       colorId: data.colorId || '',
       colorTitle: data.colorTitle || '',
+      colors: Array.isArray(data.colors) ? data.colors.map(c => ({
+        colorId: c.colorId || '',
+        colorTitle: c.colorTitle || ''
+      })) : [],
       purityId: data.purityId || '',
       purityTitle: data.purityTitle || '',
-      purityRatePerGram: Number(data.purityRatePerGram) || 0,
+      grossGoldWeightGrams: Number(data.grossGoldWeightGrams) || 0,
       netGoldWeightGrams: Number(data.netGoldWeightGrams) || 0,
       
+      sizes: Array.isArray(data.sizes) ? data.sizes.map(s => ({
+        size: s.size || '',
+        increaseAmount: Number(s.increaseAmount) || 0
+      })) : [],
+      height: data.height || '',
+      width: data.width || '',
+      
       diamondMode: data.diamondMode || 'auto',
-      diamonds: Array.isArray(data.diamonds) ? data.diamonds : [],
-      diamondQualityId: data.diamondQualityId || '',
-      diamondQualityTitle: data.diamondQualityTitle || '',
-      diamondRatePerCarat: Number(data.diamondRatePerCarat) || 0,
-      totalDiamondCarats: Number(data.totalDiamondCarats) || 0,
-      numberOfDiamonds: Number(data.numberOfDiamonds) || 0,
-      customDiamondPrice: Number(data.customDiamondPrice) || 0,
+      diamonds: cleanDiamonds,
+      totalDiamondCarats: cleanDiamonds.reduce((sum, d) => sum + (Number(d.totalDiamondCarats) || 0), 0),
+      numberOfDiamonds: cleanDiamonds.reduce((sum, d) => sum + (Number(d.numberOfDiamonds) || 0), 0),
       
       makingChargeBase: Number(data.makingChargeBase) || 0,
       makingChargeDiscountPercent: Number(data.makingChargeDiscountPercent) || 0,
       gstPercent: Number(data.gstPercent) || 3,
 
       hasGemstone: Boolean(data.hasGemstone),
-      stones: Array.isArray(data.stones) ? data.stones : [],
-      computedStonePrice: Number(data.computedStonePrice) || 0,
-
-      computedGoldPrice: Number(data.computedGoldPrice) || 0,
-      computedDiamondPrice: Number(data.computedDiamondPrice) || 0,
-      computedMakingCharges: Number(data.computedMakingCharges) || 0,
-      computedGst: Number(data.computedGst) || 0,
-      grandTotal: Number(data.grandTotal) || 0,
+      stones: cleanStones,
 
       media: Array.isArray(data.media) ? data.media : [],
       certification: formatCertification(data.certification),
@@ -234,6 +373,7 @@ export class ProductService {
       showInHomepage: Boolean(data.showInHomepage),
       showInCarousel: Boolean(data.showInCarousel),
       status: data.status || 'Active',
+      availability: data.availability || 'Available',
       createdAt: nowIso,
       updatedAt: nowIso
     };
@@ -247,7 +387,7 @@ export class ProductService {
   }
 
   /**
-   * Update an existing product
+   * Update an existing product (ONLY updates structural data)
    */
   static async updateProduct(id, data) {
     if (!db) {
@@ -273,33 +413,55 @@ export class ProductService {
     if (data.collectionTitle !== undefined) updateData.collectionTitle = data.collectionTitle;
     if (data.colorId !== undefined) updateData.colorId = data.colorId;
     if (data.colorTitle !== undefined) updateData.colorTitle = data.colorTitle;
+    if (data.colors !== undefined) {
+      updateData.colors = Array.isArray(data.colors) ? data.colors.map(c => ({
+        colorId: c.colorId || '',
+        colorTitle: c.colorTitle || ''
+      })) : [];
+    }
     if (data.purityId !== undefined) updateData.purityId = data.purityId;
     if (data.purityTitle !== undefined) updateData.purityTitle = data.purityTitle;
-    if (data.purityRatePerGram !== undefined) updateData.purityRatePerGram = Number(data.purityRatePerGram) || 0;
+    if (data.grossGoldWeightGrams !== undefined) updateData.grossGoldWeightGrams = Number(data.grossGoldWeightGrams) || 0;
     if (data.netGoldWeightGrams !== undefined) updateData.netGoldWeightGrams = Number(data.netGoldWeightGrams) || 0;
 
+    if (data.sizes !== undefined) {
+      updateData.sizes = Array.isArray(data.sizes) ? data.sizes.map(s => ({
+        size: s.size || '',
+        increaseAmount: Number(s.increaseAmount) || 0
+      })) : [];
+    }
+    if (data.height !== undefined) updateData.height = data.height;
+    if (data.width !== undefined) updateData.width = data.width;
+
     if (data.diamondMode !== undefined) updateData.diamondMode = data.diamondMode;
-    if (data.diamonds !== undefined) updateData.diamonds = Array.isArray(data.diamonds) ? data.diamonds : [];
-    if (data.diamondQualityId !== undefined) updateData.diamondQualityId = data.diamondQualityId;
-    if (data.diamondQualityTitle !== undefined) updateData.diamondQualityTitle = data.diamondQualityTitle;
-    if (data.diamondRatePerCarat !== undefined) updateData.diamondRatePerCarat = Number(data.diamondRatePerCarat) || 0;
-    if (data.totalDiamondCarats !== undefined) updateData.totalDiamondCarats = Number(data.totalDiamondCarats) || 0;
-    if (data.numberOfDiamonds !== undefined) updateData.numberOfDiamonds = Number(data.numberOfDiamonds) || 0;
-    if (data.customDiamondPrice !== undefined) updateData.customDiamondPrice = Number(data.customDiamondPrice) || 0;
+    if (data.diamonds !== undefined) {
+      updateData.diamonds = Array.isArray(data.diamonds) ? data.diamonds.map(d => ({
+        shape: d.shape || 'Round',
+        settingType: d.settingType || '',
+        diamondQualityId: d.diamondQualityId || '',
+        totalDiamondCarats: Number(d.totalDiamondCarats) || 0,
+        numberOfDiamonds: Number(d.numberOfDiamonds) || 0,
+        customDiamondPrice: Number(d.customDiamondPrice) || 0,
+        diamondQualityTitle: d.diamondQualityTitle || ''
+      })) : [];
+      updateData.totalDiamondCarats = updateData.diamonds.reduce((sum, d) => sum + (Number(d.totalDiamondCarats) || 0), 0);
+      updateData.numberOfDiamonds = updateData.diamonds.reduce((sum, d) => sum + (Number(d.numberOfDiamonds) || 0), 0);
+    }
 
     if (data.hasGemstone !== undefined) updateData.hasGemstone = Boolean(data.hasGemstone);
-    if (data.stones !== undefined) updateData.stones = Array.isArray(data.stones) ? data.stones : [];
-    if (data.computedStonePrice !== undefined) updateData.computedStonePrice = Number(data.computedStonePrice) || 0;
+    if (data.stones !== undefined) {
+      updateData.stones = Array.isArray(data.stones) ? data.stones.map(s => ({
+        stoneId: s.stoneId || '',
+        settingType: s.settingType || '',
+        stoneWeightCarats: Number(s.stoneWeightCarats) || 0,
+        numberOfStones: Number(s.numberOfStones) || 0,
+        customStonePrice: Number(s.customStonePrice) || 0
+      })) : [];
+    }
 
     if (data.makingChargeBase !== undefined) updateData.makingChargeBase = Number(data.makingChargeBase) || 0;
     if (data.makingChargeDiscountPercent !== undefined) updateData.makingChargeDiscountPercent = Number(data.makingChargeDiscountPercent) || 0;
     if (data.gstPercent !== undefined) updateData.gstPercent = Number(data.gstPercent) || 3;
-
-    if (data.computedGoldPrice !== undefined) updateData.computedGoldPrice = Number(data.computedGoldPrice) || 0;
-    if (data.computedDiamondPrice !== undefined) updateData.computedDiamondPrice = Number(data.computedDiamondPrice) || 0;
-    if (data.computedMakingCharges !== undefined) updateData.computedMakingCharges = Number(data.computedMakingCharges) || 0;
-    if (data.computedGst !== undefined) updateData.computedGst = Number(data.computedGst) || 0;
-    if (data.grandTotal !== undefined) updateData.grandTotal = Number(data.grandTotal) || 0;
 
     if (data.media !== undefined) updateData.media = Array.isArray(data.media) ? data.media : [];
     if (data.certification !== undefined) updateData.certification = formatCertification(data.certification);
@@ -307,7 +469,7 @@ export class ProductService {
     if (data.showInHomepage !== undefined) updateData.showInHomepage = Boolean(data.showInHomepage);
     if (data.showInCarousel !== undefined) updateData.showInCarousel = Boolean(data.showInCarousel);
     if (data.status !== undefined) updateData.status = data.status || 'Active';
-
+    if (data.availability !== undefined) updateData.availability = data.availability || 'Available';
 
     await docRef.update(updateData);
 

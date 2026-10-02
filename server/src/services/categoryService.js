@@ -30,7 +30,7 @@ export class CategoryService {
    * Create a new category
    * Moves image from temp/ to categories/ if uploaded to temp
    */
-  static async createCategory({ title, heading, order = 0, status = 'Active', imageUrl = '' }) {
+  static async createCategory({ title, heading, order = 0, status = 'Active', imageUrl = '', acceptSize, increaseAmountBaseOnSize, acceptHeight, acceptWidth }) {
     if (!db) {
       throw new Error('Firestore database is not initialized');
     }
@@ -52,6 +52,10 @@ export class CategoryService {
       order: Number(order) || 0,
       status: status || 'Active',
       imageUrl: finalImageUrl,
+      acceptSize: Boolean(acceptSize),
+      increaseAmountBaseOnSize: Boolean(increaseAmountBaseOnSize),
+      acceptHeight: Boolean(acceptHeight),
+      acceptWidth: Boolean(acceptWidth),
       createdAt: nowIso,
       updatedAt: nowIso
     };
@@ -68,7 +72,7 @@ export class CategoryService {
    * Update an existing category
    * Moves image from temp/ to categories/ if a new temporary image was uploaded
    */
-  static async updateCategory(id, { title, heading, order, status, imageUrl }) {
+  static async updateCategory(id, { title, heading, order, status, imageUrl, acceptSize, increaseAmountBaseOnSize, acceptHeight, acceptWidth }) {
     if (!db) {
       throw new Error('Firestore database is not initialized');
     }
@@ -89,6 +93,11 @@ export class CategoryService {
     if (order !== undefined) updateData.order = Number(order) || 0;
     if (status !== undefined) updateData.status = status;
     
+    if (acceptSize !== undefined) updateData.acceptSize = Boolean(acceptSize);
+    if (increaseAmountBaseOnSize !== undefined) updateData.increaseAmountBaseOnSize = Boolean(increaseAmountBaseOnSize);
+    if (acceptHeight !== undefined) updateData.acceptHeight = Boolean(acceptHeight);
+    if (acceptWidth !== undefined) updateData.acceptWidth = Boolean(acceptWidth);
+
     if (imageUrl !== undefined) {
       const oldImageUrl = docSnap.data()?.imageUrl;
       const newImageUrl = await StorageService.moveFromTemp(imageUrl, 'categories', 'cat');

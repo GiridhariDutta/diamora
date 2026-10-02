@@ -25,7 +25,7 @@ export class CategoryController {
    */
   static async create(req, res) {
     try {
-      const { title, heading, order, status, imageUrl } = req.body;
+      const { title, heading, order, status, imageUrl, acceptSize, increaseAmountBaseOnSize, acceptHeight, acceptWidth } = req.body;
 
       if (!title) {
         return res.status(400).json({
@@ -39,7 +39,11 @@ export class CategoryController {
         heading,
         order,
         status,
-        imageUrl
+        imageUrl,
+        acceptSize,
+        increaseAmountBaseOnSize,
+        acceptHeight,
+        acceptWidth
       });
 
       return res.status(201).json({
@@ -62,14 +66,18 @@ export class CategoryController {
   static async update(req, res) {
     try {
       const { id } = req.params;
-      const { title, heading, order, status, imageUrl } = req.body;
+      const { title, heading, order, status, imageUrl, acceptSize, increaseAmountBaseOnSize, acceptHeight, acceptWidth } = req.body;
 
       const updatedCategory = await CategoryService.updateCategory(id, {
         title,
         heading,
         order,
         status,
-        imageUrl
+        imageUrl,
+        acceptSize,
+        increaseAmountBaseOnSize,
+        acceptHeight,
+        acceptWidth
       });
 
       return res.status(200).json({

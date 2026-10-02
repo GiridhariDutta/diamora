@@ -33,7 +33,7 @@ export class OrderService {
   /**
    * Create Razorpay Order with strict Profile Completeness and Backend Price Verification
    */
-  static async createRazorpayOrder({ items, shippingDetails, totalAmount, userId }) {
+  static async createRazorpayOrder({ items, shippingDetails, totalAmount, payAmount, userId }) {
     if (!db) {
       throw new Error('Firestore database is not initialized');
     }
@@ -89,6 +89,15 @@ export class OrderService {
       throw new Error(`Price verification failed! Server price (₹${serverCalculatedTotal.toLocaleString('en-IN')}) does not match submitted total. Payment blocked.`);
     }
 
+    // Validate custom payAmount
+    const minPayable = Math.ceil(serverCalculatedTotal * 0.3);
+    const maxPayable = Math.ceil(serverCalculatedTotal);
+    const requestedPayAmount = payAmount ? Number(payAmount) : maxPayable;
+
+    if (isNaN(requestedPayAmount) || requestedPayAmount < minPayable || requestedPayAmount > maxPayable) {
+      throw new Error(`Invalid payment amount. You must pay between ₹${minPayable.toLocaleString('en-IN')} and ₹${maxPayable.toLocaleString('en-IN')}.`);
+    }
+
     // 3. Initialize Razorpay SDK with environment keys
     const keyId = process.env.RAZORPAY_KEY_ID || 'rzp_test_TakfYozY9UOoTU';
     const keySecret = process.env.RAZORPAY_KEY_SECRET || 'yP12KfisBoHB64pC86Pk8hzV';
@@ -98,7 +107,7 @@ export class OrderService {
       key_secret: keySecret
     });
 
-    const amountInPaise = Math.round(serverCalculatedTotal * 100);
+    const amountInPaise = Math.round(requestedPayAmount * 100);
 
     // Razorpay standard test mode API limits individual order transactions to max ₹5,00,000 (50,00,000 Paise / 50000000 Paise).
     // For luxury diamond purchases > ₹5,00,000 (e.g. ₹8,30,170), cap the payment request to ₹5,00,000 for Razorpay test API limit compliance
@@ -129,7 +138,7 @@ export class OrderService {
   /**
    * Verify Razorpay Payment Signature and Save Paid Order to Firestore
    */
-  static async verifyRazorpayPayment({ razorpay_order_id, razorpay_payment_id, razorpay_signature, items, shippingDetails, totalAmount, userId }) {
+  static async verifyRazorpayPayment({ razorpay_order_id, razorpay_payment_id, razorpay_signature, items, shippingDetails, totalAmount, payAmount, userId }) {
     if (!db) {
       throw new Error('Firestore database is not initialized');
     }
@@ -166,6 +175,7 @@ export class OrderService {
       userId: userId || '',
       items: items || [],
       totalAmount: totalAmount || 0,
+      payAmount: payAmount || totalAmount || 0,
       paymentMethod: 'Razorpay Online',
       paymentStatus: 'Paid',
       razorpayOrderId: razorpay_order_id,

@@ -44,9 +44,11 @@ export default function AboutPage({ pageKey = 'about_us' }) {
   const cleanHtmlContent = (rawHtml) => {
     if (!rawHtml) return '';
     let cleaned = rawHtml.replace(/<font[^>]*>/gi, '').replace(/<\/font>/gi, '');
+    cleaned = cleaned.replace(/class="ql-align-[^"]*"/gi, ''); // Remove Quill alignment classes
     cleaned = cleaned.replace(/style="[^"]*"/gi, (match) => {
       let style = match.replace(/color\s*:\s*[^;"]+;?/gi, '');
       style = style.replace(/background-color\s*:\s*[^;"]+;?/gi, '');
+      style = style.replace(/text-align\s*:\s*[^;"]+;?/gi, ''); // Remove explicit text-align
       if (style === 'style=""' || style === 'style=" "' || style === 'style=";"') return '';
       return style;
     });
@@ -89,7 +91,8 @@ export default function AboutPage({ pageKey = 'about_us' }) {
         ) : data && data.content ? (
           <div className="bg-[#16181F]/80 backdrop-blur-3xl border border-white/15 rounded-2xl p-6 sm:p-10 md:p-12 shadow-[0_20px_60px_rgba(0,0,0,0.8)] text-[#F5F5F0]">
             <div
-              className="prose prose-invert max-w-none 
+              className="prose prose-invert max-w-none text-justify
+                [&_div]:text-justify
                 [&_h1]:font-cinzel [&_h1]:text-base sm:[&_h1]:text-lg [&_h1]:!text-[#D4AF37] [&_h1_*]:!text-[#D4AF37] [&_h1]:tracking-[0.16em] [&_h1]:uppercase [&_h1]:font-medium [&_h1]:mb-3 [&_h1]:mt-6 [&_h1:first-child]:mt-0
                 [&_h2]:font-cinzel [&_h2]:text-base sm:[&_h2]:text-lg [&_h2]:!text-[#D4AF37] [&_h2_*]:!text-[#D4AF37] [&_h2]:tracking-[0.16em] [&_h2]:uppercase [&_h2]:font-medium [&_h2]:mb-3 [&_h2]:mt-6 [&_h2:first-child]:mt-0
                 [&_h3]:font-cinzel [&_h3]:text-sm sm:[&_h3]:text-base [&_h3]:!text-[#E0B094] [&_h3_*]:!text-[#E0B094] [&_h3]:tracking-[0.14em] [&_h3]:uppercase [&_h3]:font-medium [&_h3]:mb-2 [&_h3]:mt-5 [&_h3:first-child]:mt-0

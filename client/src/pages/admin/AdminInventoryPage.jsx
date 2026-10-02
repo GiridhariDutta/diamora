@@ -9,6 +9,7 @@ import {
   RefreshCw, 
   X, 
   Upload, 
+  Loader2,
   Image as ImageIcon, 
   Video, 
   Sparkles, 
@@ -48,10 +49,7 @@ const lightSwal = Swal.mixin({
   }
 });
 
-const DIAMOND_SHAPES = [
-  'Round', 'Princess', 'Marquise', 'Oval', 'Pear', 
-  'Emerald', 'Cushion', 'Radiant', 'Heart', 'Baguette', 'Triangle', 'Other'
-];
+
 
 const MAX_MEDIA_LIMIT = 10;
 
@@ -71,6 +69,8 @@ export default function AdminInventoryPage() {
   const [colors, setColors] = useState([]);
   const [purities, setPurities] = useState([]);
   const [diamondQualities, setDiamondQualities] = useState([]);
+  const [shapes, setShapes] = useState([]);
+  const [settingTypes, setSettingTypes] = useState([]);
   const [stones, setStones] = useState([]);
 
   const [loading, setLoading] = useState(false);
@@ -84,6 +84,7 @@ export default function AdminInventoryPage() {
   const [editingProduct, setEditingProduct] = useState(null);
   const [viewingProduct, setViewingProduct] = useState(null);
   const [activeMediaIndex, setActiveMediaIndex] = useState(0);
+  const [sizeInputText, setSizeInputText] = useState('');
 
   // Initial Form State
   const initialFormState = {
@@ -92,13 +93,19 @@ export default function AdminInventoryPage() {
     categoryId: '',
     collectionId: '',
     colorId: '',
+    colors: [],
     purityId: '',
+    grossGoldWeightGrams: '',
     netGoldWeightGrams: '',
+    sizes: [],
+    height: '',
+    width: '',
     
     diamondMode: 'auto', // 'auto' | 'manual'
     diamonds: [
       {
         shape: 'Round',
+        settingType: '',
         diamondQualityId: '',
         totalDiamondCarats: '',
         numberOfDiamonds: '',
@@ -110,6 +117,7 @@ export default function AdminInventoryPage() {
     stones: [
       {
         stoneId: '',
+        settingType: '',
         stoneWeightCarats: '',
         numberOfStones: '',
         customStonePrice: ''
@@ -172,13 +180,15 @@ export default function AdminInventoryPage() {
   // Fetch Master Data (categories, collections, colors, etc.) once
   const fetchMasterData = async () => {
     try {
-      const [catRes, colRes, clrRes, purRes, dqRes, stRes] = await Promise.allSettled([
+      const [catRes, colRes, clrRes, purRes, dqRes, stRes, shRes, setRes] = await Promise.allSettled([
         api.get('/api/categories'),
         api.get('/api/collections'),
         api.get('/api/colors'),
         api.get('/api/purities'),
         api.get('/api/diamond-qualities'),
-        api.get('/api/stones')
+        api.get('/api/stones'),
+        api.get('/api/shapes'),
+        api.get('/api/setting-types')
       ]);
 
       if (catRes.status === 'fulfilled' && catRes.value.data?.success) {
@@ -198,6 +208,12 @@ export default function AdminInventoryPage() {
       }
       if (stRes.status === 'fulfilled' && stRes.value.data?.success) {
         setStones(stRes.value.data.data.filter(st => st.status === 'Active'));
+      }
+      if (shRes.status === 'fulfilled' && shRes.value.data?.success) {
+        setShapes(shRes.value.data.data.filter(sh => sh.status === 'Active'));
+      }
+      if (setRes.status === 'fulfilled' && setRes.value.data?.success) {
+        setSettingTypes(setRes.value.data.data.filter(s => s.status === 'Active'));
       }
     } catch (err) {
       console.warn('Master data fetch warning:', err.message);
@@ -254,6 +270,7 @@ export default function AdminInventoryPage() {
         ...prev.diamonds,
         {
           shape: 'Round',
+          settingType: '',
           diamondQualityId: '',
           totalDiamondCarats: '',
           numberOfDiamonds: '',
@@ -289,6 +306,7 @@ export default function AdminInventoryPage() {
         ...(prev.stones || []),
         {
           stoneId: '',
+          settingType: '',
           stoneWeightCarats: '',
           numberOfStones: '',
           customStonePrice: ''
@@ -731,6 +749,7 @@ export default function AdminInventoryPage() {
     } else {
       existingDiamonds = [{
         shape: 'Round',
+        settingType: '',
         diamondQualityId: prod.diamondQualityId || '',
         totalDiamondCarats: prod.totalDiamondCarats !== undefined ? prod.totalDiamondCarats : '',
         numberOfDiamonds: prod.numberOfDiamonds !== undefined ? prod.numberOfDiamonds : '',
@@ -744,6 +763,7 @@ export default function AdminInventoryPage() {
     } else {
       existingStones = [{
         stoneId: '',
+        settingType: '',
         stoneWeightCarats: '',
         numberOfStones: '',
         customStonePrice: ''
@@ -756,8 +776,14 @@ export default function AdminInventoryPage() {
       categoryId: prod.categoryId || '',
       collectionId: prod.collectionId || '',
       colorId: prod.colorId || '',
+      colors: Array.isArray(prod.colors) ? prod.colors : [],
       purityId: prod.purityId || '',
+      grossGoldWeightGrams: prod.grossGoldWeightGrams !== undefined ? prod.grossGoldWeightGrams : '',
       netGoldWeightGrams: prod.netGoldWeightGrams !== undefined ? prod.netGoldWeightGrams : '',
+      
+      sizes: Array.isArray(prod.sizes) ? prod.sizes : [],
+      height: prod.height || '',
+      width: prod.width || '',
       
       diamondMode: prod.diamondMode || 'auto',
       diamonds: existingDiamonds,
@@ -839,6 +865,40 @@ export default function AdminInventoryPage() {
       setErrorMessage(err.message || 'Failed to update product.');
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleToggleAvailability = async (id, currentAvailability) => {
+    try {
+      const newAvailability = (currentAvailability || 'Available') === 'Available' ? 'Sold Out' : 'Available';
+      
+      // Optimistic UI update
+      setProducts(prev => prev.map(p => p.id === id ? { ...p, availability: newAvailability } : p));
+      
+      const res = await api.put(`/api/products/${id}`, { availability: newAvailability });
+      if (res.data?.success) {
+        lightSwal.fire({
+          title: `Marked as ${newAvailability}`,
+          icon: 'success',
+          toast: true,
+          position: 'top-end',
+          timer: 1500,
+          showConfirmButton: false
+        });
+      } else {
+        throw new Error('API failed');
+      }
+    } catch (err) {
+      console.error(err);
+      lightSwal.fire({
+        title: 'Failed to update',
+        icon: 'error',
+        toast: true,
+        position: 'top-end',
+        timer: 1500,
+        showConfirmButton: false
+      });
+      fetchProducts(); // Revert on failure
     }
   };
 
@@ -956,6 +1016,7 @@ export default function AdminInventoryPage() {
                 <th className="py-2 px-3 text-right">Diamond Specs</th>
                 <th className="py-2 px-3 text-right">Grand Total (₹)</th>
                 <th className="py-2 px-3">Status</th>
+                <th className="py-2 px-3">Availability</th>
                 <th className="py-2 px-3 text-right">Actions</th>
               </tr>
             </thead>
@@ -978,6 +1039,9 @@ export default function AdminInventoryPage() {
                     </td>
                     <td className="py-2.5 px-3 text-right">
                       <div className="h-3 w-20 bg-slate-200 ml-auto rounded-[3px]" />
+                    </td>
+                    <td className="py-2.5 px-3">
+                      <div className="h-4 w-16 bg-slate-200 rounded-[3px]" />
                     </td>
                     <td className="py-2.5 px-3">
                       <div className="h-4 w-16 bg-slate-200 rounded-[3px]" />
@@ -1044,7 +1108,7 @@ export default function AdminInventoryPage() {
                         {p.categoryTitle || 'N/A'}
                       </span>
                       <span className="text-[10px] text-amber-900 font-medium block">
-                        {p.purityTitle || 'N/A'} {p.colorTitle ? `(${p.colorTitle})` : ''}
+                        {p.purityTitle || 'N/A'} {Array.isArray(p.colors) && p.colors.length > 0 ? `(${p.colors.map(c => c.colorTitle).join(', ')})` : (p.colorTitle ? `(${p.colorTitle})` : '')}
                       </span>
                     </td>
 
@@ -1088,6 +1152,19 @@ export default function AdminInventoryPage() {
                       }`}>
                         {p.status || 'Active'}
                       </span>
+                    </td>
+
+                    {/* Availability */}
+                    <td className="py-2.5 px-3">
+                      <button
+                        onClick={() => handleToggleAvailability(p.id, p.availability)}
+                        className={`inline-block px-2 py-0.5 rounded-[3px] text-[9.5px] font-bold uppercase tracking-wider cursor-pointer hover:opacity-80 transition-opacity ${
+                          (p.availability || 'Available') === 'Available' ? 'bg-indigo-100 text-indigo-800 border border-indigo-300' : 'bg-rose-100 text-rose-800 border border-rose-300'
+                        }`}
+                        title="Click to toggle availability"
+                      >
+                        {p.availability || 'Available'}
+                      </button>
                     </td>
 
                     {/* Actions */}
@@ -1286,6 +1363,118 @@ export default function AdminInventoryPage() {
                   </div>
                 </div>
 
+                {/* DYNAMIC CATEGORY FIELDS */}
+                {(() => {
+                  const currentCat = categories.find(c => c.id === formData.categoryId) || {};
+                  if (!currentCat.acceptSize && !currentCat.acceptHeight && !currentCat.acceptWidth) return null;
+                  
+                  return (
+                    <div className="bg-amber-50/50 border border-amber-200/60 rounded-[4px] p-3.5 mt-3 space-y-3">
+                      <span className="text-xs font-semibold text-amber-900 uppercase tracking-wider block border-b border-amber-200/60 pb-1.5">
+                        Category Specific Details
+                      </span>
+
+                      <div className="flex flex-col sm:flex-row gap-3.5">
+                        {currentCat.acceptSize && (
+                          <div className="flex-1">
+                            <label className="block text-[11px] font-semibold tracking-wider text-slate-700 uppercase mb-1">
+                              Available Sizes <span className="text-slate-400 font-normal normal-case">(Type size & press Enter)</span>
+                            </label>
+                            <input
+                              type="text"
+                              value={sizeInputText}
+                              onChange={(e) => setSizeInputText(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  e.preventDefault();
+                                  const newSize = sizeInputText.trim();
+                                  if (newSize && !formData.sizes?.some(s => s.size === newSize)) {
+                                    setFormData({
+                                      ...formData,
+                                      sizes: [...(formData.sizes || []), { size: newSize, increaseAmount: '' }]
+                                    });
+                                  }
+                                  setSizeInputText('');
+                                }
+                              }}
+                              placeholder="e.g. 10, 12, S, M..."
+                              className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-[4px] text-xs font-medium focus:border-amber-600 focus:outline-none shadow-2xs"
+                            />
+                          </div>
+                        )}
+
+                        {(currentCat.acceptHeight || currentCat.acceptWidth) && (
+                          <div className="flex-1 flex gap-3.5">
+                            {currentCat.acceptHeight && (
+                              <div className="flex-1">
+                                <label className="block text-[11px] font-semibold tracking-wider text-slate-700 uppercase mb-1">Height</label>
+                                <input
+                                  type="text"
+                                  value={formData.height || ''}
+                                  onChange={(e) => setFormData({ ...formData, height: e.target.value })}
+                                  className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-[4px] text-xs font-medium focus:border-amber-600 focus:outline-none shadow-2xs"
+                                  placeholder="e.g. 10 mm"
+                                />
+                              </div>
+                            )}
+                            {currentCat.acceptWidth && (
+                              <div className="flex-1">
+                                <label className="block text-[11px] font-semibold tracking-wider text-slate-700 uppercase mb-1">Width</label>
+                                <input
+                                  type="text"
+                                  value={formData.width || ''}
+                                  onChange={(e) => setFormData({ ...formData, width: e.target.value })}
+                                  className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-[4px] text-xs font-medium focus:border-amber-600 focus:outline-none shadow-2xs"
+                                  placeholder="e.g. 5 mm"
+                                />
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      {currentCat.acceptSize && formData.sizes?.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-amber-200/50">
+                          {formData.sizes.map((sz, idx) => (
+                            <div key={idx} className="flex items-center bg-white border border-amber-200 rounded-[4px] shadow-sm overflow-hidden">
+                              <div className="px-2.5 py-1.5 bg-amber-50 text-amber-900 text-[11px] font-bold border-r border-amber-200 min-w-[36px] text-center">
+                                {sz.size}
+                              </div>
+                              {currentCat.increaseAmountBaseOnSize && (
+                                <div className="flex items-center px-2 py-1 bg-white">
+                                  <span className="text-[10px] text-slate-500 font-medium mr-1">+₹</span>
+                                  <input
+                                    type="number"
+                                    value={sz.increaseAmount || ''}
+                                    onChange={(e) => {
+                                      const newSizes = [...formData.sizes];
+                                      newSizes[idx].increaseAmount = e.target.value;
+                                      setFormData({ ...formData, sizes: newSizes });
+                                    }}
+                                    className="w-16 text-[11px] font-semibold text-slate-800 outline-none placeholder-slate-300"
+                                    placeholder="0"
+                                  />
+                                </div>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const newSizes = [...formData.sizes];
+                                  newSizes.splice(idx, 1);
+                                  setFormData({ ...formData, sizes: newSizes });
+                                }}
+                                className="px-2 py-1.5 text-rose-500 hover:bg-rose-50 border-l border-amber-100 transition-colors"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
+
                 {/* STATUS & DISPLAY TOGGLES */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 pt-1">
                   <div>
@@ -1338,21 +1527,33 @@ export default function AdminInventoryPage() {
                   2. Metal & Gold Specifications
                 </span>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-                  <div>
+                <div className="grid grid-cols-1 sm:grid-cols-4 gap-3.5">
+                  <div className="sm:col-span-1">
                     <label className="block text-[11px] font-semibold tracking-wider text-slate-700 uppercase mb-1">
-                      Metal Color
+                      Metal Color(s)
                     </label>
-                    <select
-                      value={formData.colorId}
-                      onChange={(e) => setFormData({ ...formData, colorId: e.target.value })}
-                      className="w-full px-3 py-2 bg-white border border-slate-300 rounded-[4px] text-xs font-medium text-slate-800 focus:outline-none focus:border-amber-600 focus:ring-1 focus:ring-amber-500/20 shadow-2xs"
-                    >
-                      <option value="">Select Color</option>
-                      {colors.map(c => (
-                        <option key={c.id} value={c.id}>{c.title}</option>
-                      ))}
-                    </select>
+                    <div className="flex flex-wrap gap-2.5 pt-1">
+                      {colors.map(c => {
+                        const isChecked = formData.colors?.some(fc => fc.colorId === c.id) || false;
+                        return (
+                          <label key={c.id} className="flex items-center gap-1.5 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setFormData({ ...formData, colors: [...(formData.colors || []), { colorId: c.id, colorTitle: c.title }] });
+                                } else {
+                                  setFormData({ ...formData, colors: (formData.colors || []).filter(fc => fc.colorId !== c.id) });
+                                }
+                              }}
+                              className="w-3.5 h-3.5 text-amber-600 rounded focus:ring-amber-500 border-slate-300"
+                            />
+                            <span className="text-[11px] font-semibold text-slate-800">{c.title}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
                   </div>
 
                   <div>
@@ -1372,6 +1573,21 @@ export default function AdminInventoryPage() {
                         </option>
                       ))}
                     </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold tracking-wider text-slate-700 uppercase mb-1">
+                      Gross Gold Weight (Grams)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.001"
+                      min="0"
+                      placeholder="e.g. 6.500"
+                      value={formData.grossGoldWeightGrams}
+                      onChange={(e) => setFormData({ ...formData, grossGoldWeightGrams: limitDecimalPlaces(e.target.value, 3) })}
+                      className="w-full px-3 py-2 bg-white border border-slate-300 rounded-[4px] text-xs font-medium font-mono text-slate-800 focus:outline-none focus:border-amber-600 focus:ring-1 focus:ring-amber-500/20 shadow-2xs"
+                    />
                   </div>
 
                   <div>
@@ -1449,7 +1665,7 @@ export default function AdminInventoryPage() {
                         )}
                       </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
                         {/* Shape */}
                         <div>
                           <label className="block text-[10.5px] font-semibold tracking-wider text-slate-700 uppercase mb-1">
@@ -1460,8 +1676,27 @@ export default function AdminInventoryPage() {
                             onChange={(e) => handleDiamondChange(index, 'shape', e.target.value)}
                             className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-[4px] text-xs font-medium text-slate-800 focus:outline-none focus:border-amber-600 shadow-2xs"
                           >
-                            {DIAMOND_SHAPES.map(s => (
-                              <option key={s} value={s}>{s}</option>
+                            {shapes.length > 0 ? shapes.map(s => (
+                              <option key={s.id} value={s.title}>{s.title}</option>
+                            )) : (
+                              <option value="Round">Round</option>
+                            )}
+                          </select>
+                        </div>
+
+                        {/* Setting Type */}
+                        <div>
+                          <label className="block text-[10.5px] font-semibold tracking-wider text-slate-700 uppercase mb-1">
+                            Setting Type
+                          </label>
+                          <select
+                            value={dRow.settingType || ''}
+                            onChange={(e) => handleDiamondChange(index, 'settingType', e.target.value)}
+                            className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-[4px] text-xs font-medium text-slate-800 focus:outline-none focus:border-amber-600 shadow-2xs"
+                          >
+                            <option value="">Select Setting</option>
+                            {settingTypes.map(s => (
+                              <option key={s.id} value={s.title}>{s.title}</option>
                             ))}
                           </select>
                         </div>
@@ -1593,7 +1828,7 @@ export default function AdminInventoryPage() {
                           )}
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
                           {/* Stone Type */}
                           <div>
                             <label className="block text-[10.5px] font-semibold tracking-wider text-slate-700 uppercase mb-1">
@@ -1609,6 +1844,23 @@ export default function AdminInventoryPage() {
                                 <option key={st.id} value={st.id}>
                                   {st.title} {st.ratePerCarat ? `(₹${Number(st.ratePerCarat).toLocaleString('en-IN')}/Ct)` : ''}
                                 </option>
+                              ))}
+                            </select>
+                          </div>
+
+                          {/* Setting Type */}
+                          <div>
+                            <label className="block text-[10.5px] font-semibold tracking-wider text-slate-700 uppercase mb-1">
+                              Setting Type
+                            </label>
+                            <select
+                              value={sRow.settingType || ''}
+                              onChange={(e) => handleStoneChange(index, 'settingType', e.target.value)}
+                              className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-[4px] text-xs font-medium text-slate-800 focus:outline-none focus:border-amber-600 shadow-2xs"
+                            >
+                              <option value="">Select Setting</option>
+                              {settingTypes.map(s => (
+                                <option key={s.id} value={s.title}>{s.title}</option>
                               ))}
                             </select>
                           </div>
@@ -1789,7 +2041,7 @@ export default function AdminInventoryPage() {
                       ? 'border-slate-300 opacity-60 cursor-not-allowed'
                       : 'border-slate-400 hover:border-amber-600 cursor-pointer'
                   }`}>
-                    <Upload className="w-4 h-4 text-amber-700" />
+                    {uploadingMedia ? <Loader2 className="w-4 h-4 text-amber-700 animate-spin" /> : <Upload className="w-4 h-4 text-amber-700" />}
                     <span className="text-xs font-semibold text-slate-800 uppercase">
                       {uploadingMedia 
                         ? 'Uploading to Firebase...' 
@@ -1960,7 +2212,7 @@ export default function AdminInventoryPage() {
                 </button>
                 <button
                   type="submit"
-                  disabled={submitting}
+                  disabled={submitting || uploadingMedia}
                   className="px-5 py-2 bg-gradient-to-r from-[#D4AF37] to-[#B48811] text-slate-950 font-semibold text-xs tracking-wider rounded-[4px] uppercase disabled:opacity-50 shadow-2xs flex items-center gap-1.5"
                 >
                   <CheckCircle2 className="w-3.5 h-3.5" />
@@ -2082,10 +2334,14 @@ export default function AdminInventoryPage() {
                   <span className="text-xs font-semibold text-slate-900 uppercase tracking-wider block border-b border-slate-200 pb-1">
                     1. Gold & Metal Specifications
                   </span>
-                  <div className="grid grid-cols-3 gap-2 text-xs">
+                  <div className="grid grid-cols-4 gap-2 text-xs">
                     <div className="bg-white p-2 border border-slate-200 rounded-[3px]">
                       <span className="text-[10px] text-slate-500 uppercase block">Metal Color</span>
-                      <span className="font-semibold text-slate-900">{viewingProduct.colorTitle || 'N/A'}</span>
+                      <span className="font-semibold text-slate-900">
+                        {Array.isArray(viewingProduct.colors) && viewingProduct.colors.length > 0 
+                          ? viewingProduct.colors.map(c => c.colorTitle).join(', ') 
+                          : viewingProduct.colorTitle || 'N/A'}
+                      </span>
                     </div>
                     <div className="bg-white p-2 border border-slate-200 rounded-[3px]">
                       <span className="text-[10px] text-slate-500 uppercase block">Purity & Rate</span>
@@ -2093,6 +2349,10 @@ export default function AdminInventoryPage() {
                         {viewingProduct.purityTitle || 'N/A'} 
                         <small className="text-slate-500 font-mono block">₹{Number(viewingProduct.purityRatePerGram || 0).toLocaleString('en-IN')}/g</small>
                       </span>
+                    </div>
+                    <div className="bg-white p-2 border border-slate-200 rounded-[3px]">
+                      <span className="text-[10px] text-slate-500 uppercase block">Gross Weight</span>
+                      <span className="font-mono font-semibold text-slate-900">{viewingProduct.grossGoldWeightGrams || 0} Grams</span>
                     </div>
                     <div className="bg-white p-2 border border-slate-200 rounded-[3px]">
                       <span className="text-[10px] text-slate-500 uppercase block">Net Weight</span>
@@ -2118,6 +2378,7 @@ export default function AdminInventoryPage() {
                       <thead>
                         <tr className="text-[9.5px] font-semibold text-slate-600 uppercase border-b border-slate-200 bg-slate-100">
                           <th className="py-1.5 px-2">Shape</th>
+                          <th className="py-1.5 px-2">Setting</th>
                           <th className="py-1.5 px-2">Quality</th>
                           <th className="py-1.5 px-2 text-right">Carats</th>
                           <th className="py-1.5 px-2 text-center">Count</th>
@@ -2129,6 +2390,7 @@ export default function AdminInventoryPage() {
                           viewingProduct.diamonds.map((d, idx) => (
                             <tr key={`vdiag-${idx}`} className="bg-white">
                               <td className="py-1.5 px-2 font-semibold text-slate-900">{d.shape || 'Round'}</td>
+                              <td className="py-1.5 px-2 text-slate-700">{d.settingType || 'N/A'}</td>
                               <td className="py-1.5 px-2 text-slate-700">{d.diamondQualityTitle || viewingProduct.diamondQualityTitle || 'Standard'}</td>
                               <td className="py-1.5 px-2 text-right font-mono">{d.totalDiamondCarats || 0} Ct</td>
                               <td className="py-1.5 px-2 text-center font-mono">{d.numberOfDiamonds || 0} Pcs</td>
@@ -2140,6 +2402,7 @@ export default function AdminInventoryPage() {
                         ) : (
                           <tr className="bg-white">
                             <td className="py-1.5 px-2 font-semibold text-slate-900">Standard</td>
+                            <td className="py-1.5 px-2 text-slate-700">N/A</td>
                             <td className="py-1.5 px-2 text-slate-700">{viewingProduct.diamondQualityTitle || 'N/A'}</td>
                             <td className="py-1.5 px-2 text-right font-mono">{viewingProduct.totalDiamondCarats || 0} Ct</td>
                             <td className="py-1.5 px-2 text-center font-mono">{viewingProduct.numberOfDiamonds || 0} Pcs</td>
@@ -2168,6 +2431,7 @@ export default function AdminInventoryPage() {
                         <thead>
                           <tr className="text-[9.5px] font-semibold text-slate-600 uppercase border-b border-slate-200 bg-slate-100">
                             <th className="py-1.5 px-2">Gemstone Type</th>
+                            <th className="py-1.5 px-2">Setting</th>
                             <th className="py-1.5 px-2 text-right">Carats</th>
                             <th className="py-1.5 px-2 text-center">Count</th>
                             <th className="py-1.5 px-2 text-right">Rate / Ct</th>
@@ -2177,6 +2441,7 @@ export default function AdminInventoryPage() {
                           {viewingProduct.stones.map((st, idx) => (
                             <tr key={`vst-${idx}`} className="bg-white">
                               <td className="py-1.5 px-2 font-semibold text-slate-900">{st.stoneTitle || 'Gemstone'}</td>
+                              <td className="py-1.5 px-2 text-slate-700">{st.settingType || 'N/A'}</td>
                               <td className="py-1.5 px-2 text-right font-mono">{st.stoneWeightCarats || 0} Ct</td>
                               <td className="py-1.5 px-2 text-center font-mono">{st.numberOfStones || 0} Pcs</td>
                               <td className="py-1.5 px-2 text-right font-mono text-amber-900 font-semibold">

@@ -39,13 +39,16 @@ export default function AdminCategoriesPage() {
   const [editingCategory, setEditingCategory] = useState(null);
   const [hoveredImage, setHoveredImage] = useState(null);
 
-  // Form states
   const [formData, setFormData] = useState({
     title: '',
     heading: '',
     order: 1,
     status: 'Active',
-    imageUrl: ''
+    imageUrl: '',
+    acceptSize: false,
+    increaseAmountBaseOnSize: false,
+    acceptHeight: false,
+    acceptWidth: false
   });
   const [uploadingImage, setUploadingImage] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -133,7 +136,11 @@ export default function AdminCategoriesPage() {
       heading: '',
       order: nextOrder,
       status: 'Active',
-      imageUrl: ''
+      imageUrl: '',
+      acceptSize: false,
+      increaseAmountBaseOnSize: false,
+      acceptHeight: false,
+      acceptWidth: false
     });
     setErrorMessage('');
     setIsAddModalOpen(true);
@@ -176,7 +183,11 @@ export default function AdminCategoriesPage() {
       heading: cat.heading || '',
       order: cat.order || 1,
       status: cat.status || 'Active',
-      imageUrl: cat.imageUrl || ''
+      imageUrl: cat.imageUrl || '',
+      acceptSize: Boolean(cat.acceptSize),
+      increaseAmountBaseOnSize: Boolean(cat.increaseAmountBaseOnSize),
+      acceptHeight: Boolean(cat.acceptHeight),
+      acceptWidth: Boolean(cat.acceptWidth)
     });
     setErrorMessage('');
     setIsEditModalOpen(true);
@@ -343,6 +354,10 @@ export default function AdminCategoriesPage() {
                 <th className="py-2 px-3">Image</th>
                 <th className="py-2 px-3">Title</th>
                 <th className="py-2 px-3">Heading / Subtitle</th>
+                <th className="py-2 px-3 text-center" title="Accept Size">Size</th>
+                <th className="py-2 px-3 text-center" title="Increase Price on Size">Size Price</th>
+                <th className="py-2 px-3 text-center" title="Accept Height">Height</th>
+                <th className="py-2 px-3 text-center" title="Accept Width">Width</th>
                 <th className="py-2 px-3 text-center">Order</th>
                 <th className="py-2 px-3">Status</th>
                 <th className="py-2 px-3 text-right">Actions</th>
@@ -380,7 +395,7 @@ export default function AdminCategoriesPage() {
                 ))
               ) : categories.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-8 text-center text-slate-500 text-xs font-medium">
+                  <td colSpan={11} className="py-8 text-center text-slate-500 text-xs font-medium">
                     No data found.
                   </td>
                 </tr>
@@ -439,6 +454,20 @@ export default function AdminCategoriesPage() {
                     {/* Heading */}
                     <td className="py-2 px-3 text-slate-600 text-[11px] truncate max-w-[220px]">
                       {cat.heading || <span className="text-slate-400 italic">No heading specified</span>}
+                    </td>
+
+                    {/* Checkboxes Values */}
+                    <td className="py-2 px-3 text-center">
+                      {cat.acceptSize ? <Check className="w-4 h-4 text-emerald-600 mx-auto" /> : <span className="text-slate-300">-</span>}
+                    </td>
+                    <td className="py-2 px-3 text-center">
+                      {cat.increaseAmountBaseOnSize ? <Check className="w-4 h-4 text-emerald-600 mx-auto" /> : <span className="text-slate-300">-</span>}
+                    </td>
+                    <td className="py-2 px-3 text-center">
+                      {cat.acceptHeight ? <Check className="w-4 h-4 text-emerald-600 mx-auto" /> : <span className="text-slate-300">-</span>}
+                    </td>
+                    <td className="py-2 px-3 text-center">
+                      {cat.acceptWidth ? <Check className="w-4 h-4 text-emerald-600 mx-auto" /> : <span className="text-slate-300">-</span>}
                     </td>
 
                     {/* Order */}
@@ -614,6 +643,46 @@ export default function AdminCategoriesPage() {
                 </div>
               </div>
 
+              {/* ADVANCED SETTINGS */}
+              <div className="grid grid-cols-2 gap-3 p-3 bg-slate-50 border border-slate-200 rounded-[4px]">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.acceptSize}
+                    onChange={(e) => setFormData({ ...formData, acceptSize: e.target.checked })}
+                    className="w-3.5 h-3.5 text-[#D4AF37] rounded focus:ring-[#D4AF37] border-slate-400"
+                  />
+                  <span className="text-[11px] font-semibold text-slate-800">Accept Size</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.increaseAmountBaseOnSize}
+                    onChange={(e) => setFormData({ ...formData, increaseAmountBaseOnSize: e.target.checked })}
+                    className="w-3.5 h-3.5 text-[#D4AF37] rounded focus:ring-[#D4AF37] border-slate-400"
+                  />
+                  <span className="text-[11px] font-semibold text-slate-800 leading-tight">Increase amount<br/>based on size</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.acceptHeight}
+                    onChange={(e) => setFormData({ ...formData, acceptHeight: e.target.checked })}
+                    className="w-3.5 h-3.5 text-[#D4AF37] rounded focus:ring-[#D4AF37] border-slate-400"
+                  />
+                  <span className="text-[11px] font-semibold text-slate-800">Accept Height</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.acceptWidth}
+                    onChange={(e) => setFormData({ ...formData, acceptWidth: e.target.checked })}
+                    className="w-3.5 h-3.5 text-[#D4AF37] rounded focus:ring-[#D4AF37] border-slate-400"
+                  />
+                  <span className="text-[11px] font-semibold text-slate-800">Accept Width</span>
+                </label>
+              </div>
+
               <div className="pt-2 flex items-center justify-end gap-2.5">
                 <button
                   type="button"
@@ -757,6 +826,46 @@ export default function AdminCategoriesPage() {
                     <option value="Inactive">Inactive</option>
                   </select>
                 </div>
+              </div>
+
+              {/* ADVANCED SETTINGS */}
+              <div className="grid grid-cols-2 gap-3 p-3 bg-slate-50 border border-slate-200 rounded-[4px]">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.acceptSize}
+                    onChange={(e) => setFormData({ ...formData, acceptSize: e.target.checked })}
+                    className="w-3.5 h-3.5 text-[#D4AF37] rounded focus:ring-[#D4AF37] border-slate-400"
+                  />
+                  <span className="text-[11px] font-semibold text-slate-800">Accept Size</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.increaseAmountBaseOnSize}
+                    onChange={(e) => setFormData({ ...formData, increaseAmountBaseOnSize: e.target.checked })}
+                    className="w-3.5 h-3.5 text-[#D4AF37] rounded focus:ring-[#D4AF37] border-slate-400"
+                  />
+                  <span className="text-[11px] font-semibold text-slate-800 leading-tight">Increase amount<br/>based on size</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.acceptHeight}
+                    onChange={(e) => setFormData({ ...formData, acceptHeight: e.target.checked })}
+                    className="w-3.5 h-3.5 text-[#D4AF37] rounded focus:ring-[#D4AF37] border-slate-400"
+                  />
+                  <span className="text-[11px] font-semibold text-slate-800">Accept Height</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={formData.acceptWidth}
+                    onChange={(e) => setFormData({ ...formData, acceptWidth: e.target.checked })}
+                    className="w-3.5 h-3.5 text-[#D4AF37] rounded focus:ring-[#D4AF37] border-slate-400"
+                  />
+                  <span className="text-[11px] font-semibold text-slate-800">Accept Width</span>
+                </label>
               </div>
 
               <div className="pt-2 flex items-center justify-end gap-2.5">

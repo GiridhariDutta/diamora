@@ -31,6 +31,12 @@ export default function ProductDetailPage() {
   const [activeMediaIndex, setActiveMediaIndex] = useState(0);
   const [addedToast, setAddedToast] = useState(false);
 
+  const [expandedSection, setExpandedSection] = useState(null);
+
+  const toggleSection = (section) => {
+    setExpandedSection(prev => prev === section ? null : section);
+  };
+
   const scrollRef = useRef(null);
   const recentlyScrollRef = useRef(null);
 
@@ -239,6 +245,7 @@ export default function ProductDetailPage() {
 
   const activeMedia = mediaList[activeMediaIndex] || mediaList[0];
   const formattedPrice = Number(product.grandTotal || product.computedGoldPrice || product.price || 0).toLocaleString('en-IN');
+  const displayColor = (Array.isArray(product.colors) && product.colors.length > 0) ? product.colors.map(c => c.colorTitle).join(', ') : (product.colorTitle || '');
 
   return (
     <div className="min-h-screen bg-[#0C0D10] text-[#F5F5F0] pt-22 pb-16 font-poppins">
@@ -346,9 +353,9 @@ export default function ProductDetailPage() {
                 {product.purityTitle && (
                   <span className="text-[#E0B094]">{product.purityTitle}</span>
                 )}
-                {product.purityTitle && product.colorTitle && <span>•</span>}
-                {product.colorTitle && (
-                  <span className="text-[#E0B094]">{product.colorTitle}</span>
+                {product.purityTitle && displayColor && <span>•</span>}
+                {displayColor && (
+                  <span className="text-[#E0B094]">{displayColor}</span>
                 )}
               </div>
             </div>
@@ -370,7 +377,7 @@ export default function ProductDetailPage() {
                 </div>
                 <div>
                   <span className="text-[9px] text-[#C5C8D0]/80 uppercase block">Gold Rate</span>
-                  <span className="font-mono text-white font-normal">₹{product.purityRatePerGram || 0}/g</span>
+                  <span className="font-mono text-white font-normal">₹{(product.purityRatePerGram || 0).toLocaleString('en-IN')}/g</span>
                 </div>
                 <div>
                   <span className="text-[9px] text-[#C5C8D0]/80 uppercase block">Diamond Weight</span>
@@ -378,14 +385,14 @@ export default function ProductDetailPage() {
                 </div>
                 <div>
                   <span className="text-[9px] text-[#C5C8D0]/80 uppercase block">Diamond Rate</span>
-                  <span className="font-mono text-white font-normal">₹{product.diamondRatePerCarat || 0}/ct</span>
+                  <span className="font-mono text-white font-normal">₹{(product.diamondRatePerCarat || product.diamonds?.[0]?.diamondRatePerCarat || 0).toLocaleString('en-IN')}/ct</span>
                 </div>
               </div>
             </div>
 
             {/* METAL TYPE AND COLOUR OPTIONS (IF PROVIDED) */}
-            {(product.purityTitle || product.colorTitle || product.diamondQualityTitle || product.hasGemstone) && (
-              <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 pt-1">
+            {(product.purityTitle || displayColor || product.diamondQualityTitle || product.hasGemstone) && (
+              <div className="flex flex-wrap items-start gap-x-8 gap-y-4 pt-1">
                 {product.purityTitle && (
                   <div className="space-y-1.5">
                     <label className="block text-xs text-[#C5C8D0] font-normal tracking-wide">
@@ -397,13 +404,23 @@ export default function ProductDetailPage() {
                   </div>
                 )}
 
-                {product.colorTitle && (
+                {displayColor && (
                   <div className="space-y-1.5">
                     <label className="block text-xs text-[#C5C8D0] font-normal tracking-wide">
                       Metal Colour:
                     </label>
-                    <div className="inline-block px-4 py-2 bg-white/5 border border-white/20 text-[#F5F5F0] text-xs font-normal rounded-md shadow-2xs">
-                      {product.colorTitle}
+                    <div className="flex flex-wrap gap-2">
+                      {Array.isArray(product.colors) && product.colors.length > 0 ? (
+                        product.colors.map((c, idx) => (
+                          <div key={c.colorId || idx} className="inline-block px-4 py-2 bg-white/5 border border-white/20 text-[#F5F5F0] text-xs font-normal rounded-md shadow-2xs">
+                            {c.colorTitle}
+                          </div>
+                        ))
+                      ) : (
+                        <div className="inline-block px-4 py-2 bg-white/5 border border-white/20 text-[#F5F5F0] text-xs font-normal rounded-md shadow-2xs">
+                          {product.colorTitle}
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
@@ -432,6 +449,183 @@ export default function ProductDetailPage() {
               </div>
             )}
 
+            {/* SOLD OUT STATUS */}
+            {product.availability === 'Sold Out' && (
+              <div className="mt-4 mb-[-8px]">
+                <span className="inline-block text-rose-500 font-semibold tracking-widest text-[11px] uppercase px-3 py-1.5 bg-rose-500/10 border border-rose-500/20 rounded-md">
+                  Sold Out
+                </span>
+              </div>
+            )}
+
+            {/* ACCORDION SECTIONS */}
+            <div className="border-t border-white/10 mt-6 mb-8">
+              
+              {/* PRODUCT DETAILS ACCORDION */}
+              <div className="border-b border-white/10">
+                <button 
+                  onClick={() => toggleSection('productDetails')}
+                  className="w-full py-4 flex items-center justify-between text-left focus:outline-none cursor-pointer"
+                >
+                  <span className="text-[11px] uppercase tracking-widest text-[#E0B094] font-medium">Product Details</span>
+                  <span className="text-[#C5C8D0] text-lg font-light leading-none transform transition-transform duration-300">
+                    {expandedSection === 'productDetails' ? '−' : '+'}
+                  </span>
+                </button>
+                
+                <div 
+                  className={`overflow-hidden transition-all duration-500 ease-in-out ${expandedSection === 'productDetails' ? 'max-h-[500px] opacity-100 pb-4' : 'max-h-0 opacity-0'}`}
+                >
+                  <div className="pt-1 text-xs font-light">
+                    {[
+                      ...(Number(product.height) > 0 ? [{ label: 'Height (mm)', value: product.height }] : []),
+                      { label: 'Product Code', value: product.sku || 'N/A' },
+                      ...(Number(product.width) > 0 ? [{ label: 'Width (mm)', value: product.width }] : [])
+                    ].map((row, idx) => (
+                      <div key={row.label} className={`flex justify-between px-3 py-2.5 ${idx % 2 === 0 ? 'bg-[#16181F] text-white' : 'bg-transparent text-[#C5C8D0]'}`}>
+                        <span>{row.label}</span>
+                        <span className="font-mono">{row.value}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* METAL DETAILS ACCORDION */}
+              <div className="border-b border-white/10">
+                <button 
+                  onClick={() => toggleSection('metalDetails')}
+                  className="w-full py-4 flex items-center justify-between text-left focus:outline-none cursor-pointer"
+                >
+                  <span className="text-[11px] uppercase tracking-widest text-[#E0B094] font-medium">Metal Details</span>
+                  <span className="text-[#C5C8D0] text-lg font-light leading-none transform transition-transform duration-300">
+                    {expandedSection === 'metalDetails' ? '-' : '+'}
+                  </span>
+                </button>
+                
+                <div 
+                  className={`overflow-hidden transition-all duration-500 ease-in-out ${expandedSection === 'metalDetails' ? 'max-h-[500px] opacity-100 pb-4' : 'max-h-0 opacity-0'}`}
+                >
+                  <div className="pt-1 text-xs font-light">
+                    <div className="bg-[#16181F] flex justify-between px-3 py-2.5 text-white">
+                      <span>Metal Purity</span>
+                      <span className="font-mono">{product.purityTitle || 'N/A'}</span>
+                    </div>
+                    <div className="bg-transparent flex justify-between px-3 py-2.5 text-[#C5C8D0]">
+                      <span>Metal Type</span>
+                      <span className="font-mono">{Array.isArray(product.colors) && product.colors.length > 0 ? product.colors.map(c => c.colorTitle).join(', ') : (product.colorTitle || 'N/A')}</span>
+                    </div>
+                    <div className="bg-[#16181F] flex justify-between px-3 py-2.5 text-white">
+                      <span>Metal Weight (grams)</span>
+                      <span className="font-mono">{product.netGoldWeightGrams || 0}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* DIAMOND DETAILS ACCORDION */}
+              {(product.diamonds && product.diamonds.length > 0 || product.diamondQualityTitle) && (
+              <div className="border-b border-white/10">
+                <button 
+                  onClick={() => toggleSection('diamondDetails')}
+                  className="w-full py-4 flex items-center justify-between text-left focus:outline-none cursor-pointer"
+                >
+                  <span className="text-[11px] uppercase tracking-widest text-[#E0B094] font-medium">Diamond Details</span>
+                  <span className="text-[#C5C8D0] text-lg font-light leading-none transform transition-transform duration-300">
+                    {expandedSection === 'diamondDetails' ? '−' : '+'}
+                  </span>
+                </button>
+                
+                <div 
+                  className={`overflow-hidden transition-all duration-500 ease-in-out ${expandedSection === 'diamondDetails' ? 'max-h-[500px] opacity-100 pb-4' : 'max-h-0 opacity-0'}`}
+                >
+                  <div className="pt-1 text-xs font-light">
+                    <div className="bg-[#16181F] flex justify-between px-3 py-2.5 text-white">
+                      <span>Diamond Quality</span>
+                      <span className="font-mono">{product.diamonds?.[0]?.diamondQualityTitle || product.diamondQualityTitle || 'N/A'}</span>
+                    </div>
+                    <div className="bg-transparent flex justify-between px-3 py-2.5 text-[#C5C8D0]">
+                      <span>Setting Type</span>
+                      <span className="font-mono">{product.diamonds?.[0]?.settingType || 'N/A'}</span>
+                    </div>
+                    <div className="bg-[#16181F] flex justify-between px-3 py-2.5 text-white">
+                      <span>Shape</span>
+                      <span className="font-mono">{product.diamonds?.[0]?.shape || 'Round'}</span>
+                    </div>
+                    <div className="bg-transparent flex justify-between px-3 py-2.5 text-[#C5C8D0]">
+                      <span>Total Diamonds</span>
+                      <span className="font-mono">{product.numberOfDiamonds || 0}</span>
+                    </div>
+                    <div className="bg-[#16181F] flex justify-between px-3 py-2.5 text-white">
+                      <span>Total Weight (carats)</span>
+                      <span className="font-mono">{product.totalDiamondCarats || 0}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              )}
+
+              {/* PRICE ACCORDION */}
+              <div className="border-b border-white/10">
+                <button 
+                  onClick={() => toggleSection('price')}
+                  className="w-full py-4 flex items-center justify-between text-left focus:outline-none cursor-pointer"
+                >
+                  <span className="text-[11px] uppercase tracking-widest text-[#E0B094] font-medium">Price</span>
+                  <span className="text-[#C5C8D0] text-lg font-light leading-none transform transition-transform duration-300">
+                    {expandedSection === 'price' ? '−' : '+'}
+                  </span>
+                </button>
+                
+                <div 
+                  className={`overflow-hidden transition-all duration-500 ease-in-out ${expandedSection === 'price' ? 'max-h-[500px] opacity-100 pb-4' : 'max-h-0 opacity-0'}`}
+                >
+                  <div className="pt-1">
+                    <div className="w-full overflow-x-auto">
+                      <table className="w-full text-left text-xs font-light min-w-[300px]">
+                        <thead>
+                          <tr className="bg-[#16181F] text-[#C5C8D0] text-[10px] uppercase tracking-wider">
+                            <th className="py-2.5 px-3 font-normal">Component</th>
+                            <th className="py-2.5 px-3 font-normal">Rate</th>
+                            <th className="py-2.5 px-3 font-normal">Weight</th>
+                            <th className="py-2.5 px-3 font-normal text-right">Value</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-white/5">
+                          <tr className="bg-transparent text-white">
+                            <td className="py-2.5 px-3">Gold {product.purityTitle || ''}</td>
+                            <td className="py-2.5 px-3 font-mono">₹{(product.purityRatePerGram || 0).toLocaleString('en-IN')}/g</td>
+                            <td className="py-2.5 px-3 font-mono">{product.netGoldWeightGrams || 0}</td>
+                            <td className="py-2.5 px-3 text-right font-mono text-[#E0B094]">₹{((product.purityRatePerGram || 0) * (product.netGoldWeightGrams || 0)).toLocaleString('en-IN')}</td>
+                          </tr>
+                          {(product.totalDiamondCarats > 0 || (product.diamondRatePerCarat || product.diamonds?.[0]?.diamondRatePerCarat) > 0) && (
+                          <tr className="bg-[#16181F] text-white">
+                            <td className="py-2.5 px-3">Diamond</td>
+                            <td className="py-2.5 px-3 font-mono">₹{((product.diamondRatePerCarat || product.diamonds?.[0]?.diamondRatePerCarat || 0)).toLocaleString('en-IN')}/ct</td>
+                            <td className="py-2.5 px-3 font-mono">{product.totalDiamondCarats || 0}</td>
+                            <td className="py-2.5 px-3 text-right font-mono text-[#E0B094]">₹{(((product.diamondRatePerCarat || product.diamonds?.[0]?.diamondRatePerCarat || 0) * (product.totalDiamondCarats || 0))).toLocaleString('en-IN')}</td>
+                          </tr>
+                          )}
+                          <tr className="bg-transparent text-[#C5C8D0]">
+                            <td className="py-2.5 px-3">GST</td>
+                            <td className="py-2.5 px-3 font-mono">{product.gstPercent || 3}%</td>
+                            <td className="py-2.5 px-3 font-mono"></td>
+                            <td className="py-2.5 px-3 text-right font-mono text-[#E0B094]">₹{Math.round(product.computedGst || 0).toLocaleString('en-IN')}</td>
+                          </tr>
+                          <tr className="bg-[#16181F] text-white border-t border-white/20">
+                            <td className="py-2.5 px-3 font-medium uppercase tracking-wider text-[10px]">Grand Total</td>
+                            <td className="py-2.5 px-3"></td>
+                            <td className="py-2.5 px-3"></td>
+                            <td className="py-2.5 px-3 text-right font-mono font-medium text-[#E0B094]">₹{formattedPrice}</td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             {/* PRODUCT DESCRIPTION SECTION */}
             <div className="bg-[#16181F]/80 border border-white/15 rounded-lg p-4 space-y-2 backdrop-blur-xl">
               <span className="text-xs font-normal tracking-[0.18em] text-[#E0B094] uppercase block border-b border-white/10 pb-1.5">
@@ -452,17 +646,6 @@ export default function ProductDetailPage() {
 
             {/* ACTION BUTTONS (3 PRIMARY BUTTONS: INQUIRE, ADD TO CART, BUY NOW) */}
             <div className="pt-2 space-y-3">
-              {/* Added Toast Notification */}
-              {addedToast && (
-                <div className="p-3 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs flex items-center justify-between animate-fade-in font-medium">
-                  <div className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-emerald-400" />
-                    <span>Added to your luxury shopping cart!</span>
-                  </div>
-                  <Link to="/cart" className="underline font-semibold hover:text-white">View Cart →</Link>
-                </div>
-              )}
-
               <div className="space-y-2 sm:space-y-0 sm:grid sm:grid-cols-3 gap-2.5">
                 {/* 1. INQUIRE BUTTON (Full Width on Mobile) */}
                 <button

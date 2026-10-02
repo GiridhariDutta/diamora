@@ -19,6 +19,9 @@ export default function OrderPage() {
   const [orderSuccess, setOrderSuccess] = useState(null);
   const [errorMessage, setErrorMessage] = useState('');
 
+  const [customPayAmount, setCustomPayAmount] = useState('');
+  const [payAmountError, setPayAmountError] = useState('');
+
   // Step 2 Form State (Pre-filled from User Profile)
   const [shippingDetails, setShippingDetails] = useState({
     customerName: '',
@@ -149,6 +152,11 @@ export default function OrderPage() {
       setCartItems(resolvedItems);
       const total = resolvedItems.reduce((acc, i) => acc + (i.subtotal || 0), 0);
       setCartTotal(total);
+      
+      // Initialize customPayAmount to 30% advance if not set
+      if (!customPayAmount && total > 0) {
+        setCustomPayAmount(String(Math.ceil(total * 0.3)));
+      }
     } catch (err) {
       console.error('Error loading checkout items:', err);
     } finally {
@@ -272,6 +280,17 @@ export default function OrderPage() {
 
     setSubmitting(true);
     setErrorMessage('');
+    setPayAmountError('');
+
+    const minPayable = Math.ceil(cartTotal * 0.3);
+    const maxPayable = Math.ceil(cartTotal);
+    const payNum = Number(customPayAmount);
+
+    if (!customPayAmount || isNaN(payNum) || payNum < minPayable || payNum > maxPayable) {
+      setSubmitting(false);
+      setPayAmountError(`Please enter a valid amount between ₹${minPayable.toLocaleString('en-IN')} and ₹${maxPayable.toLocaleString('en-IN')}`);
+      return;
+    }
 
     try {
       // 1. Call Backend to verify product prices and create Razorpay order
@@ -287,6 +306,7 @@ export default function OrderPage() {
         })),
         shippingDetails,
         totalAmount: cartTotal,
+        payAmount: payNum,
         userId: user?.uid || user?.id || user?._id || ''
       });
 
@@ -302,14 +322,35 @@ export default function OrderPage() {
         throw new Error('Razorpay Checkout SDK failed to load. Please check your internet connection.');
       }
 
-      // 3. Open Razorpay Payment Modal
+      // 3. Load and convert local logo to Base64 (Razorpay needs absolute URL or Base64)
+      let base64Logo = '';
+      try {
+        const img = new Image();
+        img.src = '/diamora_logo.png';
+        await new Promise((resolve, reject) => {
+          img.onload = resolve;
+          img.onerror = reject;
+        });
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 256;
+        const scale = MAX_WIDTH / img.width;
+        canvas.width = MAX_WIDTH;
+        canvas.height = img.height * scale;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        base64Logo = canvas.toDataURL('image/png');
+      } catch (err) {
+        console.warn('Could not generate base64 logo for Razorpay:', err);
+      }
+
+      // 4. Open Razorpay Payment Modal
       const options = {
         key: keyId,
         amount: amount,
         currency: currency,
         name: 'DIAMORAS Luxury Vault',
         description: cartItems[0]?.title || 'Certified Diamond Jewelry Purchase',
-        image: cartItems[0]?.image || '',
+        image: base64Logo || (window.location.origin + '/diamora_logo.png'),
         order_id: razorpayOrderId,
         prefill: {
           name: shippingDetails.customerName,
@@ -366,6 +407,7 @@ export default function OrderPage() {
               })),
               shippingDetails,
               totalAmount: verifiedTotal,
+              payAmount: payNum,
               userId: user?.uid || user?.id || user?._id || ''
             });
 
@@ -403,7 +445,10 @@ export default function OrderPage() {
     }
   };
 
-  const formattedTotal = Number(cartTotal).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const formattedTotal = Number(Math.ceil(cartTotal)).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const advanceAmount = Math.ceil(cartTotal * 0.3);
+  const formattedAdvance = Number(advanceAmount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const formattedRemaining = Number(Math.ceil(cartTotal) - advanceAmount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
   if (loading) {
     return (
@@ -466,10 +511,10 @@ export default function OrderPage() {
 
           <div className="pt-3 flex flex-col sm:flex-row gap-4 justify-center">
             <button
-              onClick={() => navigate('/profile')}
+              onClick={() => navigate('/my-order')}
               className="px-8 py-3.5 bg-gradient-to-r from-[#F7E09A] via-[#D4AF37] to-[#C59B27] text-[#0C0D10] font-bold text-xs tracking-[0.2em] uppercase rounded-xl hover:brightness-110 transition-all shadow-[0_4px_20px_rgba(212,175,55,0.35)] cursor-pointer"
             >
-              VIEW MY ORDERS IN PROFILE
+              VIEW MY ORDERS
             </button>
             <button
               onClick={() => navigate('/shop')}
@@ -594,7 +639,16 @@ export default function OrderPage() {
             </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          <div className="w-full">
+            {/* 30% Booking Highlight Message */}
+            <div className="bg-[#E0B094]/10 border border-[#E0B094]/40 rounded-xl p-4 sm:p-5 flex items-center justify-center gap-3 shadow-[0_0_20px_rgba(224,176,148,0.1)] mb-8">
+              <Award className="w-5 h-5 text-[#E0B094] shrink-0" />
+              <p className="text-[#F5F5F0] text-sm sm:text-base font-medium tracking-wide text-center">
+                To confirm your order today, you only need to pay a <strong className="text-[#E0B094] font-bold">30% booking amount</strong> of <strong className="text-white font-mono text-lg">₹{formattedAdvance}</strong>.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             
             {/* STEP 1: PRODUCT & PRICE BREAKDOWN CONFIRMATION */}
             {currentStep === 1 && (
@@ -754,6 +808,54 @@ export default function OrderPage() {
                       />
                     </div>
 
+                    {/* Aadhaar & PAN Check */}
+                    {(user?.aadhaar && user?.panCard) ? (
+                      <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-xs font-semibold text-[#E0B094] uppercase tracking-wider mb-2">
+                            Aadhaar Number
+                          </label>
+                          <input
+                            type="text"
+                            value={user.aadhaar}
+                            readOnly
+                            className="w-full bg-[#0C0D10]/50 border border-white/10 rounded-lg px-4 py-3 text-xs text-white/70 focus:outline-none cursor-not-allowed"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-semibold text-[#E0B094] uppercase tracking-wider mb-2">
+                            PAN Card Number
+                          </label>
+                          <input
+                            type="text"
+                            value={user.panCard}
+                            readOnly
+                            className="w-full bg-[#0C0D10]/50 border border-white/10 rounded-lg px-4 py-3 text-xs text-white/70 focus:outline-none cursor-not-allowed"
+                          />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="sm:col-span-2">
+                        <label className="block text-xs font-semibold text-rose-400 uppercase tracking-wider mb-2">
+                          Identity Verification Missing
+                        </label>
+                        <div className="w-full bg-rose-500/5 border border-rose-500/30 rounded-lg px-4 py-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                          <span className="text-[11px] text-rose-300">Govt ID (Aadhaar & PAN) required for luxury purchase.</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const profileCheck = checkProfileCompleteness();
+                              setMissingFields(profileCheck.missingFields);
+                              setShowProfileModal(true);
+                            }}
+                            className="text-[10px] font-bold text-rose-400 hover:text-rose-300 border border-rose-500/40 hover:bg-rose-500/20 uppercase tracking-wider px-3 py-1.5 rounded transition-colors shrink-0"
+                          >
+                            Update in Profile
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
                     {/* Email */}
                     <div className="sm:col-span-2">
                       <label className="block text-xs font-semibold text-[#E0B094] uppercase tracking-wider mb-2">
@@ -899,29 +1001,52 @@ export default function OrderPage() {
                     </h2>
                   </div>
 
-                  {/* Payment Methods Selection */}
+                  {/* Payment Amount Input */}
                   <div className="space-y-4">
-                    
-                    {/* Razorpay Online Payment Option */}
-                    <div className="p-4 sm:p-5 rounded-xl border border-[#E0B094] bg-[#E0B094]/10 shadow-[0_0_25px_rgba(224,176,148,0.2)] flex items-start gap-3 sm:gap-4">
-                      <div className="p-2.5 sm:p-3 rounded-lg bg-black border border-[#E0B094]/50 text-[#E0B094] shrink-0">
-                        <CreditCard className="w-5 h-5 sm:w-6 sm:h-6" />
-                      </div>
-                      <div className="space-y-1 text-left min-w-0">
-                        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-                          <h4 className="font-semibold text-xs text-white uppercase tracking-wider">
-                            Razorpay Secure Online Gateway
-                          </h4>
-                          <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-400 text-[9px] font-bold uppercase">
-                            RECOMMENDED
-                          </span>
-                        </div>
+                    <div className="p-4 sm:p-5 rounded-xl border border-[#E0B094]/30 bg-[#E0B094]/5 shadow-[0_0_25px_rgba(224,176,148,0.1)] flex flex-col gap-3">
+                      <div className="space-y-1">
+                        <label htmlFor="customPayAmount" className="font-semibold text-xs text-white uppercase tracking-wider block">
+                          Enter Amount to Pay Now
+                        </label>
                         <p className="text-[10px] sm:text-[11px] text-[#C5C8D0] leading-relaxed font-light">
-                          Supports all Credit Cards, Debit Cards, UPI (GPay, PhonePe, Paytm), NetBanking, and Wallets with 256-Bit SSL encryption.
+                          You must pay at least the <strong>30% advance (₹{formattedAdvance})</strong> up to the <strong>Grand Total (₹{formattedTotal})</strong> to confirm this order.
                         </p>
                       </div>
+                      
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                          <span className="text-[#E0B094] font-mono sm:text-lg">₹</span>
+                        </div>
+                        <input
+                          id="customPayAmount"
+                          type="number"
+                          value={customPayAmount}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            // Block invalid characters at input level
+                            if (val.includes('.') || val.includes('e') || val.includes('-')) return;
+                            setCustomPayAmount(val);
+                            setPayAmountError('');
+                          }}
+                          onKeyDown={(e) => {
+                            // Prevent 'e', '-', '.', '+'
+                            if (['e', 'E', '-', '.', '+'].includes(e.key)) {
+                              e.preventDefault();
+                            }
+                          }}
+                          onWheel={(e) => e.target.blur()}
+                          className={`w-full bg-[#0C0D10] border ${payAmountError ? 'border-red-500' : 'border-white/10 hover:border-[#E0B094]/50 focus:border-[#E0B094]'} rounded-xl py-3.5 pl-10 pr-4 text-white font-mono text-lg focus:outline-none transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
+                          placeholder={advanceAmount.toString()}
+                          required
+                          min={advanceAmount}
+                          max={Math.ceil(cartTotal)}
+                          step="1"
+                        />
+                      </div>
+                      {payAmountError && (
+                        <p className="text-red-400 text-xs font-medium">{payAmountError}</p>
+                      )}
                     </div>
-
                   </div>
 
                   {/* Summary Snippet */}
@@ -960,7 +1085,7 @@ export default function OrderPage() {
                           <CreditCard className="w-4 h-4 shrink-0" />
                           <span>Pay via Razorpay</span>
                           <span className="opacity-40">|</span>
-                          <span className="font-mono font-bold text-sm">₹{formattedTotal}</span>
+                          <span className="font-mono font-bold text-sm">₹{Number(customPayAmount || 0).toLocaleString('en-IN')}</span>
                           <ArrowRight className="w-4 h-4 shrink-0 ml-0.5" />
                         </>
                       )}
@@ -1009,14 +1134,20 @@ export default function OrderPage() {
               {/* Total */}
               <div className="border-t border-white/10 pt-4 space-y-1">
                 <div className="flex justify-between items-baseline">
-                  <span className="text-xs font-semibold text-white uppercase tracking-wider">Grand Total</span>
+                  <span className="text-xs font-semibold text-white uppercase tracking-wider">Paying Now</span>
                   <span className="font-mono text-2xl font-bold text-[#E0B094]">
-                    ₹{formattedTotal}
+                    ₹{Number(customPayAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </span>
                 </div>
                 <p className="text-[10px] text-[#C5C8D0]/50 italic text-right">
                   Includes GST & fully insured transit
                 </p>
+                <div className="flex justify-between items-baseline pt-2">
+                  <span className="text-[11px] text-[#C5C8D0] uppercase tracking-wider">Remaining Balance</span>
+                  <span className="font-mono text-sm text-[#C5C8D0]">
+                    ₹{Number(Math.max(0, Math.ceil(cartTotal) - Number(customPayAmount || 0))).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
+                </div>
               </div>
 
               {/* Security & Authenticity Trust Badges */}
@@ -1036,6 +1167,7 @@ export default function OrderPage() {
                 </div>
               </div>
             </div>
+          </div>
           </div>
         )}
       </div>
@@ -1099,7 +1231,7 @@ export default function OrderPage() {
                     <CreditCard className="w-3.5 h-3.5 shrink-0" />
                     <span className="whitespace-nowrap">PAY NOW</span>
                     <span className="opacity-40 shrink-0">|</span>
-                    <span className="font-mono font-bold text-xs truncate">₹{formattedTotal}</span>
+                    <span className="font-mono font-bold text-xs truncate">₹{Number(customPayAmount || 0).toLocaleString('en-IN')}</span>
                   </>
                 )}
               </button>

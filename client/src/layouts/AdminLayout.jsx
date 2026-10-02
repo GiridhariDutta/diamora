@@ -10,6 +10,8 @@ import {
   FolderTree,
   Boxes,
   Palette,
+  Hexagon,
+  Layers,
   Award,
   Gem,
   Settings, 
@@ -111,6 +113,8 @@ export default function AdminLayout() {
     { id: 'categories', label: 'CATEGORY', icon: FolderTree, path: '/admin/categories' },
     { id: 'collections', label: 'COLLECTION', icon: Boxes, path: '/admin/collections' },
     { id: 'colors', label: 'GOLD COLOR', icon: Palette, path: '/admin/colors' },
+    { id: 'shapes', label: 'DIAMOND SHAPE', icon: Hexagon, path: '/admin/shapes' },
+    { id: 'setting-types', label: 'SETTING TYPE', icon: Layers, path: '/admin/setting-types' },
     { id: 'purities', label: 'PURITY', icon: Award, path: '/admin/purities' },
     { id: 'diamond_qualities', label: 'DIAMOND QUALITY', icon: Gem, path: '/admin/diamond-qualities' },
     { id: 'stones', label: 'GEMSTONE', icon: Sparkles, path: '/admin/stones' },
@@ -380,6 +384,8 @@ export default function AdminLayout() {
                currentPath === '/admin/categories' ? 'Category Management' :
                currentPath === '/admin/collections' ? 'Collection Management' :
                currentPath === '/admin/colors' ? 'Gold Color Management' :
+               currentPath === '/admin/shapes' ? 'Diamond Shape Management' :
+               currentPath === '/admin/setting-types' ? 'Setting Type Management' :
                currentPath === '/admin/purities' ? 'Purity Management' :
                currentPath === '/admin/diamond-qualities' ? 'Diamond Quality Management' :
                currentPath === '/admin/stones' ? 'Gemstone Management' :

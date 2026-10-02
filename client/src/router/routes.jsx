@@ -13,6 +13,8 @@ import AdminCustomersPage from '../pages/admin/AdminCustomersPage';
 import AdminCategoriesPage from '../pages/admin/AdminCategoriesPage';
 import AdminCollectionsPage from '../pages/admin/AdminCollectionsPage';
 import AdminColorsPage from '../pages/admin/AdminColorsPage';
+import AdminShapesPage from '../pages/admin/AdminShapesPage';
+import AdminSettingTypesPage from '../pages/admin/AdminSettingTypesPage';
 import AdminPurityPage from '../pages/admin/AdminPurityPage';
 import AdminDiamondQualityPage from '../pages/admin/AdminDiamondQualityPage';
 import AdminStonesPage from '../pages/admin/AdminStonesPage';
@@ -68,6 +70,8 @@ export const router = createBrowserRouter([
       { path: 'categories', element: <AdminCategoriesPage /> },
       { path: 'collections', element: <AdminCollectionsPage /> },
       { path: 'colors', element: <AdminColorsPage /> },
+      { path: 'shapes', element: <AdminShapesPage /> },
+      { path: 'setting-types', element: <AdminSettingTypesPage /> },
       { path: 'purities', element: <AdminPurityPage /> },
       { path: 'diamond-qualities', element: <AdminDiamondQualityPage /> },
       { path: 'stones', element: <AdminStonesPage /> },
