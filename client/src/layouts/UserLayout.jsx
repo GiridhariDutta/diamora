@@ -6,6 +6,7 @@ import AmbientAudioPlayer from '../components/AmbientAudioPlayer';
 import TicketModal from '../components/TicketModal';
 import InquiryModal from '../components/InquiryModal';
 import AuthModal from '../components/AuthModal';
+import FloatingWhatsApp from '../components/FloatingWhatsApp';
 import { removeCookie } from '../utils/cookies';
 
 export default function UserLayout() {
@@ -110,6 +111,9 @@ export default function UserLayout() {
         onClose={() => setIsAuthModalOpen(false)}
         onAuthSuccess={handleAuthSuccess}
       />
+
+      {/* Floating WhatsApp Chat */}
+      <FloatingWhatsApp />
 
     </div>
   );
