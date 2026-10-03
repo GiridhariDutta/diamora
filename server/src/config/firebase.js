@@ -18,5 +18,5 @@ if (!getApps().length) {
 
 export const db = getApps().length ? getFirestore() : null;
 export const adminAuth = getApps().length ? getAuth() : null;
-export const bucket = getApps().length ? getStorage().bucket(process.env.STORAGE_BUCKET) : null;
+export const bucket = (getApps().length && process.env.STORAGE_BUCKET) ? getStorage().bucket(process.env.STORAGE_BUCKET) : null;
 export default getApps()[0];

@@ -94,11 +94,11 @@ export default function ContactPage() {
               <Phone className="w-5 h-5 text-[#E0B094]" />
             </div>
             <h3 className="text-xs font-semibold tracking-[0.18em] text-white uppercase mb-2">Phone</h3>
-            <a href="tel:+919876543210" className="text-sm text-[#C5C8D4] hover:text-[#E0B094] transition-colors font-mono block">
-              +91 98765 43210
+            <a href="tel:+919759005599" className="text-sm text-[#C5C8D4] hover:text-[#E0B094] transition-colors font-mono block">
+              +91 9759005599
             </a>
-            <a href="tel:+919123456789" className="text-sm text-[#9094A0] hover:text-[#E0B094] transition-colors font-mono block mt-1">
-              +91 91234 56789
+            <a href="tel:+919458205599" className="text-sm text-[#9094A0] hover:text-[#E0B094] transition-colors font-mono block mt-1">
+              +91 9458205599
             </a>
           </div>
 
@@ -108,11 +108,8 @@ export default function ContactPage() {
               <Mail className="w-5 h-5 text-[#E0B094]" />
             </div>
             <h3 className="text-xs font-semibold tracking-[0.18em] text-white uppercase mb-2">Email</h3>
-            <a href="mailto:info@diamora.in" className="text-sm text-[#C5C8D4] hover:text-[#E0B094] transition-colors block">
-              info@diamora.in
-            </a>
-            <a href="mailto:support@diamora.in" className="text-sm text-[#9094A0] hover:text-[#E0B094] transition-colors block mt-1">
-              support@diamora.in
+            <a href="mailto:Diamorajewelofficial@gmail.com" className="text-sm text-[#C5C8D4] hover:text-[#E0B094] transition-colors block">
+              Diamorajewelofficial@gmail.com
             </a>
           </div>
 
@@ -123,12 +120,12 @@ export default function ContactPage() {
             </div>
             <h3 className="text-xs font-semibold tracking-[0.18em] text-white uppercase mb-2">WhatsApp</h3>
             <a 
-              href="https://wa.me/919876543210?text=Hello%20Diamora,%20I%20have%20an%20inquiry" 
+              href="https://wa.me/919759005599?text=Hello%20Diamoras,%20I%20have%20an%20inquiry" 
               target="_blank" 
               rel="noopener noreferrer"
               className="text-sm text-emerald-400 hover:text-emerald-300 transition-colors font-mono block"
             >
-              +91 98765 43210
+              +91 9759005599
             </a>
             <span className="text-[10px] text-[#9094A0] mt-1 block">Chat with us instantly</span>
           </div>
@@ -140,7 +137,7 @@ export default function ContactPage() {
             </div>
             <h3 className="text-xs font-semibold tracking-[0.18em] text-white uppercase mb-2">Visit Us</h3>
             <p className="text-sm text-[#C5C8D4] leading-relaxed">
-              Kolkata, West Bengal<br />India
+              Dhampur, Bijnor<br />Uttar Pradesh, India
             </p>
           </div>
         </div>
@@ -296,7 +293,7 @@ export default function ContactPage() {
             {/* Google Maps Embed */}
             <div className="bg-[#0F1015] border border-white/10 rounded-xl overflow-hidden">
               <iframe 
-                src="https://maps.google.com/maps?q=22.620445577461695,88.39659317416071&hl=en&z=16&output=embed" 
+                src="https://www.google.com/maps/embed?pb=!1m17!1m12!1m3!1d3479.1985907861313!2d78.50478267552575!3d29.305849775303866!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m2!1m1!2zMjnCsDE4JzIxLjEiTiA3OMKwMzAnMjYuNSJF!5e0!3m2!1sen!2sin!4v1791031516775!5m2!1sen!2sin" 
                 width="100%" 
                 height="320" 
                 style={{ border: 0 }} 
