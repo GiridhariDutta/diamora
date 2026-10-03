@@ -462,9 +462,14 @@ export default function AdminOrdersPage() {
                       <td className="py-3 px-3">
                         <div>
                           <span className="font-mono font-bold text-emerald-700 text-xs block">
-                            ₹{Number(order.totalAmount || 0).toLocaleString('en-IN')}
+                            Paid: ₹{Number(order.payAmount || order.totalAmount || 0).toLocaleString('en-IN')}
                           </span>
-                          <span className="text-[10px] text-slate-500 block font-mono">
+                          {(order.payAmount && order.payAmount < order.totalAmount) ? (
+                            <span className="font-mono font-semibold text-amber-600 text-[10px] block mt-0.5">
+                              Due: ₹{Number((order.totalAmount || 0) - (order.payAmount || 0)).toLocaleString('en-IN')} (Total: ₹{Number(order.totalAmount || 0).toLocaleString('en-IN')})
+                            </span>
+                          ) : null}
+                          <span className="text-[10px] text-slate-500 block font-mono mt-1">
                             {order.paymentMethod || 'Razorpay Online'}
                           </span>
                           {order.razorpayPaymentId && (
@@ -510,7 +515,8 @@ export default function AdminOrdersPage() {
                             <Eye className="w-3.5 h-3.5" />
                           </button>
 
-                          {/* Delete Button */}
+                          {/* Delete Button (Commented out as requested) */}
+                          {/*
                           <button
                             onClick={() => handleDeleteOrder(order)}
                             className="p-1 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-600 hover:text-rose-700 rounded-[4px] transition-colors"
@@ -518,6 +524,7 @@ export default function AdminOrdersPage() {
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
+                          */}
 
                         </div>
                       </td>
@@ -535,7 +542,7 @@ export default function AdminOrdersPage() {
       {/* DETAIL & TIMELINE HISTORY MODAL */}
       {selectedOrderDetails && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-slate-900/60 backdrop-blur-xs font-open-sans animate-fadeIn">
-          <div className="relative w-full max-w-xl bg-white border border-slate-300 rounded-[4px] shadow-2xl p-5 max-h-[90vh] overflow-y-auto">
+          <div className="relative w-full max-w-3xl bg-white border border-slate-300 rounded-[4px] shadow-2xl p-5 max-h-[90vh] overflow-y-auto">
             
             <button
               onClick={() => setSelectedOrderDetails(null)}
@@ -663,7 +670,11 @@ export default function AdminOrdersPage() {
                   </div>
                   <div>
                     <span className="text-slate-400 text-[10px] uppercase block">Paid Total</span>
-                    <span className="font-bold text-emerald-700">₹{Number(selectedOrderDetails.totalAmount || 0).toLocaleString('en-IN')}</span>
+                    <span className="font-bold text-emerald-700">₹{Number(selectedOrderDetails.payAmount || selectedOrderDetails.totalAmount || 0).toLocaleString('en-IN')}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 text-[10px] uppercase block">Grand Total</span>
+                    <span className="font-bold text-amber-700">₹{Number(selectedOrderDetails.totalAmount || 0).toLocaleString('en-IN')}</span>
                   </div>
                   {selectedOrderDetails.razorpayPaymentId && (
                     <div className="col-span-2">

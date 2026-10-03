@@ -224,11 +224,7 @@ export default function Navbar({
 
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-50 font-poppins transition-all duration-300 ${
-        isCompact
-          ? 'bg-[#0C0D10]/95 backdrop-blur-md border-b border-white/10 shadow-2xl py-2 sm:py-2.5'
-          : 'bg-transparent py-3 sm:py-4'
-      }`}
+      className="fixed top-0 left-0 right-0 z-50 font-poppins transition-all duration-300 bg-[#0C0D10]/95 backdrop-blur-md border-b border-white/10 shadow-2xl py-2 sm:py-2.5"
       onMouseLeave={handleMouseLeaveShop}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-8 flex items-center justify-between relative h-12">
@@ -275,11 +271,7 @@ export default function Navbar({
             <img
               src="/diamora_logo.png"
               alt="Diamora Logo"
-              className={`w-auto object-contain transition-all duration-300 ease-in-out filter drop-shadow-[0_4px_12px_rgba(0,0,0,0.5)] ${
-                isCompact
-                  ? 'h-10 sm:h-12 md:h-14 max-w-[160px]'
-                  : 'h-14 sm:h-16 md:h-20 max-w-[220px]'
-              }`}
+              className="w-auto object-contain transition-all duration-300 ease-in-out filter drop-shadow-[0_4px_12px_rgba(0,0,0,0.5)] h-10 sm:h-12 md:h-14 max-w-[160px]"
               onError={(e) => {
                 e.target.style.display = 'none';
                 e.target.nextSibling.style.display = 'block';

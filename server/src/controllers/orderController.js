@@ -29,13 +29,14 @@ export class OrderController {
    */
   static async createRazorpayOrder(req, res) {
     try {
-      const { items, shippingDetails, totalAmount, userId } = req.body;
+      const { items, shippingDetails, totalAmount, payAmount, userId } = req.body;
       const activeUserId = req.user?.uid || userId;
 
       const result = await OrderService.createRazorpayOrder({
         items,
         shippingDetails,
         totalAmount,
+        payAmount,
         userId: activeUserId
       });
 
@@ -60,7 +61,7 @@ export class OrderController {
    */
   static async verifyRazorpayPayment(req, res) {
     try {
-      const { razorpay_order_id, razorpay_payment_id, razorpay_signature, items, shippingDetails, totalAmount, userId } = req.body;
+      const { razorpay_order_id, razorpay_payment_id, razorpay_signature, items, shippingDetails, totalAmount, payAmount, userId } = req.body;
       const activeUserId = req.user?.uid || userId;
 
       const savedOrder = await OrderService.verifyRazorpayPayment({
@@ -70,6 +71,7 @@ export class OrderController {
         items,
         shippingDetails,
         totalAmount,
+        payAmount,
         userId: activeUserId
       });
 

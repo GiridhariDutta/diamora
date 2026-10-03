@@ -1,50 +1,22 @@
-import { initializeApp, cert, getApps } from 'firebase-admin/app';
+import { initializeApp, getApps } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
 import { getStorage } from 'firebase-admin/storage';
-import path from 'path';
-import fs from 'fs';
-import { fileURLToPath } from 'url';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Optional local credential path for local development fallback
-const credentialPath = process.env.FIREBASE_CREDENTIALS_PATH ||
-  path.resolve(__dirname, '../../../cradencial/diamora-508307-firebase-adminsdk-fbsvc-a66c2cd8f1.json');
-
-const projectId = process.env.FIREBASE_PROJECT_ID || 'diamora-508307';
-const storageBucket = process.env.STORAGE_BUCKET || 'diamora-508307.firebasestorage.app';
 
 if (!getApps().length) {
   try {
-    if (fs.existsSync(credentialPath)) {
-      const serviceAccount = JSON.parse(fs.readFileSync(credentialPath, 'utf8'));
-      initializeApp({
-        credential: cert(serviceAccount),
-        projectId: serviceAccount.project_id || projectId,
-        storageBucket
-      });
-      console.log('✅ Firebase Admin SDK initialized using local Service Account key');
-    } else {
-      // Cloud Run / Google Application Default Credentials (ADC) approach (No JSON file required)
-      initializeApp({
-        projectId,
-        storageBucket
-      });
-      console.log('✅ Firebase Admin SDK initialized using Application Default Credentials (Cloud Run Mode)');
-    }
+    // In production (Cloud Run), this automatically uses Application Default Credentials.
+    // In local development, it uses the GOOGLE_APPLICATION_CREDENTIALS environment variable.
+    initializeApp({
+      ...(process.env.STORAGE_BUCKET && { storageBucket: process.env.STORAGE_BUCKET })
+    });
+    console.log('✅ Firebase Admin SDK initialized');
   } catch (error) {
-    console.warn('⚠️ Service account load error, falling back to default credentials:', error.message);
-    try {
-      initializeApp({ projectId, storageBucket });
-    } catch (e) {
-      console.error('❌ Failed to initialize Firebase Admin SDK:', e.message);
-    }
+    console.error('❌ Failed to initialize Firebase Admin SDK:', error.message);
   }
 }
 
 export const db = getApps().length ? getFirestore() : null;
 export const adminAuth = getApps().length ? getAuth() : null;
-export const bucket = getApps().length ? getStorage().bucket(storageBucket) : null;
+export const bucket = getApps().length ? getStorage().bucket(process.env.STORAGE_BUCKET) : null;
 export default getApps()[0];

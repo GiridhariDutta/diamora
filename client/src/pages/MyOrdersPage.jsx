@@ -140,11 +140,16 @@ export default function MyOrdersPage() {
                         <p className="text-[11px] text-[#C5C8D0]/60 mt-0.5">Placed on {dateStr}</p>
                       </div>
 
-                      <div className="text-left sm:text-right">
-                        <span className="text-[10px] text-[#C5C8D0]/50 uppercase tracking-wider block">Total Amount</span>
+                      <div className="text-left sm:text-right flex flex-col items-start sm:items-end">
+                        <span className="text-[10px] text-[#C5C8D0]/50 uppercase tracking-wider block">Paid Amount</span>
                         <span className="font-mono text-base font-bold text-emerald-400">
-                          ₹{Number(ord.totalAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          ₹{Number(ord.payAmount || ord.totalAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                         </span>
+                        {(ord.payAmount && ord.payAmount < ord.totalAmount) ? (
+                          <span className="font-mono text-[10px] text-amber-500 font-medium mt-0.5">
+                            Due: ₹{Number((ord.totalAmount || 0) - (ord.payAmount || 0)).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} (Total: ₹{Number(ord.totalAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })})
+                          </span>
+                        ) : null}
                       </div>
                     </div>
 

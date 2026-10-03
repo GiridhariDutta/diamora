@@ -28,6 +28,7 @@ service-account*.json
 *.key
 server/scripts/
 server/scripts/upload3DModels.js
+bank/
 
 # Logs & Temporary Files
 logs/
