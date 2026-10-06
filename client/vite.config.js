@@ -11,6 +11,9 @@ export default defineConfig({
   server: {
     host: true, // Exposes server to local network (Wi-Fi)
     port: 3000,
+    proxy: {
+      '/api': 'http://localhost:5000'
+    },
     watch: {
       ignored: ['**/66-ring-ornament/**', '**/*.3dm', '**/*.glb', '**/.git/**']
     }

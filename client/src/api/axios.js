@@ -1,23 +1,7 @@
 import axios from 'axios';
 import { getCookie } from '../utils/cookies';
 
-const getBaseUrl = () => {
-  const envUrl = import.meta.env.VITE_API_URL;
-  if (envUrl) {
-    if (envUrl.includes('localhost') && typeof window !== 'undefined' && window.location.hostname !== 'localhost') {
-      return envUrl.replace('localhost', window.location.hostname);
-    }
-    return envUrl;
-  }
-  if (import.meta.env.PROD) return '';
-  const hostname = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
-  return `http://${hostname}:5000`;
-};
-
-const API_BASE_URL = getBaseUrl();
-
 const api = axios.create({
-  baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json'
   }
