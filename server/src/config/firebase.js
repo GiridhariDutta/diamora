@@ -3,14 +3,17 @@ import { getFirestore } from 'firebase-admin/firestore';
 import { getAuth } from 'firebase-admin/auth';
 import { getStorage } from 'firebase-admin/storage';
 
+const isProd = process.env.NODE_ENV === 'production';
+const bucketName = process.env.STORAGE_BUCKET || (isProd ? 'diamora-508307.firebasestorage.app' : 'diamora-e3448.firebasestorage.app');
+
 if (!getApps().length) {
   try {
     // In production (Cloud Run), this automatically uses Application Default Credentials.
     // In local development, it uses the GOOGLE_APPLICATION_CREDENTIALS environment variable.
     initializeApp({
-      ...(process.env.STORAGE_BUCKET && { storageBucket: process.env.STORAGE_BUCKET })
+      storageBucket: bucketName
     });
-    console.log('✅ Firebase Admin SDK initialized');
+    console.log(`✅ Firebase Admin SDK initialized (Bucket: ${bucketName})`);
   } catch (error) {
     console.error('❌ Failed to initialize Firebase Admin SDK:', error.message);
   }
@@ -18,5 +21,5 @@ if (!getApps().length) {
 
 export const db = getApps().length ? getFirestore() : null;
 export const adminAuth = getApps().length ? getAuth() : null;
-export const bucket = (getApps().length && process.env.STORAGE_BUCKET) ? getStorage().bucket(process.env.STORAGE_BUCKET) : null;
+export const bucket = getApps().length ? getStorage().bucket(bucketName) : null;
 export default getApps()[0];
