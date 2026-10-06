@@ -277,10 +277,15 @@ export default function CartPage() {
 
         {/* 30% BOOKING HIGHLIGHT MESSAGE */}
         {cartItems.length > 0 && (
-          <div className="bg-[#E0B094]/10 border border-[#E0B094]/40 rounded-xl p-4 sm:p-5 flex items-center justify-center gap-3 shadow-[0_0_20px_rgba(224,176,148,0.1)] mb-2">
-            <Award className="w-5 h-5 text-[#E0B094] shrink-0" />
-            <p className="text-[#F5F5F0] text-sm sm:text-base font-medium tracking-wide text-center">
-              You can book and confirm your order today with just a <strong className="text-[#E0B094] font-bold">30% advance payment</strong>.
+          <div className="bg-[#E0B094]/10 border border-[#E0B094]/40 rounded-xl p-4 sm:p-5 flex flex-col items-center justify-center gap-2 shadow-[0_0_20px_rgba(224,176,148,0.1)] mb-2 text-center">
+            <div className="flex items-center justify-center gap-3">
+              <Award className="w-5 h-5 text-[#E0B094] shrink-0" />
+              <p className="text-[#F5F5F0] text-sm sm:text-base font-medium tracking-wide">
+                You can book and confirm your order today with just a <strong className="text-[#E0B094] font-bold">30% advance payment</strong>.
+              </p>
+            </div>
+            <p className="text-[#C5C8D0] text-xs sm:text-sm font-light italic">
+              * The remaining balance must be cleared within <strong className="text-white font-medium">2 months</strong>.
             </p>
           </div>
         )}
@@ -454,7 +459,7 @@ export default function CartPage() {
                 </div>
 
                 <div className="flex justify-between items-center">
-                  <span>IGI & GIA Diamond Certification</span>
+                  <span>IGI Diamond Certification</span>
                   <span className="text-[#E0B094] font-medium">INCLUDED</span>
                 </div>
 

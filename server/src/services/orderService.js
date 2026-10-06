@@ -113,7 +113,8 @@ export class OrderService {
     // For luxury diamond purchases > ₹5,00,000 (e.g. ₹8,30,170), cap the payment request to ₹5,00,000 for Razorpay test API limit compliance
     // while preserving the true verified total (₹8,30,170.00) for the order stored in Firestore.
     const MAX_RAZORPAY_TEST_PAISE = 50000000; // ₹5,00,000 in paise
-    const amountForRazorpay = Math.min(amountInPaise, MAX_RAZORPAY_TEST_PAISE);
+    const isTestMode = keyId.startsWith('rzp_test');
+    const amountForRazorpay = isTestMode ? Math.min(amountInPaise, MAX_RAZORPAY_TEST_PAISE) : amountInPaise;
 
     const razorpayOrder = await razorpay.orders.create({
       amount: amountForRazorpay,
