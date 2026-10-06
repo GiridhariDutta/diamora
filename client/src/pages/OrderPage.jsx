@@ -21,6 +21,7 @@ export default function OrderPage() {
 
   const [customPayAmount, setCustomPayAmount] = useState('');
   const [payAmountError, setPayAmountError] = useState('');
+  const [paymentMode, setPaymentMode] = useState('full'); // 'full' or 'advance'
 
   // Step 2 Form State (Pre-filled from User Profile)
   const [shippingDetails, setShippingDetails] = useState({
@@ -153,9 +154,9 @@ export default function OrderPage() {
       const total = resolvedItems.reduce((acc, i) => acc + (i.subtotal || 0), 0);
       setCartTotal(total);
       
-      // Initialize customPayAmount to 30% advance if not set
+      // Initialize customPayAmount to full if not set
       if (!customPayAmount && total > 0) {
-        setCustomPayAmount(String(Math.ceil(total * 0.3)));
+        setCustomPayAmount(String(Math.ceil(total)));
       }
     } catch (err) {
       console.error('Error loading checkout items:', err);
@@ -193,7 +194,7 @@ export default function OrderPage() {
     if (!email || !email.includes('@')) missing.push('Email Address');
     if (phone.length !== 10) missing.push('10-digit Phone Number');
     if (aadhaar.length !== 12) missing.push('12-digit Aadhaar Card Number');
-    if (!/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(panCard)) missing.push('Valid PAN Card Number');
+    if (panCard && !/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(panCard)) missing.push('Valid PAN Card Number');
 
     return {
       isComplete: missing.length === 0,
@@ -501,8 +502,14 @@ export default function OrderPage() {
               <span className="text-[#C5C8D0]">Payment Method:</span>
               <span className="text-[#E0B094] font-medium">{orderSuccess.paymentMethod}</span>
             </div>
+            <div className="flex justify-between items-center pb-2 border-b border-white/10">
+              <span className="text-[#C5C8D0]">Amount Paid Now:</span>
+              <strong className="text-emerald-400 font-mono text-base">
+                ₹{Number(orderSuccess.payAmount || 0).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </strong>
+            </div>
             <div className="flex justify-between items-center">
-              <span className="text-[#C5C8D0]">Order Total:</span>
+              <span className="text-[#C5C8D0]">Grand Order Total:</span>
               <strong className="text-[#E0B094] font-mono text-base">
                 ₹{Number(orderSuccess.totalAmount || cartTotal).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </strong>
@@ -1001,52 +1008,84 @@ export default function OrderPage() {
                     </h2>
                   </div>
 
-                  {/* Payment Amount Input */}
+                  {/* Payment Mode Selection */}
                   <div className="space-y-4">
-                    <div className="p-4 sm:p-5 rounded-xl border border-[#E0B094]/30 bg-[#E0B094]/5 shadow-[0_0_25px_rgba(224,176,148,0.1)] flex flex-col gap-3">
-                      <div className="space-y-1">
-                        <label htmlFor="customPayAmount" className="font-semibold text-xs text-white uppercase tracking-wider block">
-                          Enter Amount to Pay Now
-                        </label>
-                        <p className="text-[10px] sm:text-[11px] text-[#C5C8D0] leading-relaxed font-light">
-                          You must pay at least the <strong>30% advance (₹{formattedAdvance})</strong> up to the <strong>Grand Total (₹{formattedTotal})</strong> to confirm this order.
-                        </p>
-                      </div>
-                      
-                      <div className="relative">
-                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                          <span className="text-[#E0B094] font-mono sm:text-lg">₹</span>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {/* Full Payment Option */}
+                      <div 
+                        onClick={() => { setPaymentMode('full'); setPayAmountError(''); setCustomPayAmount(String(Math.ceil(cartTotal))); }}
+                        className={`cursor-pointer border p-4 sm:p-5 rounded-xl transition-all ${paymentMode === 'full' ? 'border-[#E0B094] bg-[#E0B094]/10 shadow-[0_0_20px_rgba(224,176,148,0.15)]' : 'border-white/10 hover:border-[#E0B094]/50 bg-white/5'}`}
+                      >
+                        <div className="flex items-center gap-3 mb-2">
+                          <div className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${paymentMode === 'full' ? 'border-[#E0B094]' : 'border-white/30'}`}>
+                            {paymentMode === 'full' && <div className="w-2 h-2 bg-[#E0B094] rounded-full" />}
+                          </div>
+                          <span className="font-semibold text-[13px] uppercase tracking-wider text-white">Full Payment</span>
                         </div>
-                        <input
-                          id="customPayAmount"
-                          type="number"
-                          value={customPayAmount}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            // Block invalid characters at input level
-                            if (val.includes('.') || val.includes('e') || val.includes('-')) return;
-                            setCustomPayAmount(val);
-                            setPayAmountError('');
-                          }}
-                          onKeyDown={(e) => {
-                            // Prevent 'e', '-', '.', '+'
-                            if (['e', 'E', '-', '.', '+'].includes(e.key)) {
-                              e.preventDefault();
-                            }
-                          }}
-                          onWheel={(e) => e.target.blur()}
-                          className={`w-full bg-[#0C0D10] border ${payAmountError ? 'border-red-500' : 'border-white/10 hover:border-[#E0B094]/50 focus:border-[#E0B094]'} rounded-xl py-3.5 pl-10 pr-4 text-white font-mono text-lg focus:outline-none transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
-                          placeholder={advanceAmount.toString()}
-                          required
-                          min={advanceAmount}
-                          max={Math.ceil(cartTotal)}
-                          step="1"
-                        />
+                        <p className="text-[11px] text-[#C5C8D0] ml-7 font-light">Pay the full amount (₹{Math.ceil(cartTotal).toLocaleString('en-IN')}) now and complete your order.</p>
                       </div>
-                      {payAmountError && (
-                        <p className="text-red-400 text-xs font-medium">{payAmountError}</p>
-                      )}
+
+                      {/* Advance Payment Option */}
+                      <div 
+                        onClick={() => { setPaymentMode('advance'); setPayAmountError(''); setCustomPayAmount(String(Math.ceil(cartTotal * 0.3))); }}
+                        className={`cursor-pointer border p-4 sm:p-5 rounded-xl transition-all ${paymentMode === 'advance' ? 'border-[#E0B094] bg-[#E0B094]/10 shadow-[0_0_20px_rgba(224,176,148,0.15)]' : 'border-white/10 hover:border-[#E0B094]/50 bg-white/5'}`}
+                      >
+                        <div className="flex items-center gap-3 mb-2">
+                          <div className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${paymentMode === 'advance' ? 'border-[#E0B094]' : 'border-white/30'}`}>
+                            {paymentMode === 'advance' && <div className="w-2 h-2 bg-[#E0B094] rounded-full" />}
+                          </div>
+                          <span className="font-semibold text-[13px] uppercase tracking-wider text-white">Pay 30% & Book</span>
+                        </div>
+                        <p className="text-[11px] text-[#C5C8D0] ml-7 font-light">Pay ₹{Math.ceil(cartTotal * 0.3).toLocaleString('en-IN')} now to book. Pay the rest within 2 months.</p>
+                      </div>
                     </div>
+
+                    {paymentMode === 'advance' && (
+                      <div className="p-4 sm:p-5 rounded-xl border border-[#E0B094]/30 bg-[#E0B094]/5 mt-4 shadow-[0_0_25px_rgba(224,176,148,0.1)] flex flex-col gap-3 animate-fade-in">
+                        <div className="space-y-1">
+                          <label htmlFor="customPayAmount" className="font-semibold text-xs text-white uppercase tracking-wider block">
+                            Enter Amount to Pay Now
+                          </label>
+                          <p className="text-[10px] sm:text-[11px] text-[#C5C8D0] leading-relaxed font-light">
+                            You must pay at least the <strong>30% advance (₹{Math.ceil(cartTotal * 0.3).toLocaleString('en-IN')})</strong> up to the <strong>Grand Total (₹{Math.ceil(cartTotal).toLocaleString('en-IN')})</strong> to confirm this order.
+                          </p>
+                        </div>
+                        
+                        <div className="relative">
+                          <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                            <span className="text-[#E0B094] font-mono sm:text-lg">₹</span>
+                          </div>
+                          <input
+                            id="customPayAmount"
+                            type="number"
+                            value={customPayAmount}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              // Block invalid characters at input level
+                              if (val.includes('.') || val.includes('e') || val.includes('-')) return;
+                              setCustomPayAmount(val);
+                              setPayAmountError('');
+                            }}
+                            onKeyDown={(e) => {
+                              // Prevent 'e', '-', '.', '+'
+                              if (['e', 'E', '-', '.', '+'].includes(e.key)) {
+                                e.preventDefault();
+                              }
+                            }}
+                            onWheel={(e) => e.target.blur()}
+                            className={`w-full bg-[#0C0D10] border ${payAmountError ? 'border-red-500' : 'border-white/10 hover:border-[#E0B094]/50 focus:border-[#E0B094]'} rounded-xl py-3.5 pl-10 pr-4 text-white font-mono text-lg focus:outline-none transition-colors [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
+                            placeholder={Math.ceil(cartTotal * 0.3).toString()}
+                            required
+                            min={Math.ceil(cartTotal * 0.3)}
+                            max={Math.ceil(cartTotal)}
+                            step="1"
+                          />
+                        </div>
+                        {payAmountError && (
+                          <p className="text-red-400 text-xs font-medium">{payAmountError}</p>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   {/* Summary Snippet */}
@@ -1121,7 +1160,7 @@ export default function OrderPage() {
                 </div>
 
                 <div className="flex justify-between items-center">
-                  <span>IGI & GIA Diamond Certification</span>
+                  <span>IGI Diamond Certification</span>
                   <span className="text-[#E0B094] font-medium">INCLUDED</span>
                 </div>
 
