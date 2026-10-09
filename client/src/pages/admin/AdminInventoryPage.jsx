@@ -463,48 +463,7 @@ export default function AdminInventoryPage() {
     }
   };
 
-  // Helper to compress base64 images to WebP format to prevent 413 Payload Too Large
-  const compressImageFile = (file) => {
-    return new Promise((resolve) => {
-      if (!file.type || !file.type.startsWith('image/')) {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result);
-        reader.readAsDataURL(file);
-        return;
-      }
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const img = new Image();
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          let width = img.width;
-          let height = img.height;
-          const maxDim = 1600;
-          if (width > maxDim || height > maxDim) {
-            if (width > height) {
-              height = Math.round((height * maxDim) / width);
-              width = maxDim;
-            } else {
-              width = Math.round((width * maxDim) / height);
-              height = maxDim;
-            }
-          }
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext('2d');
-          ctx.drawImage(img, 0, 0, width, height);
-          const compressedBase64 = canvas.toDataURL('image/webp', 0.85);
-          resolve(compressedBase64);
-        };
-        img.onerror = () => {
-          resolve(e.target.result);
-        };
-        img.src = e.target.result;
-      };
-      reader.onerror = () => resolve('');
-      reader.readAsDataURL(file);
-    });
-  };
+
 
   // Upload Product Media Files (Firebase Storage + Fail-safe Base64 Fallback)
   const handleFileUpload = async (e) => {
@@ -528,6 +487,21 @@ export default function AdminInventoryPage() {
     setUploadingMedia(true);
     setErrorMessage('');
 
+    // File Size Validation: Maximum 7MB per file
+    const MAX_FILE_SIZE_MB = 7;
+    const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
+    const oversizedFiles = files.filter(file => file.size > MAX_FILE_SIZE_BYTES);
+
+    if (oversizedFiles.length > 0) {
+      setUploadingMedia(false);
+      lightSwal.fire({
+        icon: 'error',
+        title: 'File Too Large',
+        text: `Each file must be under ${MAX_FILE_SIZE_MB}MB. Please reduce the size of these files and try again: ${oversizedFiles.map(f => f.name).join(', ')}`
+      });
+      return;
+    }
+
     try {
       const uploadedMedia = [];
 
@@ -547,7 +521,6 @@ export default function AdminInventoryPage() {
 
         let finalUrl = '';
 
-        // Try Firebase Storage upload first with 6s timeout
         try {
           const fileExt = isVideo 
             ? (fileToUpload.name.split('.').pop() || 'mp4') 
@@ -558,19 +531,13 @@ export default function AdminInventoryPage() {
           const uploadTask = uploadBytesResumable(storageRef, fileToUpload);
 
           finalUrl = await new Promise((resolve, reject) => {
-            const timer = setTimeout(() => {
-              reject(new Error('Firebase storage upload timed out'));
-            }, 6000);
-
             uploadTask.on(
               'state_changed',
               null,
               (error) => {
-                clearTimeout(timer);
                 reject(error);
               },
               async () => {
-                clearTimeout(timer);
                 try {
                   const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
                   resolve(downloadURL);
@@ -581,9 +548,8 @@ export default function AdminInventoryPage() {
             );
           });
         } catch (firebaseErr) {
-          console.warn('Firebase Storage upload notice (using local compressed fallback):', firebaseErr.message);
-          // Fallback to compressed Base64 Data URL to avoid HTTP 413 Payload Too Large
-          finalUrl = await compressImageFile(fileToUpload);
+          console.error('Firebase Storage upload failed:', firebaseErr);
+          throw new Error('Failed to upload image/video to storage. Please check your connection and try again.');
         }
 
         if (finalUrl) {
