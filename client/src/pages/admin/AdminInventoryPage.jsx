@@ -29,7 +29,8 @@ import {
   Gem,
   ArrowLeft,
   ArrowRight,
-  Star
+  Star,
+  AlertCircle
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 import api from '../../api/axios';
@@ -143,8 +144,9 @@ export default function AdminInventoryPage() {
 
   const joditConfig = useMemo(() => ({
     readonly: false,
-    placeholder: 'Enter product story and specifications...',
+    placeholder: 'Enter product story and specifications (max 1000 characters)...',
     height: 240,
+    limitChars: 1000,
     buttons: [
       'bold', 'italic', 'underline', 'strikethrough', '|',
       'font', 'fontsize', 'brush', 'paragraph', '|',
@@ -154,8 +156,80 @@ export default function AdminInventoryPage() {
       'fullsize'
     ],
     toolbarAdaptive: false,
-    showXPathInStatusbar: false
+    showXPathInStatusbar: false,
+    askBeforePasteHTML: false,
+    askBeforePasteFromWord: false,
+    defaultActionOnPaste: 'insert_clear_html',
+    uploader: {
+      insertImageAsBase64URI: false
+    }
   }), []);
+
+  // Helper to extract clean plain text length from HTML string
+  const getPlainTextLength = (html) => {
+    if (!html) return 0;
+    return html.replace(/<[^>]*>/g, '').trim().length;
+  };
+
+  // Helper to format any technical database/gRPC error into user-friendly message
+  const formatUserFriendlyError = (rawMsg) => {
+    if (!rawMsg) return 'An unexpected error occurred. Please try again.';
+    const str = String(rawMsg);
+
+    if (
+      str.includes('1,048,576') || 
+      str.includes('exceeds the maximum allowed size') || 
+      str.includes('cannot be written because its size')
+    ) {
+      return 'Product data size exceeds the 1MB limit. Please ensure the description does not contain pasted images and upload photos only through the Media upload section.';
+    }
+    if (str.includes('Product description is too long') || str.includes('1000 characters')) {
+      return 'Product description cannot exceed 1000 characters. Please shorten the text.';
+    }
+    if (str.includes('Images cannot be pasted into the description') || str.includes('Base64 images are not allowed')) {
+      return 'Pasting images inside the description is not allowed. Please use the Media upload section for all photos and videos.';
+    }
+    if (str.includes('DEADLINE_EXCEEDED') || str.includes('ETIMEDOUT') || str.includes('Network Error')) {
+      return 'Network connection timed out. Please check your internet connection and try again.';
+    }
+    if (str.includes('UNAVAILABLE') || str.includes('service is currently unavailable')) {
+      return 'Database service is temporarily unavailable. Please try again in a few moments.';
+    }
+    if (str.includes('PERMISSION_DENIED') || str.includes('403')) {
+      return 'Your session may have expired or you do not have permission. Please log in again.';
+    }
+    if (str.includes('413') || str.includes('Payload Too Large') || str.includes('entity too large')) {
+      return 'Uploaded file size is too large. Please select smaller media files.';
+    }
+    if (str.includes('not found') || str.includes('NOT_FOUND')) {
+      return 'The requested product could not be found or has been removed.';
+    }
+    if (
+      !str.includes('projects/') && 
+      !str.includes('databases/') && 
+      !str.includes('INVALID_ARGUMENT') && 
+      !str.includes('at ') && 
+      str.length < 140
+    ) {
+      return str;
+    }
+    return 'Failed to save product due to a database validation error. Please check product details and try again.';
+  };
+
+  // Safe description change handler to prevent base64 pasting
+  const handleDescriptionChange = (newContent) => {
+    if (newContent && (newContent.includes('data:image/') || newContent.includes(';base64,'))) {
+      lightSwal.fire({
+        icon: 'warning',
+        title: 'Image Pasting Disabled',
+        text: 'Images cannot be pasted into the description. Please upload images in the Media section.'
+      });
+      const sanitized = newContent.replace(/<img[^>]*src=["']data:image\/[^"']*["'][^>]*>/gi, '');
+      setFormData(prev => ({ ...prev, descriptionHtml: sanitized }));
+      return;
+    }
+    setFormData(prev => ({ ...prev, descriptionHtml: newContent }));
+  };
 
   // Helper to cap decimal inputs to at most 3 decimal places
   const limitDecimalPlaces = (val, maxDecimals = 3) => {
@@ -649,6 +723,18 @@ export default function AdminInventoryPage() {
       return;
     }
 
+    // Description length validation (Max 1000 characters)
+    const descLength = getPlainTextLength(formData.descriptionHtml);
+    if (descLength > 1000) {
+      setErrorMessage(`Product description exceeds the maximum limit of 1000 characters (Current: ${descLength} characters). Please shorten the text.`);
+      return;
+    }
+
+    if ((formData.descriptionHtml || '').includes('data:image/') || (formData.descriptionHtml || '').includes(';base64,')) {
+      setErrorMessage('Images cannot be pasted into the description. Please upload photos via the Media section.');
+      return;
+    }
+
     setSubmitting(true);
     setErrorMessage('');
 
@@ -699,7 +785,7 @@ export default function AdminInventoryPage() {
         });
       }
     } catch (err) {
-      setErrorMessage(err.message || 'Failed to create product.');
+      setErrorMessage(formatUserFriendlyError(err.message));
     } finally {
       setSubmitting(false);
     }
@@ -777,6 +863,18 @@ export default function AdminInventoryPage() {
     e.preventDefault();
     if (!editingProduct) return;
 
+    // Description length validation (Max 1000 characters)
+    const descLength = getPlainTextLength(formData.descriptionHtml);
+    if (descLength > 1000) {
+      setErrorMessage(`Product description exceeds the maximum limit of 1000 characters (Current: ${descLength} characters). Please shorten the text.`);
+      return;
+    }
+
+    if ((formData.descriptionHtml || '').includes('data:image/') || (formData.descriptionHtml || '').includes(';base64,')) {
+      setErrorMessage('Images cannot be pasted into the description. Please upload photos via the Media section.');
+      return;
+    }
+
     setSubmitting(true);
     setErrorMessage('');
 
@@ -828,7 +926,7 @@ export default function AdminInventoryPage() {
         });
       }
     } catch (err) {
-      setErrorMessage(err.message || 'Failed to update product.');
+      setErrorMessage(formatUserFriendlyError(err.message));
     } finally {
       setSubmitting(false);
     }
@@ -1252,8 +1350,19 @@ export default function AdminInventoryPage() {
             {/* SCROLLABLE CARD BODY */}
             <div className="p-4 sm:p-6 overflow-y-auto flex-1 space-y-4">
               {errorMessage && (
-                <div className="p-2.5 bg-rose-50 border border-rose-200 text-rose-800 text-xs rounded-[4px] font-semibold">
-                  {errorMessage}
+                <div className="p-3 bg-rose-50 border border-rose-300 text-rose-800 text-xs rounded-[4px] font-semibold flex items-start justify-between gap-2.5 shadow-2xs animate-fadeIn">
+                  <div className="flex items-start gap-2">
+                    <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
+                    <span className="leading-relaxed">{errorMessage}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setErrorMessage('')}
+                    className="text-rose-500 hover:text-rose-800 p-0.5 rounded transition-colors shrink-0"
+                    title="Dismiss notification"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
                 </div>
               )}
 
@@ -2152,19 +2261,35 @@ export default function AdminInventoryPage() {
 
               {/* SECTION 7: PROFESSIONAL JODIT WYSIWYG RICH TEXT EDITOR */}
               <div className="bg-slate-50/80 border border-slate-200 rounded-[4px] p-3 space-y-2">
-                <span className="text-xs font-semibold text-slate-900 uppercase tracking-wider block border-b border-slate-200 pb-1 flex items-center gap-1.5">
-                  <FileText className="w-3.5 h-3.5 text-amber-700" />
-                  Product Description Editor
-                </span>
+                <div className="flex items-center justify-between border-b border-slate-200 pb-1">
+                  <span className="text-xs font-semibold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                    <FileText className="w-3.5 h-3.5 text-amber-700" />
+                    Product Description Editor
+                  </span>
+                  <span className={`text-[10.5px] font-mono font-semibold px-2 py-0.5 rounded-[3px] border transition-colors ${
+                    getPlainTextLength(formData.descriptionHtml) > 1000
+                      ? 'bg-rose-100 text-rose-700 border-rose-300 font-bold'
+                      : getPlainTextLength(formData.descriptionHtml) > 850
+                      ? 'bg-amber-100 text-amber-800 border-amber-300'
+                      : 'bg-white text-slate-600 border-slate-300'
+                  }`}>
+                    {getPlainTextLength(formData.descriptionHtml)} / 1000 characters
+                  </span>
+                </div>
 
                 <div className="border border-slate-300 rounded-[4px] bg-white overflow-hidden shadow-2xs text-slate-900">
                   <JoditEditor
                     value={formData.descriptionHtml || ''}
                     config={joditConfig}
-                    onBlur={(newContent) => setFormData(prev => ({ ...prev, descriptionHtml: newContent }))}
-                    onChange={(newContent) => setFormData(prev => ({ ...prev, descriptionHtml: newContent }))}
+                    onBlur={handleDescriptionChange}
+                    onChange={handleDescriptionChange}
                   />
                 </div>
+                {getPlainTextLength(formData.descriptionHtml) > 1000 && (
+                  <p className="text-[11px] text-rose-600 font-semibold">
+                    * Description exceeds the maximum allowed 1000 characters limit.
+                  </p>
+                )}
               </div>
 
               {/* MODAL ACTIONS */}

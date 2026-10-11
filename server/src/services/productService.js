@@ -310,6 +310,24 @@ export class ProductService {
       throw new Error('Product title is required.');
     }
 
+    // Validate Description max character limit (1000 characters) and disallow inline Base64 images
+    let cleanDescription = (data.descriptionHtml || '').trim();
+    if (cleanDescription.includes('data:image/') || cleanDescription.includes(';base64,')) {
+      throw new Error('Images cannot be pasted into the description. Please upload images in the Media section.');
+    }
+    const rawDescText = cleanDescription.replace(/<[^>]*>/g, '').trim();
+    if (rawDescText.length > 1000) {
+      throw new Error(`Product description is too long (${rawDescText.length} characters). Maximum allowed is 1000 characters.`);
+    }
+
+    // Validate Media URLs - disallow Base64 in media
+    const cleanMedia = Array.isArray(data.media) ? data.media : [];
+    for (const item of cleanMedia) {
+      if (item.url && (item.url.startsWith('data:') || item.url.includes(';base64,'))) {
+        throw new Error('Base64 images are not allowed. Please upload files to storage.');
+      }
+    }
+
     // Clean up diamonds and stones arrays to strip any computed frontend values if present
     const cleanDiamonds = Array.isArray(data.diamonds) ? data.diamonds.map(d => ({
       shape: d.shape || 'Round',
@@ -367,9 +385,9 @@ export class ProductService {
       hasGemstone: Boolean(data.hasGemstone),
       stones: cleanStones,
 
-      media: Array.isArray(data.media) ? data.media : [],
+      media: cleanMedia,
       certification: formatCertification(data.certification),
-      descriptionHtml: data.descriptionHtml || '',
+      descriptionHtml: cleanDescription,
       showInHomepage: Boolean(data.showInHomepage),
       showInCarousel: Boolean(data.showInCarousel),
       status: data.status || 'Active',
@@ -463,9 +481,27 @@ export class ProductService {
     if (data.makingChargeDiscountPercent !== undefined) updateData.makingChargeDiscountPercent = Number(data.makingChargeDiscountPercent) || 0;
     if (data.gstPercent !== undefined) updateData.gstPercent = Number(data.gstPercent) || 3;
 
-    if (data.media !== undefined) updateData.media = Array.isArray(data.media) ? data.media : [];
+    if (data.media !== undefined) {
+      const cleanMedia = Array.isArray(data.media) ? data.media : [];
+      for (const item of cleanMedia) {
+        if (item.url && (item.url.startsWith('data:') || item.url.includes(';base64,'))) {
+          throw new Error('Base64 images are not allowed. Please upload files to storage.');
+        }
+      }
+      updateData.media = cleanMedia;
+    }
     if (data.certification !== undefined) updateData.certification = formatCertification(data.certification);
-    if (data.descriptionHtml !== undefined) updateData.descriptionHtml = data.descriptionHtml;
+    if (data.descriptionHtml !== undefined) {
+      let cleanDescription = (data.descriptionHtml || '').trim();
+      if (cleanDescription.includes('data:image/') || cleanDescription.includes(';base64,')) {
+        throw new Error('Images cannot be pasted into the description. Please upload images in the Media section.');
+      }
+      const rawDescText = cleanDescription.replace(/<[^>]*>/g, '').trim();
+      if (rawDescText.length > 1000) {
+        throw new Error(`Product description is too long (${rawDescText.length} characters). Maximum allowed is 1000 characters.`);
+      }
+      updateData.descriptionHtml = cleanDescription;
+    }
     if (data.showInHomepage !== undefined) updateData.showInHomepage = Boolean(data.showInHomepage);
     if (data.showInCarousel !== undefined) updateData.showInCarousel = Boolean(data.showInCarousel);
     if (data.status !== undefined) updateData.status = data.status || 'Active';

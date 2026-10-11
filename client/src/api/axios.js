@@ -25,12 +25,25 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    const customMessage = 
+    let customMessage = 
       error.response?.data?.message || 
       error.message || 
       'An unexpected error occurred.';
+
+    // Fallback cleanup if any raw Firestore / gRPC error slipped past backend
+    if (typeof customMessage === 'string') {
+      if (customMessage.includes('1,048,576') || customMessage.includes('maximum allowed size')) {
+        customMessage = 'Product data size exceeds the 1MB limit. Please ensure description does not contain pasted images and upload photos only through the Media section.';
+      } else if (customMessage.includes('DEADLINE_EXCEEDED') || customMessage.includes('ETIMEDOUT')) {
+        customMessage = 'Network connection timed out. Please check your internet connection and try again.';
+      } else if (customMessage.includes('UNAVAILABLE')) {
+        customMessage = 'Database service is temporarily unavailable. Please try again in a few moments.';
+      }
+    }
+
     return Promise.reject(new Error(customMessage));
   }
 );
+
 
 export default api;
