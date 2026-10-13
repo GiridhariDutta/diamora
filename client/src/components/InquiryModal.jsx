@@ -67,8 +67,9 @@ export default function InquiryModal({ isOpen, onClose, product }) {
       productSku: product?.sku || '',
       productPrice: productPriceDisplay ? String(productPriceDisplay) : '',
       productImage: productImage,
-      selectedMetal: product?.selectedMetal || product?.metalType || '',
-      selectedColor: product?.selectedColor || product?.metalColor || ''
+      selectedSize: product?.selectedSize || product?.size || product?.ringSize || '',
+      selectedColor: product?.selectedColor || product?.colorTitle || product?.metalColor || '',
+      selectedMetal: product?.selectedMetal || product?.purityTitle || product?.metalType || ''
     };
 
     try {
@@ -164,7 +165,12 @@ export default function InquiryModal({ isOpen, onClose, product }) {
                     )}
                     {product.selectedColor && (
                       <span className="px-2 py-0.5 rounded bg-white/10 text-gray-300 text-[9.5px]">
-                        {product.selectedColor}
+                        Color: {product.selectedColor}
+                      </span>
+                    )}
+                    {product.selectedSize && (
+                      <span className="px-2 py-0.5 rounded bg-[#E0B094]/15 border border-[#E0B094]/30 text-[#E0B094] font-mono text-[9.5px]">
+                        Size: {product.selectedSize}
                       </span>
                     )}
                   </div>
@@ -298,9 +304,28 @@ export default function InquiryModal({ isOpen, onClose, product }) {
                   <span className="font-bold text-white">{customerPhone}</span>
                 </div>
                 {product && (
-                  <div className="col-span-2 pt-1 border-t border-white/5">
+                  <div className="col-span-2 pt-1 border-t border-white/5 space-y-1">
                     <span className="text-[9px] text-gray-400 uppercase block">INQUIRED PRODUCT</span>
                     <span className="font-bold text-white truncate block">{product.title || product.name}</span>
+                    {((product.selectedSize || product.size || product.ringSize) || (product.selectedColor || product.colorTitle) || (product.selectedMetal || product.purityTitle)) && (
+                      <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                        {(product.selectedSize || product.size || product.ringSize) && (
+                          <span className="px-2 py-0.5 rounded bg-[#E0B094]/15 border border-[#E0B094]/30 text-[#E0B094] font-mono text-[10px]">
+                            Size: {product.selectedSize || product.size || product.ringSize}
+                          </span>
+                        )}
+                        {(product.selectedColor || product.colorTitle) && (
+                          <span className="px-2 py-0.5 rounded bg-white/10 text-gray-300 text-[10px]">
+                            Color: {product.selectedColor || product.colorTitle}
+                          </span>
+                        )}
+                        {(product.selectedMetal || product.purityTitle) && (
+                          <span className="px-2 py-0.5 rounded bg-white/10 text-gray-300 text-[10px]">
+                            Metal: {product.selectedMetal || product.purityTitle}
+                          </span>
+                        )}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

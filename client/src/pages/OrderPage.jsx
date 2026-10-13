@@ -9,7 +9,40 @@ import api from '../api/axios';
 
 export default function OrderPage() {
   const navigate = useNavigate();
-  const { user } = useOutletContext() || {};
+  const { user: ctxUser, setUser } = useOutletContext() || {};
+
+  // Local user state with immediate fallback to localStorage
+  const [localUser, setLocalUser] = useState(() => {
+    try {
+      const stored = localStorage.getItem('user');
+      return stored ? JSON.parse(stored) : null;
+    } catch (e) {
+      return null;
+    }
+  });
+
+  const user = ctxUser || localUser;
+
+  // Sync latest user profile on mount to prevent any stale state
+  useEffect(() => {
+    const syncUserProfile = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        if (token) {
+          const res = await api.get('/api/auth/me');
+          if (res.data?.success && res.data.data) {
+            const fresh = res.data.data;
+            setLocalUser(fresh);
+            localStorage.setItem('user', JSON.stringify(fresh));
+            if (setUser) setUser(fresh);
+          }
+        }
+      } catch (err) {
+        // silent
+      }
+    };
+    syncUserProfile();
+  }, []);
 
   const [currentStep, setCurrentStep] = useState(1); // Step 1: Breakdown | Step 2: Details | Step 3: Payment
   const [cartItems, setCartItems] = useState([]);
@@ -139,6 +172,10 @@ export default function OrderPage() {
         const title = liveProduct?.title || liveProduct?.name || 'Haute Joaillerie Masterpiece';
         const categoryTitle = liveProduct?.categoryTitle || liveProduct?.category || 'DIAMORAS LUXURY';
 
+        const selectedSize = item.options?.size || item.options?.ringSize || item.options?.selectedSize || item.size || item.ringSize || null;
+        const selectedColor = item.options?.colorTitle || item.options?.selectedColor || item.colorTitle || liveProduct?.colorTitle || null;
+        const selectedMetal = item.options?.purityTitle || item.options?.selectedMetal || item.purityTitle || liveProduct?.purityTitle || null;
+
         return {
           ...item,
           product: liveProduct,
@@ -146,7 +183,14 @@ export default function OrderPage() {
           categoryTitle,
           image: img,
           price,
-          subtotal: price * (item.quantity || 1)
+          subtotal: price * (item.quantity || 1),
+          selectedSize,
+          size: selectedSize,
+          ringSize: selectedSize,
+          selectedColor,
+          colorTitle: selectedColor,
+          selectedMetal,
+          purityTitle: selectedMetal
         };
       }));
 
@@ -303,7 +347,13 @@ export default function OrderPage() {
           title: i.title,
           categoryTitle: i.categoryTitle,
           image: i.image,
-          options: i.options
+          size: i.selectedSize || i.size || i.ringSize || i.options?.size || i.options?.ringSize || '',
+          selectedSize: i.selectedSize || i.size || i.ringSize || i.options?.size || i.options?.ringSize || '',
+          colorTitle: i.selectedColor || i.colorTitle || i.options?.colorTitle || '',
+          selectedColor: i.selectedColor || i.colorTitle || i.options?.colorTitle || '',
+          purityTitle: i.selectedMetal || i.purityTitle || i.options?.purityTitle || '',
+          selectedMetal: i.selectedMetal || i.purityTitle || i.options?.purityTitle || '',
+          options: i.options || {}
         })),
         shippingDetails,
         totalAmount: cartTotal,
@@ -404,7 +454,13 @@ export default function OrderPage() {
                 title: i.title,
                 categoryTitle: i.categoryTitle,
                 image: i.image,
-                options: i.options
+                size: i.selectedSize || i.size || i.ringSize || i.options?.size || i.options?.ringSize || '',
+                selectedSize: i.selectedSize || i.size || i.ringSize || i.options?.size || i.options?.ringSize || '',
+                colorTitle: i.selectedColor || i.colorTitle || i.options?.colorTitle || '',
+                selectedColor: i.selectedColor || i.colorTitle || i.options?.colorTitle || '',
+                purityTitle: i.selectedMetal || i.purityTitle || i.options?.purityTitle || '',
+                selectedMetal: i.selectedMetal || i.purityTitle || i.options?.purityTitle || '',
+                options: i.options || {}
               })),
               shippingDetails,
               totalAmount: verifiedTotal,
@@ -688,10 +744,19 @@ export default function OrderPage() {
                           <h3 className="font-serif text-xs sm:text-base font-medium text-white line-clamp-2 leading-tight" title={item.title}>
                             {item.title}
                           </h3>
-                          {(item.options?.purityTitle || item.options?.colorTitle) && (
+                          {(item.options?.purityTitle || item.options?.colorTitle || item.selectedSize || item.options?.size || item.options?.ringSize) && (
                             <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[10px] text-[#C5C8D0] pt-0.5">
-                              {item.options.purityTitle && <span>Purity: <strong className="text-white font-normal">{item.options.purityTitle}</strong></span>}
-                              {item.options.colorTitle && <span>Color: <strong className="text-white font-normal">{item.options.colorTitle}</strong></span>}
+                              {(item.selectedSize || item.options?.size || item.options?.ringSize) && (
+                                <span className="px-1.5 py-0.2 rounded bg-[#E0B094]/15 border border-[#E0B094]/30 text-[#E0B094] font-mono">
+                                  Size: <strong className="text-[#E0B094] font-semibold">{item.selectedSize || item.options?.size || item.options?.ringSize}</strong>
+                                </span>
+                              )}
+                              {(item.options?.colorTitle || item.selectedColor) && (
+                                <span>Color: <strong className="text-white font-normal">{item.options?.colorTitle || item.selectedColor}</strong></span>
+                              )}
+                              {(item.options?.purityTitle || item.selectedMetal) && (
+                                <span>Purity: <strong className="text-white font-normal">{item.options?.purityTitle || item.selectedMetal}</strong></span>
+                              )}
                             </div>
                           )}
                         </div>
@@ -815,29 +880,33 @@ export default function OrderPage() {
                       />
                     </div>
 
-                    {/* Aadhaar & PAN Check */}
-                    {(user?.aadhaar && user?.panCard) ? (
+                    {/* Aadhaar & PAN Identity Verification */}
+                    {Boolean(user?.aadhaar) ? (
                       <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div>
-                          <label className="block text-xs font-semibold text-[#E0B094] uppercase tracking-wider mb-2">
-                            Aadhaar Number
+                          <label className="block text-xs font-semibold text-[#E0B094] uppercase tracking-wider mb-2 flex items-center justify-between">
+                            <span>Aadhaar Number</span>
+                            <span className="text-[10px] text-emerald-400 font-mono flex items-center gap-1 font-normal">
+                              <Check className="w-3 h-3 text-emerald-400" /> Verified
+                            </span>
                           </label>
                           <input
                             type="text"
                             value={user.aadhaar}
                             readOnly
-                            className="w-full bg-[#0C0D10]/50 border border-white/10 rounded-lg px-4 py-3 text-xs text-white/70 focus:outline-none cursor-not-allowed"
+                            className="w-full bg-[#0C0D10]/50 border border-emerald-500/30 rounded-lg px-4 py-3 text-xs text-white/90 focus:outline-none cursor-not-allowed font-mono"
                           />
                         </div>
                         <div>
-                          <label className="block text-xs font-semibold text-[#E0B094] uppercase tracking-wider mb-2">
-                            PAN Card Number
+                          <label className="block text-xs font-semibold text-[#E0B094] uppercase tracking-wider mb-2 flex items-center justify-between">
+                            <span>PAN Card Number</span>
+                            <span className="text-[10px] text-white/40 normal-case font-normal">(optional)</span>
                           </label>
                           <input
                             type="text"
-                            value={user.panCard}
+                            value={user.panCard || 'Not provided (Optional)'}
                             readOnly
-                            className="w-full bg-[#0C0D10]/50 border border-white/10 rounded-lg px-4 py-3 text-xs text-white/70 focus:outline-none cursor-not-allowed"
+                            className={`w-full bg-[#0C0D10]/50 border border-white/10 rounded-lg px-4 py-3 text-xs focus:outline-none cursor-not-allowed font-mono ${user.panCard ? 'text-white/70' : 'text-white/40 italic'}`}
                           />
                         </div>
                       </div>
@@ -847,7 +916,7 @@ export default function OrderPage() {
                           Identity Verification Missing
                         </label>
                         <div className="w-full bg-rose-500/5 border border-rose-500/30 rounded-lg px-4 py-3 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                          <span className="text-[11px] text-rose-300">Govt ID (Aadhaar & PAN) required for luxury purchase.</span>
+                          <span className="text-[11px] text-rose-300">Govt ID (12-digit Aadhaar Card) required for luxury purchase.</span>
                           <button
                             type="button"
                             onClick={() => {

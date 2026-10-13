@@ -348,17 +348,22 @@ export default function CartPage() {
                       {item.title}
                     </h3>
 
-                    {/* Selected Metal & Purity Options */}
-                    {(item.options?.purityTitle || item.options?.colorTitle) && (
+                    {/* Selected Options (Size, Color, Metal) */}
+                    {(item.options?.purityTitle || item.options?.colorTitle || item.options?.size || item.options?.ringSize || item.options?.selectedSize || item.size || item.selectedSize) && (
                       <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 text-[11px] text-[#C5C8D0]">
-                        {item.options.purityTitle && (
-                          <span className="px-2 py-0.5 rounded bg-white/5 border border-white/10">
-                            Purity: <strong className="text-white font-normal">{item.options.purityTitle}</strong>
+                        {(item.options?.size || item.options?.ringSize || item.options?.selectedSize || item.size || item.selectedSize) && (
+                          <span className="px-2 py-0.5 rounded bg-[#E0B094]/15 border border-[#E0B094]/30 text-[#E0B094] font-mono">
+                            Size: <strong className="font-bold">{item.options?.size || item.options?.ringSize || item.options?.selectedSize || item.size || item.selectedSize}</strong>
                           </span>
                         )}
-                        {item.options.colorTitle && (
+                        {(item.options?.colorTitle || item.options?.selectedColor || item.colorTitle || item.selectedColor) && (
                           <span className="px-2 py-0.5 rounded bg-white/5 border border-white/10">
-                            Color: <strong className="text-white font-normal">{item.options.colorTitle}</strong>
+                            Color: <strong className="text-white font-normal">{item.options?.colorTitle || item.options?.selectedColor || item.colorTitle || item.selectedColor}</strong>
+                          </span>
+                        )}
+                        {(item.options?.purityTitle || item.options?.selectedMetal || item.purityTitle || item.selectedMetal) && (
+                          <span className="px-2 py-0.5 rounded bg-white/5 border border-white/10">
+                            Purity: <strong className="text-white font-normal">{item.options?.purityTitle || item.options?.selectedMetal || item.purityTitle || item.selectedMetal}</strong>
                           </span>
                         )}
                       </div>

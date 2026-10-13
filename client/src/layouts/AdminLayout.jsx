@@ -20,7 +20,6 @@ import {
   FileText,
   BookOpen,
   LogOut, 
-  Eye, 
   ShieldCheck, 
   Search, 
   Bell, 
@@ -41,13 +40,7 @@ export default function AdminLayout() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [allUsers, setAllUsers] = useState([
-    { id: 'admin-1', name: 'Goutam Jana', email: 'janagoutam147@gmail.com', role: 'admin', permissions: 'Super Administrator', orders: 12, spent: '$45,200', joined: 'Sep 7, 2026', status: 'Active' },
-    { id: 'admin-2', name: 'Alexander Vance', email: 'vance@diamora.com', role: 'admin', permissions: 'Inventory & Vault Manager', orders: 8, spent: '$32,100', joined: 'Aug 15, 2026', status: 'Active' },
-    { id: 'user-1', name: 'Eleanor Vance', email: 'eleanor@diamora.com', role: 'customer', permissions: 'Client Access', orders: 1, spent: '$4,200', joined: 'Sep 6, 2026', status: 'Active' },
-    { id: 'user-2', name: 'Julian Thorne', email: 'julian@luxury.io', role: 'customer', permissions: 'Client Access', orders: 5, spent: '$28,900', joined: 'Sep 4, 2026', status: 'Active' },
-    { id: 'user-3', name: 'Sophia Sterling', email: 'sophia@highfashion.org', role: 'customer', permissions: 'Client Access', orders: 2, spent: '$9,800', joined: 'Sep 1, 2026', status: 'Active' }
-  ]);
+  const [allUsers, setAllUsers] = useState([]);
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
@@ -102,9 +95,14 @@ export default function AdminLayout() {
     fetchProfile();
   }, []);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      const { auth } = await import('../config/firebase');
+      if (auth) await auth.signOut();
+    } catch (e) {}
     removeCookie('token');
     localStorage.removeItem('user');
+    localStorage.removeItem('token');
     setUser(null);
     navigate('/');
   };
@@ -114,7 +112,6 @@ export default function AdminLayout() {
     { id: 'collections', label: 'COLLECTION', icon: Boxes, path: '/admin/collections' },
     { id: 'colors', label: 'GOLD COLOR', icon: Palette, path: '/admin/colors' },
     { id: 'shapes', label: 'DIAMOND SHAPE', icon: Hexagon, path: '/admin/shapes' },
-    { id: 'setting-types', label: 'SETTING TYPE', icon: Layers, path: '/admin/setting-types' },
     { id: 'purities', label: 'PURITY', icon: Award, path: '/admin/purities' },
     { id: 'diamond_qualities', label: 'DIAMOND QUALITY', icon: Gem, path: '/admin/diamond-qualities' },
     { id: 'stones', label: 'GEMSTONE', icon: Sparkles, path: '/admin/stones' },
@@ -153,10 +150,10 @@ export default function AdminLayout() {
   };
 
   return (
-    <div className="admin-panel-root min-h-screen bg-[#F8FAFC] text-slate-800 font-open-sans flex flex-col md:flex-row overflow-x-hidden">
+    <div className="admin-panel-root h-screen bg-[#F8FAFC] text-slate-800 font-open-sans flex flex-col md:flex-row overflow-hidden">
       
       {/* MOBILE TOP NAVBAR */}
-      <div className="md:hidden flex items-center justify-between bg-white border-b border-slate-200 px-4 py-2.5 z-40 shadow-xs">
+      <div className="md:hidden flex items-center justify-between bg-white border-b border-slate-200 px-4 py-2.5 z-40 shadow-xs shrink-0">
         <div className="flex items-center gap-2">
           <div className="w-7 h-7 rounded-[4px] bg-gradient-to-br from-[#D4AF37] to-[#B48811] p-0.5 flex items-center justify-center">
             <div className="w-full h-full bg-white rounded-[3px] flex items-center justify-center">
@@ -182,13 +179,13 @@ export default function AdminLayout() {
         />
       )}
 
-      {/* SIDEBAR NAVIGATION */}
+      {/* SIDEBAR NAVIGATION (FIXED ON DESKTOP, NEVER SCROLLS WITH RIGHT CONTENT) */}
       <aside className={`
-        fixed md:static top-0 left-0 bottom-0 z-50 md:z-30
-        w-56 bg-white border-r border-slate-200 p-3 flex flex-col justify-between shrink-0 shadow-xs transition-transform duration-300 ease-in-out
+        fixed md:static top-0 left-0 bottom-0 md:h-full z-50 md:z-30
+        w-56 bg-white border-r border-slate-200 flex flex-col shrink-0 shadow-xs transition-transform duration-300 ease-in-out
         ${mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
       `}>
-        <div>
+        <div className="p-3 flex-1 overflow-y-auto min-h-0">
           {/* Brand Logo Header */}
           <div className="flex items-center justify-between mb-3 pb-2.5 border-b border-slate-200">
             <div className="flex items-center gap-2.5">
@@ -350,19 +347,11 @@ export default function AdminLayout() {
           </nav>
         </div>
 
-        {/* View Storefront & Logout */}
-        <div className="pt-2.5 border-t border-slate-200 space-y-1 mt-3">
-          <button
-            onClick={() => { setMobileSidebarOpen(false); navigate('/'); }}
-            className="w-full flex items-center justify-center gap-1.5 px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-[4px] text-[11px] font-medium tracking-wider text-slate-800 transition-all"
-          >
-            <Eye className="w-3.5 h-3.5 text-amber-700" />
-            <span>VIEW STOREFRONT</span>
-          </button>
-
+        {/* Fixed Logout Button at the Bottom */}
+        <div className="p-3 pt-2.5 border-t border-slate-200 shrink-0 bg-white">
           <button
             onClick={handleLogout}
-            className="w-full flex items-center justify-center gap-1.5 px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-[4px] text-[11px] font-medium tracking-wider text-rose-700 transition-all"
+            className="w-full flex items-center justify-center gap-1.5 px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-[4px] text-[11px] font-semibold tracking-wider text-rose-700 transition-all cursor-pointer"
           >
             <LogOut className="w-3.5 h-3.5" />
             <span>LOG OUT</span>
@@ -370,8 +359,8 @@ export default function AdminLayout() {
         </div>
       </aside>
 
-      {/* MAIN CONTENT AREA */}
-      <main className="flex-1 p-2.5 sm:p-3.5 lg:p-4 overflow-y-auto bg-[#F8FAFC]">
+      {/* MAIN CONTENT AREA (SCROLLS INDEPENDENTLY) */}
+      <main className="flex-1 h-full min-h-0 p-2.5 sm:p-3.5 lg:p-4 overflow-y-auto bg-[#F8FAFC]">
         
         {/* TOP BAR HEADER */}
         <header className="flex flex-col md:flex-row md:items-center justify-between gap-2.5 mb-3 pb-2.5 border-b border-slate-200">

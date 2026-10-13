@@ -13,10 +13,7 @@ export default function HomePage() {
   return (
     <>
       {/* Hero Section */}
-      <HeroSectionUI
-        onOpenShop={onOpenShop}
-        onOpenSignup={onOpenSignup}
-      />
+      <HeroSectionUI />
 
       {/* Brand Trust & Luxury Features Bar */}
       <BrandFeaturesBar />

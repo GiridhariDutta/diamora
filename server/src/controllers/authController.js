@@ -103,7 +103,7 @@ export class AuthController {
    */
   static async getProfile(req, res) {
     try {
-      const userProfile = await AuthService.getUserProfile(req.user.uid);
+      const userProfile = await AuthService.getUserProfile(req.user.uid, req.user.email);
       const token = AuthService.generateJwtToken(userProfile);
 
       return res.status(200).json({

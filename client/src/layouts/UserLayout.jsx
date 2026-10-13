@@ -50,9 +50,14 @@ export default function UserLayout() {
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      const { auth } = await import('../config/firebase');
+      if (auth) await auth.signOut();
+    } catch (e) {}
     removeCookie('token');
     localStorage.removeItem('user');
+    localStorage.removeItem('token');
     setUser(null);
     navigate('/');
   };

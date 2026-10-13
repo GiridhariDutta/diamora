@@ -11,9 +11,12 @@ import {
   Mail, 
   User as UserIcon,
   RefreshCw,
-  Clock
+  Clock,
+  KeyRound
 } from 'lucide-react';
 import Swal from 'sweetalert2';
+import { sendPasswordResetEmail } from 'firebase/auth';
+import { auth } from '../../config/firebase';
 import api from '../../api/axios';
 
 // Executive Light styled SweetAlert2 configuration with ~4-5px border radius
@@ -111,12 +114,12 @@ export default function AdminUsersPage() {
     displayAdminUsers = contextAdminUsers;
   } else if (!loading && loggedInUser && (loggedInUser.role === 'admin' || loggedInUser.role === 'ADMIN')) {
     displayAdminUsers = [{
-      uid: loggedInUser.uid || 'admin-1',
-      name: loggedInUser.name || 'Goutam Jana',
-      email: loggedInUser.email || 'janagoutam147@gmail.com',
+      uid: loggedInUser.uid || loggedInUser.id || 'admin-current',
+      name: loggedInUser.name || loggedInUser.displayName || loggedInUser.email?.split('@')[0] || 'Admin',
+      email: loggedInUser.email || '',
       role: 'admin',
       lastSignInTime: 'Active Session',
-      creationTime: loggedInUser.createdAt || 'Sep 7, 2026'
+      creationTime: loggedInUser.createdAt || 'Recent'
     }];
   }
 
@@ -241,6 +244,51 @@ export default function AdminUsersPage() {
         }
       }
     });
+  };
+
+  // Handle Firebase Password Reset Email
+  const handleResetPassword = async (admin) => {
+    if (!admin?.email) {
+      lightSwal.fire({
+        icon: 'error',
+        title: 'Email Missing',
+        text: 'This admin account does not have a valid email address.'
+      });
+      return;
+    }
+
+    const result = await lightSwal.fire({
+      title: 'Reset Password?',
+      html: `Send Firebase password reset email to <b>${admin.email}</b>?<br/><span class="text-xs text-slate-500">A secure reset link will be sent to their email inbox.</span>`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, Send Reset Email',
+      cancelButtonText: 'Cancel'
+    });
+
+    if (result.isConfirmed) {
+      try {
+        await sendPasswordResetEmail(auth, admin.email);
+        lightSwal.fire({
+          icon: 'success',
+          title: 'Reset Email Sent!',
+          text: `A Firebase password reset link has been dispatched to ${admin.email}.`,
+          timer: 2500,
+          showConfirmButton: false
+        });
+      } catch (err) {
+        console.error('Password reset error:', err);
+        let msg = err.message || 'Failed to send password reset email.';
+        if (err.code === 'auth/user-not-found') {
+          msg = 'No Firebase Authentication account found for this email.';
+        }
+        lightSwal.fire({
+          icon: 'error',
+          title: 'Reset Failed',
+          text: msg
+        });
+      }
+    }
   };
 
   // Copy Credentials to Clipboard
@@ -429,6 +477,15 @@ export default function AdminUsersPage() {
                             title="Edit Admin User"
                           >
                             <Pencil className="w-3.5 h-3.5" />
+                          </button>
+
+                          {/* RESET PASSWORD BUTTON (FIREBASE AUTH) */}
+                          <button
+                            onClick={() => handleResetPassword(admin)}
+                            className="p-1 bg-slate-100 hover:bg-slate-200 border border-slate-300 hover:border-amber-500 text-slate-700 hover:text-amber-800 rounded-[4px] transition-all"
+                            title="Send Password Reset Email (Firebase)"
+                          >
+                            <KeyRound className="w-3.5 h-3.5" />
                           </button>
 
                           {/* DELETE BUTTON */}

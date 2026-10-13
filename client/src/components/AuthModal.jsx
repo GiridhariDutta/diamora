@@ -1,19 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { X, Mail, Lock, User as UserIcon, ArrowRight, AlertCircle, CheckCircle2, Eye, EyeOff } from 'lucide-react';
-import { 
-  signInWithPopup, 
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword, 
-  updateProfile 
+import {
+  signInWithPopup,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  updateProfile
 } from 'firebase/auth';
 import { auth, googleProvider } from '../config/firebase';
 import api from '../api/axios';
 import { setCookie } from '../utils/cookies';
 
 const getFirebaseErrorMessage = (error) => {
-  if (error?.response?.data?.message) {
-    return error.response.data.message;
-  }
   const code = error?.code || '';
   switch (code) {
     case 'auth/invalid-credential':
@@ -30,13 +27,13 @@ const getFirebaseErrorMessage = (error) => {
     case 'auth/user-disabled':
       return 'This account has been disabled. Please contact support.';
     case 'auth/too-many-requests':
-      return 'Access temporarily disabled due to too many failed attempts. Please try again later.';
+      return 'Too many failed attempts. Please try again later.';
     case 'auth/popup-closed-by-user':
       return 'Sign-in popup was closed before completing.';
     case 'auth/network-request-failed':
       return 'Network connection error. Please check your internet connection.';
     default:
-      return error?.message || 'Authentication failed. Please check your details and try again.';
+      return 'Something went wrong. Please try again.';
   }
 };
 
@@ -93,9 +90,9 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
 
       // 3. Send Firebase ID Token to Backend to get 7-day backend JWT & sync profile
       // If Firebase login fails above, execution jumps to catch and NO request is sent to backend!
-      const response = await api.post('/api/auth/firebase-login', { 
+      const response = await api.post('/api/auth/firebase-login', {
         idToken,
-        name: isLoginTab ? undefined : formData.name 
+        name: isLoginTab ? undefined : formData.name
       });
       const data = response.data;
 
@@ -105,10 +102,11 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
 
       // Store JWT token in cookie (expires in 7 days) and user info in localStorage
       setCookie('token', data.data.token, 7);
+      localStorage.setItem('token', data.data.token);
       localStorage.setItem('user', JSON.stringify(data.data.user));
 
       setSuccess(isLoginTab ? 'Welcome back! Logged in successfully.' : 'Account created successfully!');
-      
+
       setTimeout(() => {
         if (onAuthSuccess) onAuthSuccess(data.data.user);
         onClose();
@@ -142,10 +140,11 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
 
       // Store JWT token in cookie (expires in 7 days) and user info in localStorage
       setCookie('token', data.data.token, 7);
+      localStorage.setItem('token', data.data.token);
       localStorage.setItem('user', JSON.stringify(data.data.user));
 
       setSuccess('Signed in with Google successfully!');
-      
+
       setTimeout(() => {
         if (onAuthSuccess) onAuthSuccess(data.data.user);
         onClose();
@@ -161,13 +160,13 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn font-poppins">
-      
+
       {/* Modal Container */}
-      <div 
+      <div
         className="relative w-full max-w-md bg-[#0C0D10]/95 backdrop-blur-2xl border border-white/10 rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.9)] overflow-hidden p-6 sm:p-8 transition-all"
         onClick={(e) => e.stopPropagation()}
       >
-        
+
         {/* Subtle Gold Ambient Glow */}
         <div className="absolute -top-24 -left-24 w-48 h-48 bg-[#E0B094]/15 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-[#D4AF37]/10 rounded-full blur-3xl pointer-events-none" />
@@ -197,9 +196,8 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
         <div className="flex border-b border-white/10 mb-6">
           <button
             onClick={() => { setIsLoginTab(true); setError(''); setSuccess(''); }}
-            className={`flex-1 py-3 text-xs font-semibold tracking-[0.15em] transition-colors relative uppercase ${
-              isLoginTab ? 'text-[#E0B094]' : 'text-gray-400 hover:text-gray-200'
-            }`}
+            className={`flex-1 py-3 text-xs font-semibold tracking-[0.15em] transition-colors relative uppercase ${isLoginTab ? 'text-[#E0B094]' : 'text-gray-400 hover:text-gray-200'
+              }`}
           >
             LOG IN
             {isLoginTab && (
@@ -208,9 +206,8 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
           </button>
           <button
             onClick={() => { setIsLoginTab(false); setError(''); setSuccess(''); }}
-            className={`flex-1 py-3 text-xs font-semibold tracking-[0.15em] transition-colors relative uppercase ${
-              !isLoginTab ? 'text-[#E0B094]' : 'text-gray-400 hover:text-gray-200'
-            }`}
+            className={`flex-1 py-3 text-xs font-semibold tracking-[0.15em] transition-colors relative uppercase ${!isLoginTab ? 'text-[#E0B094]' : 'text-gray-400 hover:text-gray-200'
+              }`}
           >
             SIGN UP
             {!isLoginTab && (
@@ -236,7 +233,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
 
         {/* Auth Form */}
         <form onSubmit={handleAuthSubmit} className="space-y-4">
-          
+
           {/* Full Name Input (Sign Up Only) */}
           {!isLoginTab && (
             <div>

@@ -163,6 +163,26 @@ export class OrderService {
       note: 'Order placed & payment verified via Razorpay'
     }];
 
+    const normalizedItems = (items || []).map(i => {
+      const sizeVal = i.selectedSize || i.size || i.ringSize || i.options?.size || i.options?.ringSize || i.options?.selectedSize || '';
+      const colorVal = i.selectedColor || i.colorTitle || i.options?.colorTitle || i.options?.selectedColor || '';
+      const metalVal = i.selectedMetal || i.purityTitle || i.options?.purityTitle || i.options?.selectedMetal || '';
+      return {
+        ...i,
+        size: sizeVal,
+        selectedSize: sizeVal,
+        ringSize: sizeVal,
+        colorTitle: colorVal,
+        selectedColor: colorVal,
+        purityTitle: metalVal,
+        selectedMetal: metalVal
+      };
+    });
+
+    const primarySize = normalizedItems[0]?.selectedSize || '';
+    const primaryColor = normalizedItems[0]?.selectedColor || '';
+    const primaryMetal = normalizedItems[0]?.selectedMetal || '';
+
     const orderData = {
       customerName: (shippingDetails.customerName || '').trim(),
       customerPhone: (shippingDetails.customerPhone || '').trim(),
@@ -174,7 +194,10 @@ export class OrderService {
       pincode: (shippingDetails.pincode || '').trim(),
       notes: (shippingDetails.notes || '').trim(),
       userId: userId || '',
-      items: items || [],
+      items: normalizedItems,
+      selectedSize: primarySize,
+      selectedColor: primaryColor,
+      selectedMetal: primaryMetal,
       totalAmount: totalAmount || 0,
       payAmount: payAmount || totalAmount || 0,
       paymentMethod: 'Razorpay Online',
@@ -216,6 +239,7 @@ export class OrderService {
       productImage = '',
       selectedMetal = '',
       selectedColor = '',
+      selectedSize = '',
       userId = '',
       items = [],
       totalAmount = 0,
@@ -254,6 +278,7 @@ export class OrderService {
       productImage: productImage || (items.length > 0 ? items[0].image : ''),
       selectedMetal: selectedMetal || '',
       selectedColor: selectedColor || '',
+      selectedSize: selectedSize || '',
       userId: userId || '',
       items: items || [],
       totalAmount: totalAmount || productPrice || 0,
