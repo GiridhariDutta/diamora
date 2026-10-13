@@ -16,15 +16,27 @@ export const requireAdminRole = async (req, res, next) => {
     return next();
   }
 
-  // Fallback: Check Firestore DB in case user role was updated after JWT token issue
+  // Fallback: Check Firestore DB by UID or email
   try {
-    if (db && req.user.uid) {
-      const docSnap = await db.collection('users').doc(req.user.uid).get();
-      if (docSnap.exists) {
-        const userData = docSnap.data();
-        if (userData.role && (userData.role.toLowerCase() === 'admin' || userData.role === 'ADMIN')) {
-          req.user.role = 'admin';
-          return next();
+    if (db) {
+      if (req.user.uid) {
+        const docSnap = await db.collection('users').doc(req.user.uid).get();
+        if (docSnap.exists) {
+          const userData = docSnap.data();
+          if (userData.role && (userData.role.toLowerCase() === 'admin' || userData.role === 'ADMIN')) {
+            req.user.role = 'admin';
+            return next();
+          }
+        }
+      }
+      if (req.user.email) {
+        const querySnap = await db.collection('users').where('email', '==', req.user.email.toLowerCase().trim()).limit(1).get();
+        if (!querySnap.empty) {
+          const userData = querySnap.docs[0].data();
+          if (userData.role && (userData.role.toLowerCase() === 'admin' || userData.role === 'ADMIN')) {
+            req.user.role = 'admin';
+            return next();
+          }
         }
       }
     }

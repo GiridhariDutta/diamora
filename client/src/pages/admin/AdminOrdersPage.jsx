@@ -435,22 +435,56 @@ export default function AdminOrdersPage() {
                             {order.items[0].image ? (
                               <img src={order.items[0].image} alt={order.items[0].title} className="w-9 h-9 rounded object-cover border border-slate-200 shrink-0" />
                             ) : null}
-                            <div className="min-w-0">
+                            <div className="min-w-0 space-y-0.5">
                               <p className="font-semibold text-slate-900 text-xs truncate max-w-[170px]">
                                 {order.items[0].title}
                               </p>
+                              <div className="flex flex-wrap items-center gap-1">
+                                {(order.items[0].selectedSize || order.items[0].size || order.items[0].ringSize || order.items[0].options?.size || order.items[0].options?.ringSize || order.selectedSize) && (
+                                  <span className="inline-block px-1.5 py-0.2 bg-amber-50 border border-amber-300 rounded text-[9px] text-amber-900 font-bold font-mono">
+                                    Size: {order.items[0].selectedSize || order.items[0].size || order.items[0].ringSize || order.items[0].options?.size || order.items[0].options?.ringSize || order.selectedSize}
+                                  </span>
+                                )}
+                                {(order.items[0].selectedColor || order.items[0].colorTitle || order.items[0].options?.colorTitle || order.selectedColor) && (
+                                  <span className="inline-block px-1.5 py-0.2 bg-slate-100 border border-slate-200 rounded text-[9px] text-slate-700 font-medium">
+                                    {order.items[0].selectedColor || order.items[0].colorTitle || order.items[0].options?.colorTitle || order.selectedColor}
+                                  </span>
+                                )}
+                                {(order.items[0].selectedMetal || order.items[0].purityTitle || order.items[0].options?.purityTitle || order.selectedMetal) && (
+                                  <span className="inline-block px-1.5 py-0.2 bg-slate-100 border border-slate-200 rounded text-[9px] text-slate-700 font-medium">
+                                    {order.items[0].selectedMetal || order.items[0].purityTitle || order.items[0].options?.purityTitle || order.selectedMetal}
+                                  </span>
+                                )}
+                              </div>
                               {order.items.length > 1 && (
-                                <span className="text-[9.5px] font-semibold text-amber-800">
+                                <span className="text-[9.5px] font-semibold text-amber-800 block">
                                   + {order.items.length - 1} more item(s)
                                 </span>
                               )}
                             </div>
                           </div>
                         ) : (
-                          <div className="min-w-0">
+                          <div className="min-w-0 space-y-0.5">
                             <p className="font-semibold text-slate-900 text-xs truncate max-w-[180px]">
                               {order.productTitle || 'Haute Joaillerie Item'}
                             </p>
+                            <div className="flex flex-wrap items-center gap-1">
+                              {order.selectedSize && (
+                                <span className="inline-block px-1.5 py-0.2 bg-amber-50 border border-amber-300 rounded text-[9px] text-amber-900 font-bold font-mono">
+                                  Size: {order.selectedSize}
+                                </span>
+                              )}
+                              {order.selectedColor && (
+                                <span className="inline-block px-1.5 py-0.2 bg-slate-100 border border-slate-200 rounded text-[9px] text-slate-700 font-medium">
+                                  {order.selectedColor}
+                                </span>
+                              )}
+                              {order.selectedMetal && (
+                                <span className="inline-block px-1.5 py-0.2 bg-slate-100 border border-slate-200 rounded text-[9px] text-slate-700 font-medium">
+                                  {order.selectedMetal}
+                                </span>
+                              )}
+                            </div>
                             {order.productSku && (
                               <span className="text-[10px] font-mono text-slate-500 block">SKU: {order.productSku}</span>
                             )}
@@ -706,7 +740,24 @@ export default function AdminOrdersPage() {
                           )}
                           <div>
                             <p className="font-bold text-slate-900 text-xs">{item.title}</p>
-                            <p className="text-[10.5px] text-slate-500 font-mono">Qty: {item.quantity || 1} × ₹{Number(item.price || 0).toLocaleString('en-IN')}</p>
+                            <div className="flex flex-wrap items-center gap-1 mt-0.5">
+                              {(item.size || item.ringSize || item.selectedSize || item.options?.size || item.options?.ringSize || item.options?.selectedSize) && (
+                                <span className="px-1.5 py-0.2 bg-amber-50 border border-amber-300 text-amber-900 text-[10px] font-mono font-bold rounded">
+                                  Size: {item.size || item.ringSize || item.selectedSize || item.options?.size || item.options?.ringSize || item.options?.selectedSize}
+                                </span>
+                              )}
+                              {(item.colorTitle || item.selectedColor || item.options?.colorTitle || item.options?.selectedColor) && (
+                                <span className="px-1.5 py-0.2 bg-slate-100 border border-slate-200 text-slate-700 text-[10px] rounded font-medium">
+                                  Color: {item.colorTitle || item.selectedColor || item.options?.colorTitle || item.options?.selectedColor}
+                                </span>
+                              )}
+                              {(item.purityTitle || item.selectedMetal) && (
+                                <span className="px-1.5 py-0.2 bg-slate-100 border border-slate-200 text-slate-700 text-[10px] rounded">
+                                  {item.purityTitle || item.selectedMetal}
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-[10.5px] text-slate-500 font-mono mt-0.5">Qty: {item.quantity || 1} × ₹{Number(item.price || 0).toLocaleString('en-IN')}</p>
                           </div>
                         </div>
                         <span className="font-mono font-bold text-slate-900 text-xs">
@@ -722,6 +773,23 @@ export default function AdminOrdersPage() {
                     )}
                     <div className="space-y-0.5 flex-1">
                       <p className="font-bold text-slate-900">{selectedOrderDetails.productTitle}</p>
+                      <div className="flex flex-wrap items-center gap-1 pt-0.5">
+                        {selectedOrderDetails.selectedSize && (
+                          <span className="px-1.5 py-0.2 bg-amber-50 border border-amber-300 text-amber-900 text-[10px] font-mono font-bold rounded">
+                            Size: {selectedOrderDetails.selectedSize}
+                          </span>
+                        )}
+                        {selectedOrderDetails.selectedColor && (
+                          <span className="px-1.5 py-0.2 bg-white border border-slate-300 text-slate-800 text-[10px] rounded font-semibold shadow-2xs">
+                            Color: {selectedOrderDetails.selectedColor}
+                          </span>
+                        )}
+                        {selectedOrderDetails.selectedMetal && (
+                          <span className="px-1.5 py-0.2 bg-slate-100 border border-slate-200 text-slate-700 text-[10px] rounded">
+                            Metal: {selectedOrderDetails.selectedMetal}
+                          </span>
+                        )}
+                      </div>
                       <p className="font-mono font-bold text-amber-900">₹{Number(selectedOrderDetails.totalAmount || selectedOrderDetails.productPrice || 0).toLocaleString('en-IN')}</p>
                     </div>
                   </div>

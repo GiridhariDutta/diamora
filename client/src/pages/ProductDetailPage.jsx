@@ -23,6 +23,8 @@ export default function ProductDetailPage() {
   const { onOpenShop, onOpenInquiry } = useOutletContext() || {};
 
   const [product, setProduct] = useState(null);
+  const [selectedSize, setSelectedSize] = useState(null);
+  const [selectedColor, setSelectedColor] = useState(null);
   const [similarProducts, setSimilarProducts] = useState([]);
   const [recentlyViewed, setRecentlyViewed] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -39,9 +41,45 @@ export default function ProductDetailPage() {
 
   const scrollRef = useRef(null);
   const recentlyScrollRef = useRef(null);
+  const mainTouchStartX = useRef(null);
+  const mainTouchStartY = useRef(null);
+
+  const handleMainTouchStart = (e) => {
+    mainTouchStartX.current = e.touches[0].clientX;
+    mainTouchStartY.current = e.touches[0].clientY;
+  };
+
+  const handleMainTouchEnd = (mediaCount) => (e) => {
+    if (mainTouchStartX.current === null || mainTouchStartY.current === null) return;
+    const currentX = e.changedTouches[0]?.clientX || mainTouchStartX.current;
+    const currentY = e.changedTouches[0]?.clientY || mainTouchStartY.current;
+    const deltaX = currentX - mainTouchStartX.current;
+    const deltaY = currentY - mainTouchStartY.current;
+
+    // Minimum swipe threshold 40px and predominantly horizontal
+    if (Math.abs(deltaX) > 40 && Math.abs(deltaX) > Math.abs(deltaY)) {
+      if (deltaX < 0) {
+        // Swiped Left -> Next media
+        setActiveMediaIndex((prev) => (prev + 1) % mediaCount);
+      } else {
+        // Swiped Right -> Previous media
+        setActiveMediaIndex((prev) => (prev - 1 + mediaCount) % mediaCount);
+      }
+    }
+
+    mainTouchStartX.current = null;
+    mainTouchStartY.current = null;
+  };
 
   const handleInquireClick = (targetProduct = null) => {
-    const prodToInquire = targetProduct || product;
+    const baseProd = targetProduct || product;
+    if (!baseProd) return;
+    const prodToInquire = {
+      ...baseProd,
+      selectedSize: (baseProd === product ? selectedSize : baseProd.selectedSize) || baseProd.size || baseProd.ringSize || undefined,
+      selectedColor: (baseProd === product ? selectedColor : baseProd.selectedColor) || baseProd.colorTitle || undefined,
+      selectedMetal: baseProd.purityTitle || baseProd.selectedMetal || undefined
+    };
     if (onOpenInquiry && prodToInquire) {
       onOpenInquiry(prodToInquire);
     } else if (onOpenShop) {
@@ -53,7 +91,12 @@ export default function ProductDetailPage() {
     if (!product) return;
     addToCart(product, 1, {
       purityTitle: product.purityTitle,
-      colorTitle: product.colorTitle
+      selectedMetal: product.purityTitle,
+      colorTitle: selectedColor || product.colorTitle,
+      selectedColor: selectedColor || product.colorTitle,
+      size: selectedSize || undefined,
+      selectedSize: selectedSize || undefined,
+      ringSize: selectedSize || undefined
     });
     showCartAlert(product, navigate);
   };
@@ -62,7 +105,12 @@ export default function ProductDetailPage() {
     if (!product) return;
     addToCart(product, 1, {
       purityTitle: product.purityTitle,
-      colorTitle: product.colorTitle
+      selectedMetal: product.purityTitle,
+      colorTitle: selectedColor || product.colorTitle,
+      selectedColor: selectedColor || product.colorTitle,
+      size: selectedSize || undefined,
+      selectedSize: selectedSize || undefined,
+      ringSize: selectedSize || undefined
     });
     navigate('/cart');
   };
@@ -134,6 +182,19 @@ export default function ProductDetailPage() {
       if (res.data?.success && res.data.data) {
         const fetchedProd = res.data.data;
         setProduct(fetchedProd);
+        if (Array.isArray(fetchedProd.sizes) && fetchedProd.sizes.length > 0) {
+          const firstSz = typeof fetchedProd.sizes[0] === 'object' ? fetchedProd.sizes[0]?.size : fetchedProd.sizes[0];
+          setSelectedSize(firstSz || null);
+        } else {
+          setSelectedSize(null);
+        }
+        if (Array.isArray(fetchedProd.colors) && fetchedProd.colors.length > 0) {
+          setSelectedColor(fetchedProd.colors[0]?.colorTitle || null);
+        } else if (fetchedProd.colorTitle) {
+          setSelectedColor(fetchedProd.colorTitle);
+        } else {
+          setSelectedColor(null);
+        }
         setActiveMediaIndex(0);
         // Fetch matching similar products
         fetchSimilarProducts(fetchedProd);
@@ -244,7 +305,12 @@ export default function ProductDetailPage() {
     : [{ url: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=800&q=80', type: 'image' }];
 
   const activeMedia = mediaList[activeMediaIndex] || mediaList[0];
-  const formattedPrice = Number(product.grandTotal || product.computedGoldPrice || product.price || 0).toLocaleString('en-IN');
+  const selectedSizeObj = Array.isArray(product.sizes)
+    ? product.sizes.find(s => (typeof s === 'object' ? s?.size : s) === selectedSize)
+    : null;
+  const extraSizePrice = selectedSizeObj && Number(selectedSizeObj.increaseAmount) > 0 ? Number(selectedSizeObj.increaseAmount) : 0;
+  const rawBasePrice = Number(product.grandTotal || product.computedGoldPrice || product.price || 0);
+  const formattedPrice = (rawBasePrice + extraSizePrice).toLocaleString('en-IN');
   const displayColor = (Array.isArray(product.colors) && product.colors.length > 0) ? product.colors.map(c => c.colorTitle).join(', ') : (product.colorTitle || '');
 
   return (
@@ -307,9 +373,14 @@ export default function ProductDetailPage() {
             )}
 
             {/* Main Stage Preview */}
-            <div className="flex-1 w-full bg-[#16181F] border border-white/15 rounded-xl overflow-hidden relative shadow-xl aspect-square sm:aspect-[4/3] flex items-center justify-center">
+            <div 
+              className="flex-1 w-full bg-[#16181F] border border-white/15 rounded-xl overflow-hidden relative shadow-xl aspect-square sm:aspect-[4/3] flex items-center justify-center select-none touch-pan-y"
+              onTouchStart={handleMainTouchStart}
+              onTouchEnd={handleMainTouchEnd(mediaList.length)}
+            >
               {activeMedia.type === 'video' ? (
                 <video
+                  key={activeMedia.url}
                   src={activeMedia.url}
                   controls
                   autoPlay
@@ -319,16 +390,19 @@ export default function ProductDetailPage() {
                 />
               ) : (
                 <img
+                  key={activeMedia.url}
                   src={activeMedia.url}
                   alt={product.title}
-                  className="w-full h-full object-contain p-2"
+                  className="w-full h-full object-contain p-2 transition-all duration-300"
                 />
               )}
 
-              {/* SKU Badge - Commented out */}
-              {/* <div className="absolute top-3 left-3 bg-[#0C0D10]/80 backdrop-blur-md px-2.5 py-1 rounded-md border border-white/10 text-[10px] font-mono text-[#E0B094]">
-                SKU: {product.sku || 'DIAM-VAULT'}
-              </div> */}
+              {/* Image Counter Badge for Mobile */}
+              {mediaList.length > 1 && (
+                <div className="absolute bottom-2.5 right-3 bg-black/75 backdrop-blur-md border border-white/15 text-[#E0B094] text-[10px] font-mono px-2.5 py-0.5 rounded-full z-10 pointer-events-none shadow-md">
+                  {activeMediaIndex + 1} / {mediaList.length}
+                </div>
+              )}
             </div>
 
           </div>
@@ -355,7 +429,7 @@ export default function ProductDetailPage() {
                 )}
                 {product.purityTitle && displayColor && <span>•</span>}
                 {displayColor && (
-                  <span className="text-[#E0B094]">{displayColor}</span>
+                  <span className="text-[#E0B094]">{selectedColor || displayColor}</span>
                 )}
               </div>
             </div>
@@ -411,13 +485,26 @@ export default function ProductDetailPage() {
                     </label>
                     <div className="flex flex-wrap gap-2">
                       {Array.isArray(product.colors) && product.colors.length > 0 ? (
-                        product.colors.map((c, idx) => (
-                          <div key={c.colorId || idx} className="inline-block px-4 py-2 bg-white/5 border border-white/20 text-[#F5F5F0] text-xs font-normal rounded-md shadow-2xs">
-                            {c.colorTitle}
-                          </div>
-                        ))
+                        product.colors.map((c, idx) => {
+                          const colTitle = c.colorTitle || c;
+                          const isColorSelected = (selectedColor || product.colorTitle) === colTitle;
+                          return (
+                            <button
+                              key={c.colorId || idx}
+                              type="button"
+                              onClick={() => setSelectedColor(colTitle)}
+                              className={`px-4 py-2 text-xs rounded-md transition-colors duration-150 cursor-pointer select-none border-2 ${
+                                isColorSelected
+                                  ? 'border-[#E0B094] text-[#E0B094] bg-white/10 font-semibold'
+                                  : 'border-white/15 bg-white/5 text-[#F5F5F0] hover:border-[#E0B094]/50 hover:bg-white/10 font-normal'
+                              }`}
+                            >
+                              {colTitle}
+                            </button>
+                          );
+                        })
                       ) : (
-                        <div className="inline-block px-4 py-2 bg-white/5 border border-white/20 text-[#F5F5F0] text-xs font-normal rounded-md shadow-2xs">
+                        <div className="inline-block px-4 py-2 bg-white/10 border-2 border-[#E0B094] text-[#E0B094] text-xs font-semibold rounded-md">
                           {product.colorTitle}
                         </div>
                       )}
@@ -455,6 +542,49 @@ export default function ProductDetailPage() {
                 <span className="inline-block text-rose-500 font-semibold tracking-widest text-[11px] uppercase px-3 py-1.5 bg-rose-500/10 border border-rose-500/20 rounded-md">
                   Sold Out
                 </span>
+              </div>
+            )}
+
+            {/* AVAILABLE SIZES SELECTION (RESPONSIVE) */}
+            {Array.isArray(product.sizes) && product.sizes.length > 0 && (
+              <div className="pt-3 pb-1 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-[#C5C8D0] font-normal tracking-wide">
+                    Available Sizes: <strong className="text-[#E0B094] font-mono font-medium ml-1">{selectedSize || 'Select Size'}</strong>
+                  </span>
+                  <span className="text-[10px] text-[#C5C8D0]/60 uppercase tracking-wider font-light">
+                    {product.sizes.length} Sizes
+                  </span>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  {product.sizes.map((szItem, idx) => {
+                    const sizeValue = typeof szItem === 'object' && szItem !== null ? szItem.size : szItem;
+                    const incAmount = typeof szItem === 'object' && szItem !== null && Number(szItem.increaseAmount) > 0 ? Number(szItem.increaseAmount) : 0;
+                    if (!sizeValue) return null;
+                    const isSelected = selectedSize === sizeValue;
+
+                    return (
+                      <button
+                        key={`size-opt-${idx}`}
+                        type="button"
+                        onClick={() => setSelectedSize(sizeValue)}
+                        className={`min-w-[40px] px-3.5 py-1.5 sm:py-2 rounded-md text-xs font-medium transition-colors duration-150 border cursor-pointer select-none flex flex-col items-center justify-center ${
+                          isSelected
+                            ? 'bg-[#E0B094] text-[#0C0D10] border-[#E0B094] font-semibold'
+                            : 'bg-white/5 text-[#F5F5F0] border-white/15 hover:border-[#E0B094]/60 hover:bg-white/10'
+                        }`}
+                      >
+                        <span className="font-mono leading-none">{sizeValue}</span>
+                        {incAmount > 0 && (
+                          <span className={`text-[8.5px] mt-0.5 leading-none font-normal ${isSelected ? 'text-[#0C0D10]/80' : 'text-[#E0B094]'}`}>
+                            +₹{incAmount.toLocaleString('en-IN')}
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             )}
 
@@ -545,18 +675,14 @@ export default function ProductDetailPage() {
                       <span className="font-mono">{product.diamonds?.[0]?.diamondQualityTitle || product.diamondQualityTitle || 'N/A'}</span>
                     </div>
                     <div className="bg-transparent flex justify-between px-3 py-2.5 text-[#C5C8D0]">
-                      <span>Setting Type</span>
-                      <span className="font-mono">{product.diamonds?.[0]?.settingType || 'N/A'}</span>
-                    </div>
-                    <div className="bg-[#16181F] flex justify-between px-3 py-2.5 text-white">
                       <span>Shape</span>
                       <span className="font-mono">{product.diamonds?.[0]?.shape || 'Round'}</span>
                     </div>
-                    <div className="bg-transparent flex justify-between px-3 py-2.5 text-[#C5C8D0]">
+                    <div className="bg-[#16181F] flex justify-between px-3 py-2.5 text-white">
                       <span>Total Diamonds</span>
                       <span className="font-mono">{product.numberOfDiamonds || 0}</span>
                     </div>
-                    <div className="bg-[#16181F] flex justify-between px-3 py-2.5 text-white">
+                    <div className="bg-transparent flex justify-between px-3 py-2.5 text-[#C5C8D0]">
                       <span>Total Weight (carats)</span>
                       <span className="font-mono">{product.totalDiamondCarats || 0}</span>
                     </div>

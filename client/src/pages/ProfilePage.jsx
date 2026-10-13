@@ -87,15 +87,14 @@ export default function ProfilePage() {
   // Helper to calculate Profile Completion Percentage
   const calculateCompletion = () => {
     let completedCount = 0;
-    const totalFields = 5;
+    const totalFields = 4;
 
     if (profileData.name && profileData.name.trim() !== '') completedCount++;
     if (profileData.phone && profileData.phone.trim() !== '') completedCount++;
     if (profileData.aadhaar && profileData.aadhaar.trim().length >= 12) completedCount++;
-    if (profileData.panCard && /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(profileData.panCard)) completedCount++;
     if (addresses.length > 0) completedCount++;
 
-    return Math.round((completedCount / totalFields) * 100);
+    return Math.min(100, Math.round((completedCount / totalFields) * 100));
   };
 
   // Helper to extract clean display name
@@ -573,7 +572,7 @@ export default function ProfilePage() {
               </div>
               {completionPercent < 100 && (
                 <span className="text-[11px] text-[#E0B094] italic font-light">
-                  Fill in your phone, Aadhaar & PAN Card to complete profile setup.
+                  Fill in your phone & Aadhaar Card to complete profile setup.
                 </span>
               )}
             </div>
@@ -649,8 +648,8 @@ export default function ProfilePage() {
               {/* PAN Card Number */}
               <div>
                 <label className="block text-xs font-semibold text-[#E0B094] uppercase tracking-wider mb-1.5 flex items-center justify-between">
-                  <span>PAN Card Number</span>
-                  <span className="text-[10px] text-[#C5C8D0]/50 normal-case">Encrypted for tax</span>
+                  <span>PAN Card Number <span className="text-[#C5C8D0]/40 normal-case font-normal">(optional)</span></span>
+                  <span className="text-[10px] text-[#C5C8D0]/50 normal-case">Optional for tax</span>
                 </label>
                 <input
                   type="text"

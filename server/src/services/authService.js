@@ -104,34 +104,48 @@ export class AuthService {
 
     const displayName = customName || name || email?.split('@')[0] || 'User';
 
-    let userProfile = {
+    let existingData = null;
+    const userRef = db.collection('users').doc(uid);
+
+    try {
+      const docSnap = await userRef.get();
+      if (docSnap.exists) {
+        existingData = docSnap.data();
+      }
+
+      // If document by UID does not exist or has missing role/email, look up by email in users collection
+      if ((!existingData || !existingData.role || !existingData.email) && email) {
+        const querySnap = await db.collection('users')
+          .where('email', '==', email.toLowerCase().trim())
+          .limit(1)
+          .get();
+        if (!querySnap.empty) {
+          const matchedData = querySnap.docs[0].data();
+          existingData = { ...matchedData, ...(existingData || {}) };
+        }
+      }
+    } catch (dbError) {
+      console.error('Firestore lookup error:', dbError.message);
+    }
+
+    const resolvedRole = existingData?.role || 'customer';
+    const resolvedName = customName || existingData?.name || displayName;
+    const resolvedEmail = email || existingData?.email || '';
+
+    const userProfile = {
       uid,
-      email: email || '',
-      name: displayName,
-      photoURL: picture || '',
-      createdAt: nowIso,
-      lastSignInAt: nowIso,
-      role: 'customer'
+      email: resolvedEmail,
+      name: resolvedName,
+      photoURL: picture || existingData?.photoURL || '',
+      role: resolvedRole,
+      createdAt: existingData?.createdAt || nowIso,
+      lastSignInAt: nowIso
     };
 
     try {
-      const userRef = db.collection('users').doc(uid);
-      const docSnap = await userRef.get();
-
-      if (!docSnap.exists) {
-        await userRef.set(userProfile);
-      } else {
-        const existingData = docSnap.data();
-        userProfile = { 
-          ...existingData, 
-          uid: docSnap.id,
-          name: existingData.name || displayName,
-          lastSignInAt: nowIso 
-        };
-        await userRef.update({ lastSignInAt: nowIso });
-      }
-    } catch (dbError) {
-      console.error('Firestore sync error:', dbError.message);
+      await userRef.set(userProfile, { merge: true });
+    } catch (saveError) {
+      console.error('Firestore sync error:', saveError.message);
     }
 
     const token = generateJwtToken(userProfile);
@@ -145,24 +159,52 @@ export class AuthService {
   /**
    * Get user profile from Firestore DB
    */
-  static async getUserProfile(uid) {
+  static async getUserProfile(uid, userEmail = null) {
     if (!db) {
       throw new Error('Firestore database is not initialized');
     }
 
-    const docSnap = await db.collection('users').doc(uid).get();
+    let docSnap = await db.collection('users').doc(uid).get();
+
+    // If not found by UID, check Firestore by email
+    let searchEmail = userEmail;
+    if ((!docSnap.exists || !docSnap.data()?.role) && !searchEmail && adminAuth) {
+      try {
+        const authUser = await adminAuth.getUser(uid);
+        searchEmail = authUser?.email;
+      } catch (e) {}
+    }
+
+    if ((!docSnap.exists || !docSnap.data()?.role) && searchEmail) {
+      try {
+        const querySnap = await db.collection('users')
+          .where('email', '==', searchEmail.toLowerCase().trim())
+          .limit(1)
+          .get();
+        if (!querySnap.empty) {
+          docSnap = querySnap.docs[0];
+        }
+      } catch (e) {}
+    }
 
     if (!docSnap.exists) {
       if (adminAuth) {
-        const userRecord = await adminAuth.getUser(uid);
-        return {
-          uid: userRecord.uid,
-          email: userRecord.email,
-          name: userRecord.displayName || '',
-          role: 'customer'
-        };
+        try {
+          const userRecord = await adminAuth.getUser(uid);
+          return {
+            uid: userRecord.uid,
+            email: userRecord.email,
+            name: userRecord.displayName || '',
+            role: 'customer'
+          };
+        } catch (e) {}
       }
-      throw new Error('User profile not found');
+      return {
+        uid,
+        email: userEmail || '',
+        name: userEmail?.split('@')[0] || 'User',
+        role: 'customer'
+      };
     }
 
     return { uid, ...docSnap.data() };
@@ -262,7 +304,7 @@ export class AuthService {
     }
     
     // 3. Retrieve User Profile & issue JWT token
-    const userProfile = await this.getUserProfile(uid);
+    const userProfile = await this.getUserProfile(uid, email);
     const token = generateJwtToken(userProfile);
 
     return {
@@ -272,69 +314,44 @@ export class AuthService {
   }
 
   /**
-   * Fetch all Admin Users and merge lastSignInTime from Firebase Auth Metadata
+   * Fetch all Admin Users directly from Firestore `users` collection where role is 'admin'
    */
   static async getAdminUsers() {
-    if (!db || !adminAuth) {
-      throw new Error('Firebase Admin service is not initialized');
+    if (!db) {
+      throw new Error('Firestore service is not initialized');
     }
 
-    // 1. Query Firestore users collection
+    // Query all documents from Firestore users collection
     const snapshot = await db.collection('users').get();
-    let adminDocs = [];
+    const adminDocs = [];
+    const seenEmails = new Set();
 
     snapshot.forEach(doc => {
       const data = doc.data();
-      if (data.role && (data.role.toLowerCase() === 'admin' || data.role === 'ADMIN')) {
-        adminDocs.push({ ...data, uid: doc.id });
+      if (data && data.role && (data.role.toLowerCase() === 'admin' || data.role === 'ADMIN')) {
+        const emailKey = (data.email || '').toLowerCase().trim();
+        // Prevent duplicate entries if same email has multiple docs
+        if (emailKey && seenEmails.has(emailKey)) {
+          return;
+        }
+        if (emailKey) {
+          seenEmails.add(emailKey);
+        }
+
+        adminDocs.push({
+          uid: doc.id,
+          id: doc.id,
+          name: data.name || data.displayName || data.email?.split('@')[0] || 'Admin',
+          email: data.email || '',
+          role: 'admin',
+          lastSignInTime: data.lastSignInAt || data.lastSignInTime || data.updatedAt || 'Recent',
+          creationTime: data.createdAt || data.creationTime || 'Recent',
+          ...data
+        });
       }
     });
 
-    // 2. If no admin documents found in Firestore, check Firebase Auth users directly
-    if (adminDocs.length === 0) {
-      try {
-        const authList = await adminAuth.listUsers(100);
-        for (const authUser of authList.users) {
-          const adminProfile = {
-            uid: authUser.uid,
-            name: authUser.displayName || authUser.email?.split('@')[0] || 'Admin',
-            email: authUser.email || '',
-            role: 'admin',
-            createdAt: authUser.metadata.creationTime || new Date().toISOString()
-          };
-          // Save to Firestore DB so it's persisted for subsequent requests
-          await db.collection('users').doc(authUser.uid).set(adminProfile, { merge: true });
-          adminDocs.push(adminProfile);
-        }
-      } catch (authErr) {
-        console.warn('Firebase Auth listUsers fallback warning:', authErr.message);
-      }
-    }
-
-    // 3. Fetch Firebase Auth metadata for each admin user
-    const adminUsersWithMetadata = await Promise.all(
-      adminDocs.map(async (userDoc) => {
-        try {
-          const authRecord = await adminAuth.getUser(userDoc.uid);
-          return {
-            ...userDoc,
-            name: userDoc.name || authRecord.displayName || userDoc.email?.split('@')[0] || 'Admin',
-            email: userDoc.email || authRecord.email || '',
-            lastSignInTime: authRecord.metadata.lastSignInTime || userDoc.lastSignInAt || authRecord.metadata.creationTime || 'Recent',
-            creationTime: authRecord.metadata.creationTime || userDoc.createdAt || 'Recent'
-          };
-        } catch (err) {
-          return {
-            ...userDoc,
-            name: userDoc.name || 'Admin',
-            lastSignInTime: userDoc.lastSignInAt || userDoc.createdAt || 'Recent',
-            creationTime: userDoc.createdAt || 'Recent'
-          };
-        }
-      })
-    );
-
-    return adminUsersWithMetadata;
+    return adminDocs;
   }
 
   /**

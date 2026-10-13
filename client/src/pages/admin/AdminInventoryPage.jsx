@@ -30,7 +30,8 @@ import {
   ArrowLeft,
   ArrowRight,
   Star,
-  AlertCircle
+  AlertCircle,
+  Ruler
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 import api from '../../api/axios';
@@ -1740,7 +1741,7 @@ export default function AdminInventoryPage() {
                         )}
                       </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
                         {/* Shape */}
                         <div>
                           <label className="block text-[10.5px] font-semibold tracking-wider text-slate-700 uppercase mb-1">
@@ -1756,23 +1757,6 @@ export default function AdminInventoryPage() {
                             )) : (
                               <option value="Round">Round</option>
                             )}
-                          </select>
-                        </div>
-
-                        {/* Setting Type */}
-                        <div>
-                          <label className="block text-[10.5px] font-semibold tracking-wider text-slate-700 uppercase mb-1">
-                            Setting Type
-                          </label>
-                          <select
-                            value={dRow.settingType || ''}
-                            onChange={(e) => handleDiamondChange(index, 'settingType', e.target.value)}
-                            className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-[4px] text-xs font-medium text-slate-800 focus:outline-none focus:border-amber-600 shadow-2xs"
-                          >
-                            <option value="">Select Setting</option>
-                            {settingTypes.map(s => (
-                              <option key={s.id} value={s.title}>{s.title}</option>
-                            ))}
                           </select>
                         </div>
 
@@ -1903,7 +1887,7 @@ export default function AdminInventoryPage() {
                           )}
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                           {/* Stone Type */}
                           <div>
                             <label className="block text-[10.5px] font-semibold tracking-wider text-slate-700 uppercase mb-1">
@@ -1919,23 +1903,6 @@ export default function AdminInventoryPage() {
                                 <option key={st.id} value={st.id}>
                                   {st.title} {st.ratePerCarat ? `(₹${Number(st.ratePerCarat).toLocaleString('en-IN')}/Ct)` : ''}
                                 </option>
-                              ))}
-                            </select>
-                          </div>
-
-                          {/* Setting Type */}
-                          <div>
-                            <label className="block text-[10.5px] font-semibold tracking-wider text-slate-700 uppercase mb-1">
-                              Setting Type
-                            </label>
-                            <select
-                              value={sRow.settingType || ''}
-                              onChange={(e) => handleStoneChange(index, 'settingType', e.target.value)}
-                              className="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-[4px] text-xs font-medium text-slate-800 focus:outline-none focus:border-amber-600 shadow-2xs"
-                            >
-                              <option value="">Select Setting</option>
-                              {settingTypes.map(s => (
-                                <option key={s.id} value={s.title}>{s.title}</option>
                               ))}
                             </select>
                           </div>
@@ -2469,7 +2436,6 @@ export default function AdminInventoryPage() {
                       <thead>
                         <tr className="text-[9.5px] font-semibold text-slate-600 uppercase border-b border-slate-200 bg-slate-100">
                           <th className="py-1.5 px-2">Shape</th>
-                          <th className="py-1.5 px-2">Setting</th>
                           <th className="py-1.5 px-2">Quality</th>
                           <th className="py-1.5 px-2 text-right">Carats</th>
                           <th className="py-1.5 px-2 text-center">Count</th>
@@ -2481,7 +2447,6 @@ export default function AdminInventoryPage() {
                           viewingProduct.diamonds.map((d, idx) => (
                             <tr key={`vdiag-${idx}`} className="bg-white">
                               <td className="py-1.5 px-2 font-semibold text-slate-900">{d.shape || 'Round'}</td>
-                              <td className="py-1.5 px-2 text-slate-700">{d.settingType || 'N/A'}</td>
                               <td className="py-1.5 px-2 text-slate-700">{d.diamondQualityTitle || viewingProduct.diamondQualityTitle || 'Standard'}</td>
                               <td className="py-1.5 px-2 text-right font-mono">{d.totalDiamondCarats || 0} Ct</td>
                               <td className="py-1.5 px-2 text-center font-mono">{d.numberOfDiamonds || 0} Pcs</td>
@@ -2493,7 +2458,6 @@ export default function AdminInventoryPage() {
                         ) : (
                           <tr className="bg-white">
                             <td className="py-1.5 px-2 font-semibold text-slate-900">Standard</td>
-                            <td className="py-1.5 px-2 text-slate-700">N/A</td>
                             <td className="py-1.5 px-2 text-slate-700">{viewingProduct.diamondQualityTitle || 'N/A'}</td>
                             <td className="py-1.5 px-2 text-right font-mono">{viewingProduct.totalDiamondCarats || 0} Ct</td>
                             <td className="py-1.5 px-2 text-center font-mono">{viewingProduct.numberOfDiamonds || 0} Pcs</td>
@@ -2522,7 +2486,6 @@ export default function AdminInventoryPage() {
                         <thead>
                           <tr className="text-[9.5px] font-semibold text-slate-600 uppercase border-b border-slate-200 bg-slate-100">
                             <th className="py-1.5 px-2">Gemstone Type</th>
-                            <th className="py-1.5 px-2">Setting</th>
                             <th className="py-1.5 px-2 text-right">Carats</th>
                             <th className="py-1.5 px-2 text-center">Count</th>
                             <th className="py-1.5 px-2 text-right">Rate / Ct</th>
@@ -2532,7 +2495,6 @@ export default function AdminInventoryPage() {
                           {viewingProduct.stones.map((st, idx) => (
                             <tr key={`vst-${idx}`} className="bg-white">
                               <td className="py-1.5 px-2 font-semibold text-slate-900">{st.stoneTitle || 'Gemstone'}</td>
-                              <td className="py-1.5 px-2 text-slate-700">{st.settingType || 'N/A'}</td>
                               <td className="py-1.5 px-2 text-right font-mono">{st.stoneWeightCarats || 0} Ct</td>
                               <td className="py-1.5 px-2 text-center font-mono">{st.numberOfStones || 0} Pcs</td>
                               <td className="py-1.5 px-2 text-right font-mono text-amber-900 font-semibold">
@@ -2542,6 +2504,85 @@ export default function AdminInventoryPage() {
                           ))}
                         </tbody>
                       </table>
+                    </div>
+                  </div>
+                )}
+
+                {/* AVAILABLE SIZES & DIMENSIONS CARD */}
+                {(
+                  (Array.isArray(viewingProduct.sizes) && viewingProduct.sizes.length > 0) ||
+                  viewingProduct.height ||
+                  viewingProduct.width ||
+                  viewingProduct.length
+                ) && (
+                  <div className="bg-slate-50/90 border border-slate-200 rounded-[4px] p-3 space-y-2.5">
+                    <div className="flex items-center justify-between border-b border-slate-200 pb-1">
+                      <span className="text-xs font-semibold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                        <Ruler className="w-3.5 h-3.5 text-amber-700" />
+                        Available Sizes & Dimensions
+                      </span>
+                    </div>
+
+                    <div className="space-y-2.5">
+                      {/* SIZES LIST */}
+                      {Array.isArray(viewingProduct.sizes) && viewingProduct.sizes.length > 0 && (
+                        <div>
+                          <span className="text-[10px] text-slate-500 uppercase font-semibold block mb-1.5">
+                            Available Sizes ({viewingProduct.sizes.length})
+                          </span>
+                          <div className="flex flex-wrap gap-1.5">
+                            {viewingProduct.sizes.map((sz, idx) => {
+                              const sizeLabel = typeof sz === 'object' && sz !== null ? sz.size : sz;
+                              const extraCost = typeof sz === 'object' && sz !== null && sz.increaseAmount ? sz.increaseAmount : null;
+                              if (!sizeLabel) return null;
+                              return (
+                                <div 
+                                  key={`view-size-${idx}`}
+                                  className="inline-flex items-center bg-white border border-amber-300 rounded-[3px] shadow-2xs overflow-hidden"
+                                >
+                                  <span className="px-2.5 py-1 text-xs font-bold text-slate-900 bg-amber-50/80 min-w-[32px] text-center">
+                                    {sizeLabel}
+                                  </span>
+                                  {extraCost && Number(extraCost) > 0 && (
+                                    <span className="px-1.5 py-1 text-[10px] font-semibold text-amber-900 bg-amber-100/70 border-l border-amber-200">
+                                      +₹{Number(extraCost).toLocaleString('en-IN')}
+                                    </span>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* HEIGHT & WIDTH / DIMENSIONS */}
+                      {(viewingProduct.height || viewingProduct.width || viewingProduct.length) && (
+                        <div className="pt-1 border-t border-slate-200">
+                          <span className="text-[10px] text-slate-500 uppercase font-semibold block mb-1.5">
+                            Product Dimensions
+                          </span>
+                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                            {viewingProduct.height && (
+                              <div className="bg-white p-2 border border-slate-200 rounded-[3px]">
+                                <span className="text-[10px] text-slate-500 uppercase block">Height</span>
+                                <span className="font-semibold text-xs text-slate-900">{viewingProduct.height}</span>
+                              </div>
+                            )}
+                            {viewingProduct.width && (
+                              <div className="bg-white p-2 border border-slate-200 rounded-[3px]">
+                                <span className="text-[10px] text-slate-500 uppercase block">Width</span>
+                                <span className="font-semibold text-xs text-slate-900">{viewingProduct.width}</span>
+                              </div>
+                            )}
+                            {viewingProduct.length && (
+                              <div className="bg-white p-2 border border-slate-200 rounded-[3px]">
+                                <span className="text-[10px] text-slate-500 uppercase block">Length</span>
+                                <span className="font-semibold text-xs text-slate-900">{viewingProduct.length}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}

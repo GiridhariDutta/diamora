@@ -54,7 +54,7 @@ export default function CollectionShowcase({ onOpenShop }) {
   };
 
   return (
-    <section id="collection" className="relative pt-6 sm:pt-10 pb-8 sm:pb-12 px-4 sm:px-8 lg:px-12 bg-[#0A0B0E] text-[#F5F5F0] select-none z-20">
+    <section id="collection" className="scroll-mt-16 sm:scroll-mt-20 relative pt-6 sm:pt-10 pb-8 sm:pb-12 px-4 sm:px-8 lg:px-12 bg-[#0A0B0E] text-[#F5F5F0] select-none z-20">
       
       {/* Background Hairline Gridlines */}
       <div className="absolute inset-0 hairline-grid pointer-events-none opacity-30 z-0" />

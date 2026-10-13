@@ -7,7 +7,7 @@ const api = axios.create({
   }
 });
 
-// Request Interceptor: Automatically attach JWT token from cookies to headers if available
+// Request Interceptor: Automatically attach JWT token from cookies/localStorage to headers if available
 api.interceptors.request.use(
   (config) => {
     const token = getCookie('token');
@@ -25,9 +25,9 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    let customMessage = 
-      error.response?.data?.message || 
-      error.message || 
+    let customMessage =
+      error.response?.data?.message ||
+      error.message ||
       'An unexpected error occurred.';
 
     // Fallback cleanup if any raw Firestore / gRPC error slipped past backend

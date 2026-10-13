@@ -436,21 +436,28 @@ export default function AdminInquiriesPage() {
                       {/* OPTIONS & NOTES */}
                       <td className="py-3 px-3">
                         <div className="space-y-1">
-                          {inquiry.selectedMetal && (
-                            <span className="inline-block px-1.5 py-0.5 bg-slate-100 border border-slate-200 rounded-[3px] text-[10px] text-slate-700 font-medium mr-1">
-                              Metal: {inquiry.selectedMetal}
-                            </span>
-                          )}
-                          {inquiry.selectedColor && (
-                            <span className="inline-block px-1.5 py-0.5 bg-slate-100 border border-slate-200 rounded-[3px] text-[10px] text-slate-700 font-medium">
-                              Color: {inquiry.selectedColor}
-                            </span>
-                          )}
+                          <div className="flex flex-wrap items-center gap-1">
+                            {(inquiry.selectedSize || inquiry.items?.[0]?.size || inquiry.items?.[0]?.ringSize) && (
+                              <span className="inline-block px-1.5 py-0.5 bg-amber-50 border border-amber-300 rounded-[3px] text-[10px] text-amber-900 font-bold font-mono">
+                                Size: {inquiry.selectedSize || inquiry.items?.[0]?.size || inquiry.items?.[0]?.ringSize}
+                              </span>
+                            )}
+                            {(inquiry.selectedColor || inquiry.items?.[0]?.colorTitle || inquiry.items?.[0]?.selectedColor) && (
+                              <span className="inline-block px-1.5 py-0.5 bg-slate-100 border border-slate-200 rounded-[3px] text-[10px] text-slate-700 font-medium">
+                                Color: {inquiry.selectedColor || inquiry.items?.[0]?.colorTitle || inquiry.items?.[0]?.selectedColor}
+                              </span>
+                            )}
+                            {(inquiry.selectedMetal || inquiry.items?.[0]?.purityTitle || inquiry.items?.[0]?.selectedMetal) && (
+                              <span className="inline-block px-1.5 py-0.5 bg-slate-100 border border-slate-200 rounded-[3px] text-[10px] text-slate-700 font-medium">
+                                Metal: {inquiry.selectedMetal || inquiry.items?.[0]?.purityTitle || inquiry.items?.[0]?.selectedMetal}
+                              </span>
+                            )}
+                          </div>
                           {inquiry.notes ? (
                             <p className="text-[10.5px] text-slate-600 italic truncate max-w-[180px]">
                               "{inquiry.notes}"
                             </p>
-                          ) : !inquiry.selectedMetal && !inquiry.selectedColor ? (
+                          ) : !inquiry.selectedSize && !inquiry.selectedColor && !inquiry.selectedMetal && !inquiry.items?.[0]?.size && !inquiry.items?.[0]?.colorTitle ? (
                             <span className="text-slate-400 text-[10.5px] italic">No special notes</span>
                           ) : null}
                         </div>
@@ -634,6 +641,29 @@ export default function AdminInquiriesPage() {
                   {selectedInquiryDetails.productPrice ? (
                     <p className="font-mono font-bold text-amber-900">₹{Number(selectedInquiryDetails.productPrice).toLocaleString('en-IN')}</p>
                   ) : null}
+
+                  {/* Customer Selected Specifications */}
+                  {((selectedInquiryDetails.selectedSize || selectedInquiryDetails.items?.[0]?.size || selectedInquiryDetails.items?.[0]?.ringSize) ||
+                    (selectedInquiryDetails.selectedColor || selectedInquiryDetails.items?.[0]?.colorTitle || selectedInquiryDetails.items?.[0]?.selectedColor) ||
+                    (selectedInquiryDetails.selectedMetal || selectedInquiryDetails.items?.[0]?.purityTitle || selectedInquiryDetails.items?.[0]?.selectedMetal)) && (
+                    <div className="flex flex-wrap items-center gap-1.5 pt-1.5">
+                      {(selectedInquiryDetails.selectedSize || selectedInquiryDetails.items?.[0]?.size || selectedInquiryDetails.items?.[0]?.ringSize) && (
+                        <span className="inline-flex items-center px-2 py-0.5 bg-amber-50 border border-amber-300 rounded text-[11px] font-bold text-amber-900 font-mono">
+                          Selected Size: {selectedInquiryDetails.selectedSize || selectedInquiryDetails.items?.[0]?.size || selectedInquiryDetails.items?.[0]?.ringSize}
+                        </span>
+                      )}
+                      {(selectedInquiryDetails.selectedColor || selectedInquiryDetails.items?.[0]?.colorTitle || selectedInquiryDetails.items?.[0]?.selectedColor) && (
+                        <span className="inline-flex items-center px-2 py-0.5 bg-white border border-slate-300 rounded text-[11px] font-semibold text-slate-800 shadow-2xs">
+                          Selected Color: {selectedInquiryDetails.selectedColor || selectedInquiryDetails.items?.[0]?.colorTitle || selectedInquiryDetails.items?.[0]?.selectedColor}
+                        </span>
+                      )}
+                      {(selectedInquiryDetails.selectedMetal || selectedInquiryDetails.items?.[0]?.purityTitle || selectedInquiryDetails.items?.[0]?.selectedMetal) && (
+                        <span className="inline-flex items-center px-2 py-0.5 bg-slate-100 border border-slate-200 rounded text-[11px] font-medium text-slate-700">
+                          Metal: {selectedInquiryDetails.selectedMetal || selectedInquiryDetails.items?.[0]?.purityTitle || selectedInquiryDetails.items?.[0]?.selectedMetal}
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
 

@@ -79,12 +79,16 @@ export const addToCart = (product, quantity = 1, options = {}) => {
     return currentCart;
   }
 
-  // Unique item ID considering selected options (e.g. Color, Purity)
-  const cartItemId = options.colorTitle || options.purityTitle
-    ? `${productId}-${options.colorTitle || ''}-${options.purityTitle || ''}`
+  // Unique item ID considering selected options (e.g. Size, Color, Purity)
+  const selectedSizeVal = options.size || options.ringSize || options.selectedSize || null;
+  const selectedColorVal = options.colorTitle || options.selectedColor || product.colorTitle || null;
+  const selectedMetalVal = options.purityTitle || options.selectedMetal || product.purityTitle || null;
+
+  const cartItemId = (selectedColorVal || selectedMetalVal || selectedSizeVal)
+    ? `${productId}-${selectedColorVal || ''}-${selectedMetalVal || ''}-${selectedSizeVal || ''}`
     : productId;
 
-  const existingIndex = currentCart.findIndex(item => item.cartItemId === cartItemId || item.productId === productId);
+  const existingIndex = currentCart.findIndex(item => item.cartItemId === cartItemId);
 
   if (existingIndex > -1) {
     currentCart[existingIndex].quantity += quantity;
@@ -93,10 +97,21 @@ export const addToCart = (product, quantity = 1, options = {}) => {
       cartItemId,
       productId,
       quantity: Math.max(1, quantity),
+      size: selectedSizeVal,
+      selectedSize: selectedSizeVal,
+      ringSize: selectedSizeVal,
+      colorTitle: selectedColorVal,
+      selectedColor: selectedColorVal,
+      purityTitle: selectedMetalVal,
+      selectedMetal: selectedMetalVal,
       options: {
-        colorTitle: options.colorTitle || product.colorTitle || null,
-        purityTitle: options.purityTitle || product.purityTitle || null,
-        ringSize: options.ringSize || null,
+        colorTitle: selectedColorVal,
+        selectedColor: selectedColorVal,
+        purityTitle: selectedMetalVal,
+        selectedMetal: selectedMetalVal,
+        size: selectedSizeVal,
+        selectedSize: selectedSizeVal,
+        ringSize: selectedSizeVal,
         ...options
       },
       addedAt: new Date().toISOString()

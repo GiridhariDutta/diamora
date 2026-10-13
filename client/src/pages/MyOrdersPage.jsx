@@ -118,7 +118,8 @@ export default function MyOrdersPage() {
                       price: ord.productPrice || ord.totalAmount || 0,
                       quantity: 1,
                       metal: ord.selectedMetal,
-                      color: ord.selectedColor
+                      color: ord.selectedColor,
+                      size: ord.selectedSize
                     }];
 
                 return (
@@ -171,10 +172,23 @@ export default function MyOrdersPage() {
                             )}
                             <div>
                               <h4 className="font-semibold text-white text-xs">{item.title}</h4>
-                              <div className="text-[11px] text-[#C5C8D0]/70 flex items-center gap-2">
-                                <span>Qty: <strong className="text-white">{item.quantity || 1}</strong></span>
-                                {item.metal && <span>• Metal: {item.metal}</span>}
-                                {item.color && <span>• Color: {item.color}</span>}
+                              <div className="flex flex-wrap items-center gap-1.5 pt-1 text-[11px]">
+                                <span className="text-[#C5C8D0]/70">Qty: <strong className="text-white">{item.quantity || 1}</strong></span>
+                                {(item.size || item.selectedSize || item.ringSize || item.options?.size || item.options?.ringSize || ord.selectedSize) && (
+                                  <span className="px-1.5 py-0.5 rounded bg-[#E0B094]/15 border border-[#E0B094]/30 text-[#E0B094] font-mono text-[10px]">
+                                    Size: {item.size || item.selectedSize || item.ringSize || item.options?.size || item.options?.ringSize || ord.selectedSize}
+                                  </span>
+                                )}
+                                {(item.color || item.selectedColor || item.colorTitle || item.options?.colorTitle || ord.selectedColor) && (
+                                  <span className="px-1.5 py-0.5 rounded bg-white/5 border border-white/10 text-white text-[10px]">
+                                    Color: {item.color || item.selectedColor || item.colorTitle || item.options?.colorTitle || ord.selectedColor}
+                                  </span>
+                                )}
+                                {(item.metal || item.selectedMetal || item.purityTitle || item.options?.purityTitle || ord.selectedMetal) && (
+                                  <span className="px-1.5 py-0.5 rounded bg-white/5 border border-white/10 text-white/80 text-[10px]">
+                                    {item.metal || item.selectedMetal || item.purityTitle || item.options?.purityTitle || ord.selectedMetal}
+                                  </span>
+                                )}
                               </div>
                             </div>
                           </div>
