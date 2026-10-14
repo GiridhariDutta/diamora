@@ -90,7 +90,7 @@ export default function Footer({ onOpenTickets }) {
               <li><Link to="/about" className="hover:text-[#E0B094] transition-colors">About Us</Link></li>
               <li><a href="/#collection" className="hover:text-[#E0B094] transition-colors">Collection</a></li>
               <li><Link to="/shop" className="hover:text-[#E0B094] transition-colors">Shop</Link></li>
-              <li><a href="/#whydiamora" className="hover:text-[#E0B094] transition-colors">Why Diamoras</a></li>
+              <li><Link to="/why-diamora" className="hover:text-[#E0B094] transition-colors">Why Diamoras</Link></li>
               <li><Link to="/contact" className="hover:text-[#E0B094] transition-colors">Contact Us</Link></li>
               <li><a href="/#contact" className="hover:text-[#E0B094] transition-colors">FAQs</a></li>
             </ul>
@@ -102,7 +102,7 @@ export default function Footer({ onOpenTickets }) {
               CUSTOMER SERVICE
             </h4>
             <ul className="space-y-2.5 text-xs text-[#9094A0]">
-              <li><a href="#" className="hover:text-[#E0B094] transition-colors">Ring Size Guide</a></li>
+              <li><Link to="/ring-size-guide" className="hover:text-[#E0B094] transition-colors">Ring Size Guide</Link></li>
               <li><a href="#" className="hover:text-[#E0B094] transition-colors">Care Instructions</a></li>
               <li><a href="#" className="hover:text-[#E0B094] transition-colors">Shipping & Delivery</a></li>
               <li><a href="#" className="hover:text-[#E0B094] transition-colors">Returns & Exchanges</a></li>

@@ -30,6 +30,7 @@ import OrderPage from '../pages/OrderPage';
 import MyOrdersPage from '../pages/MyOrdersPage';
 import ContactPage from '../pages/ContactPage';
 import WhyDiamoraPage from '../pages/WhyDiamoraPage';
+import RingGuidePage from '../pages/RingGuidePage';
 
 export const router = createBrowserRouter([
   {
@@ -52,6 +53,9 @@ export const router = createBrowserRouter([
       { path: 'contact', element: <ContactPage /> },
       { path: 'contact-us', element: <ContactPage /> },
       { path: 'why-diamora', element: <WhyDiamoraPage /> },
+      { path: 'why-diamoras', element: <WhyDiamoraPage /> },
+      { path: 'ring-guide', element: <RingGuidePage /> },
+      { path: 'ring-size-guide', element: <RingGuidePage /> },
       { path: '*', element: <Navigate to="/" replace /> }
     ]
   },
