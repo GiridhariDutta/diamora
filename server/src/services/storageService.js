@@ -40,6 +40,74 @@ export class StorageService {
   }
 
   /**
+   * Uploads a base64 encoded media string directly to Firebase Storage.
+   * Converts base64 buffer into a permanent storage file and returns the public media URL.
+   * If input is not base64 or if upload fails, returns original string safely.
+   */
+  static async uploadBase64(base64String, folder = 'products') {
+    if (!base64String || typeof base64String !== 'string') {
+      return base64String || '';
+    }
+
+    const trimmed = base64String.trim();
+    if (!trimmed.startsWith('data:') || !trimmed.includes(';base64,')) {
+      return base64String;
+    }
+
+    if (!bucket) {
+      console.warn('StorageService.uploadBase64 warning: bucket is not initialized, keeping original string');
+      return base64String;
+    }
+
+    try {
+      const commaIdx = trimmed.indexOf(',');
+      if (commaIdx === -1) return base64String;
+
+      const header = trimmed.substring(0, commaIdx);
+      const base64Data = trimmed.substring(commaIdx + 1);
+
+      let mimeType = 'image/jpeg';
+      const mimeMatch = header.match(/data:([^;]+)/);
+      if (mimeMatch && mimeMatch[1]) {
+        mimeType = mimeMatch[1].trim();
+      }
+
+      const buffer = Buffer.from(base64Data, 'base64');
+      if (buffer.length === 0) {
+        return base64String;
+      }
+
+      let extension = 'jpg';
+      if (mimeType.includes('png')) extension = 'png';
+      else if (mimeType.includes('webp')) extension = 'webp';
+      else if (mimeType.includes('gif')) extension = 'gif';
+      else if (mimeType.includes('svg')) extension = 'svg';
+      else if (mimeType.includes('mp4') || mimeType.includes('video')) extension = 'mp4';
+
+      const fileName = `${folder}/migrated_${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${extension}`;
+      const fileRef = bucket.file(fileName);
+      const downloadToken = crypto.randomUUID();
+
+      await fileRef.save(buffer, {
+        metadata: {
+          contentType: mimeType,
+          metadata: {
+            firebaseStorageDownloadTokens: downloadToken
+          }
+        }
+      });
+
+      const encodedPath = encodeURIComponent(fileName);
+      const publicUrl = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodedPath}?alt=media&token=${downloadToken}`;
+      console.log(`✅ Converted legacy base64 media to Firebase Storage: ${fileName}`);
+      return publicUrl;
+    } catch (err) {
+      console.error('Failed to upload base64 to Firebase Storage:', err.message);
+      return base64String;
+    }
+  }
+
+  /**
    * Check if a URL or path points to a temp file and move it to the target folder (e.g., 'categories').
    * If not temp, returns the original URL unchanged.
    */

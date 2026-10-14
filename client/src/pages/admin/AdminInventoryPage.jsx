@@ -187,8 +187,11 @@ export default function AdminInventoryPage() {
     if (str.includes('Product description is too long') || str.includes('1000 characters')) {
       return 'Product description cannot exceed 1000 characters. Please shorten the text.';
     }
-    if (str.includes('Images cannot be pasted into the description') || str.includes('Base64 images are not allowed')) {
+    if (str.includes('Images cannot be pasted into the description')) {
       return 'Pasting images inside the description is not allowed. Please use the Media upload section for all photos and videos.';
+    }
+    if (str.includes('Base64 images are not allowed')) {
+      return 'One or more media items contains an unsupported image format. Please re-upload them in the Media section.';
     }
     if (str.includes('DEADLINE_EXCEEDED') || str.includes('ETIMEDOUT') || str.includes('Network Error')) {
       return 'Network connection timed out. Please check your internet connection and try again.';

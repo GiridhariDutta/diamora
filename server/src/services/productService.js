@@ -1,4 +1,5 @@
 import { db } from '../config/firebase.js';
+import { StorageService } from './storageService.js';
 
 const formatCertification = (cert) => {
   if (!cert || typeof cert !== 'string') return '100% Certified';
@@ -320,11 +321,17 @@ export class ProductService {
       throw new Error(`Product description is too long (${rawDescText.length} characters). Maximum allowed is 1000 characters.`);
     }
 
-    // Validate Media URLs - disallow Base64 in media
-    const cleanMedia = Array.isArray(data.media) ? data.media : [];
-    for (const item of cleanMedia) {
-      if (item.url && (item.url.startsWith('data:') || item.url.includes(';base64,'))) {
-        throw new Error('Base64 images are not allowed. Please upload files to storage.');
+    // Process Media URLs - safely migrate any legacy Base64 to Firebase Storage
+    const cleanMedia = Array.isArray(data.media) ? [...data.media] : [];
+    for (let i = 0; i < cleanMedia.length; i++) {
+      const item = cleanMedia[i];
+      if (item && item.url && (item.url.startsWith('data:') || item.url.includes(';base64,'))) {
+        try {
+          const storageUrl = await StorageService.uploadBase64(item.url, 'products');
+          cleanMedia[i] = { ...item, url: storageUrl };
+        } catch (uploadErr) {
+          console.warn('Could not migrate base64 media to storage in createProduct:', uploadErr.message);
+        }
       }
     }
 
@@ -482,10 +489,16 @@ export class ProductService {
     if (data.gstPercent !== undefined) updateData.gstPercent = Number(data.gstPercent) || 3;
 
     if (data.media !== undefined) {
-      const cleanMedia = Array.isArray(data.media) ? data.media : [];
-      for (const item of cleanMedia) {
-        if (item.url && (item.url.startsWith('data:') || item.url.includes(';base64,'))) {
-          throw new Error('Base64 images are not allowed. Please upload files to storage.');
+      const cleanMedia = Array.isArray(data.media) ? [...data.media] : [];
+      for (let i = 0; i < cleanMedia.length; i++) {
+        const item = cleanMedia[i];
+        if (item && item.url && (item.url.startsWith('data:') || item.url.includes(';base64,'))) {
+          try {
+            const storageUrl = await StorageService.uploadBase64(item.url, 'products');
+            cleanMedia[i] = { ...item, url: storageUrl };
+          } catch (uploadErr) {
+            console.warn('Could not migrate base64 media to storage in updateProduct:', uploadErr.message);
+          }
         }
       }
       updateData.media = cleanMedia;
