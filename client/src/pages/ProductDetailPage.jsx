@@ -12,7 +12,8 @@ import {
   Eye,
   Clock,
   Check,
-  Zap
+  Zap,
+  Info
 } from 'lucide-react';
 import api from '../api/axios';
 import { addToCart, showCartAlert } from '../utils/cartManager';
@@ -434,6 +435,14 @@ export default function ProductDetailPage() {
               </div>
             </div>
 
+            {/* PRODUCT DESCRIPTION (WITHOUT CARD/BOX, DIRECTLY ABOVE PRICE CARD) */}
+            {Boolean(product.descriptionHtml && product.descriptionHtml.replace(/<[^>]*>/g, '').trim()) && (
+              <div 
+                className="text-xs sm:text-sm leading-relaxed text-[#C5C8D0] font-light space-y-1.5 [&_h1]:text-base [&_h1]:font-normal [&_h1]:text-white [&_h2]:text-sm [&_h2]:font-normal [&_h2]:text-white [&_p]:mb-1.5 [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4"
+                dangerouslySetInnerHTML={{ __html: product.descriptionHtml }} 
+              />
+            )}
+
             {/* PRICE & BREAKDOWN BOX */}
             <div className="bg-[#16181F]/80 border border-white/15 rounded-lg p-4 space-y-2 backdrop-blur-xl">
               <div className="flex items-baseline justify-between">
@@ -552,9 +561,16 @@ export default function ProductDetailPage() {
                   <span className="text-xs text-[#C5C8D0] font-normal tracking-wide">
                     Available Sizes: <strong className="text-[#E0B094] font-mono font-medium ml-1">{selectedSize || 'Select Size'}</strong>
                   </span>
-                  <span className="text-[10px] text-[#C5C8D0]/60 uppercase tracking-wider font-light">
-                    {product.sizes.length} Sizes
-                  </span>
+                  <Link 
+                    to="/ring-size-guide" 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    title="Ring Size Guide"
+                    className="p-1 text-[#E0B094] hover:text-white hover:bg-white/10 rounded-full transition-all flex items-center justify-center"
+                    aria-label="Ring Size Guide"
+                  >
+                    <Info className="w-4 h-4" />
+                  </Link>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
@@ -750,24 +766,6 @@ export default function ProductDetailPage() {
                   </div>
                 </div>
               </div>
-            </div>
-
-            {/* PRODUCT DESCRIPTION SECTION */}
-            <div className="bg-[#16181F]/80 border border-white/15 rounded-lg p-4 space-y-2 backdrop-blur-xl">
-              <span className="text-xs font-normal tracking-[0.18em] text-[#E0B094] uppercase block border-b border-white/10 pb-1.5">
-                Description & Details
-              </span>
-
-              {product.descriptionHtml ? (
-                <div 
-                  className="text-xs leading-relaxed text-[#C5C8D0] font-light space-y-1 [&_h1]:text-sm [&_h1]:font-normal [&_h1]:text-white [&_h2]:text-xs [&_h2]:font-normal [&_h2]:text-white [&_p]:mb-1.5 [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4"
-                  dangerouslySetInnerHTML={{ __html: product.descriptionHtml }} 
-                />
-              ) : (
-                <p className="text-xs text-[#C5C8D0]/70 font-light italic">
-                  Crafted with precision in certified gold and handselected diamonds.
-                </p>
-              )}
             </div>
 
             {/* ACTION BUTTONS (3 PRIMARY BUTTONS: INQUIRE, ADD TO CART, BUY NOW) */}

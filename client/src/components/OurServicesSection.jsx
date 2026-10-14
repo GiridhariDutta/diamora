@@ -15,8 +15,8 @@ export default function OurServicesSection() {
     {
       id: 'certificate',
       tabLabel: 'Certificate',
-      title: 'GIA & IGI GEMOLOGICAL CERTIFICATION',
-      description: '100% natural, conflict-free certified diamonds graded by international laboratories including GIA, IGI, and SGL. Every diamond features micro laser-inscribed girdle numbers.',
+      title: 'IGI GEMOLOGICAL CERTIFICATION',
+      description: '100% natural, conflict-free certified diamonds graded by international laboratories including IGI and SGL. Every diamond features micro laser-inscribed girdle numbers.',
       image: '/images/ring_hero.jpg'
     },
     {
