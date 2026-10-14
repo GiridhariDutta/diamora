@@ -35,8 +35,6 @@ import {
 } from 'lucide-react';
 import Swal from 'sweetalert2';
 import api from '../../api/axios';
-import { storage } from '../../config/firebase';
-import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { convertToWebP } from '../../utils/imageUtils';
 
 const lightSwal = Swal.mixin({
@@ -600,34 +598,23 @@ export default function AdminInventoryPage() {
         let finalUrl = '';
 
         try {
-          const fileExt = isVideo 
-            ? (fileToUpload.name.split('.').pop() || 'mp4') 
-            : 'webp';
-          const fileName = `products/${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
-          const storageRef = ref(storage, fileName);
+          const uploadFormData = new FormData();
+          uploadFormData.append('file', fileToUpload);
 
-          const uploadTask = uploadBytesResumable(storageRef, fileToUpload);
-
-          finalUrl = await new Promise((resolve, reject) => {
-            uploadTask.on(
-              'state_changed',
-              null,
-              (error) => {
-                reject(error);
-              },
-              async () => {
-                try {
-                  const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-                  resolve(downloadURL);
-                } catch (err) {
-                  reject(err);
-                }
-              }
-            );
+          const uploadRes = await api.post('/api/products/upload', uploadFormData, {
+            headers: {
+              'Content-Type': 'multipart/form-data'
+            }
           });
-        } catch (firebaseErr) {
-          console.error('Firebase Storage upload failed:', firebaseErr);
-          throw new Error('Failed to upload image/video to storage. Please check your connection and try again.');
+
+          if (uploadRes.data?.success && uploadRes.data?.data?.url) {
+            finalUrl = uploadRes.data.data.url;
+          } else {
+            throw new Error(uploadRes.data?.message || 'Failed to upload media file.');
+          }
+        } catch (uploadErr) {
+          console.error('Server media upload failed:', uploadErr);
+          throw uploadErr;
         }
 
         if (finalUrl) {
@@ -652,7 +639,9 @@ export default function AdminInventoryPage() {
         timer: 1800
       });
     } catch (err) {
-      setErrorMessage('Media upload failed. Please try selecting a smaller file.');
+      console.error('Media upload error:', err);
+      const msg = err.response?.data?.message || err.message || 'Media upload failed. Please try again.';
+      setErrorMessage(msg);
     } finally {
       setUploadingMedia(false);
     }
