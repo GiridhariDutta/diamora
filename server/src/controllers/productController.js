@@ -1,4 +1,5 @@
 import { ProductService } from '../services/productService.js';
+import { StorageService } from '../services/storageService.js';
 
 /**
  * Formats database, grpc, and validation errors into user-friendly messages
@@ -147,6 +148,33 @@ export class ProductController {
       return res.status(400).json({
         success: false,
         message: formatProductErrorMessage(error, 'Failed to delete product.')
+      });
+    }
+  }
+
+  /**
+   * Upload product media (image or video) directly to Firebase Storage bucket
+   */
+  static async uploadMedia(req, res) {
+    try {
+      if (!req.file) {
+        return res.status(400).json({
+          success: false,
+          message: 'No media file uploaded.'
+        });
+      }
+
+      const result = await StorageService.uploadProductMedia(req.file);
+      return res.status(200).json({
+        success: true,
+        message: 'Product media uploaded successfully.',
+        data: result
+      });
+    } catch (error) {
+      console.error('Error in ProductController.uploadMedia:', error);
+      return res.status(500).json({
+        success: false,
+        message: error.message || 'Failed to upload product media.'
       });
     }
   }

@@ -40,6 +40,42 @@ export class StorageService {
   }
 
   /**
+   * Upload product media (image or video) directly to `products/` in Firebase Storage.
+   * Returns permanent public URL and storage path.
+   */
+  static async uploadProductMedia(file) {
+    if (!bucket) {
+      throw new Error('Firebase Storage bucket is not initialized');
+    }
+
+    if (!file || !file.buffer) {
+      throw new Error('No media file provided');
+    }
+
+    const fileExtension = file.originalname ? file.originalname.split('.').pop().toLowerCase() : 'webp';
+    const fileName = `products/${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${fileExtension}`;
+    const fileRef = bucket.file(fileName);
+    const downloadToken = crypto.randomUUID();
+
+    await fileRef.save(file.buffer, {
+      metadata: {
+        contentType: file.mimetype || 'image/webp',
+        metadata: {
+          firebaseStorageDownloadTokens: downloadToken
+        }
+      }
+    });
+
+    const encodedPath = encodeURIComponent(fileName);
+    const publicUrl = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodedPath}?alt=media&token=${downloadToken}`;
+
+    return {
+      url: publicUrl,
+      storagePath: fileName
+    };
+  }
+
+  /**
    * Uploads a base64 encoded media string directly to Firebase Storage.
    * Converts base64 buffer into a permanent storage file and returns the public media URL.
    * If input is not base64 or if upload fails, returns original string safely.
