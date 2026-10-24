@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, useNavigate, Link, useOutletContext } from 'react-router-dom';
 import { 
   Sparkles, 
@@ -17,6 +17,21 @@ import {
 } from 'lucide-react';
 import api from '../api/axios';
 import { addToCart, showCartAlert } from '../utils/cartManager';
+
+// Process description HTML: wrap tables in responsive scroll wrapper & sanitize fixed editor inline widths
+const formatDescriptionHtml = (rawHtml) => {
+  if (!rawHtml) return '';
+  let html = rawHtml;
+  if (html.includes('<table') && !html.includes('table-responsive-wrapper')) {
+    // Clean rigid inline widths like width="800" so table fits container cleanly
+    html = html.replace(/(<table[^>]*?)\s+width=["']\d+["']/gi, '$1');
+    html = html.replace(
+      /<table([\s\S]*?)<\/table>/gi,
+      '<div class="table-responsive-wrapper w-full max-w-full overflow-x-auto my-3 rounded border border-white/25 scrollbar-thin"><table$1</table></div>'
+    );
+  }
+  return html;
+};
 
 export default function ProductDetailPage() {
   const { id } = useParams();
@@ -438,8 +453,8 @@ export default function ProductDetailPage() {
             {/* PRODUCT DESCRIPTION (WITHOUT CARD/BOX, DIRECTLY ABOVE PRICE CARD) */}
             {Boolean(product.descriptionHtml && product.descriptionHtml.replace(/<[^>]*>/g, '').trim()) && (
               <div 
-                className="text-xs sm:text-sm leading-relaxed text-[#C5C8D0] font-light space-y-1.5 [&_h1]:text-base [&_h1]:font-normal [&_h1]:text-white [&_h2]:text-sm [&_h2]:font-normal [&_h2]:text-white [&_p]:mb-1.5 [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4"
-                dangerouslySetInnerHTML={{ __html: product.descriptionHtml }} 
+                className="text-xs sm:text-sm leading-relaxed text-[#C5C8D0] font-light space-y-1.5 [&_h1]:text-base [&_h1]:font-normal [&_h1]:text-white [&_h2]:text-sm [&_h2]:font-normal [&_h2]:text-white [&_p]:mb-1.5 [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4 [&_.table-responsive-wrapper_table]:!w-full [&_.table-responsive-wrapper_table]:!min-w-full [&_.table-responsive-wrapper_table]:border-collapse [&_.table-responsive-wrapper_table]:my-0 [&_.table-responsive-wrapper_th]:bg-white/10 [&_.table-responsive-wrapper_th]:text-white [&_.table-responsive-wrapper_th]:font-medium [&_.table-responsive-wrapper_th]:text-left [&_.table-responsive-wrapper_th]:!px-3 [&_.table-responsive-wrapper_th]:!py-2 [&_.table-responsive-wrapper_th]:border [&_.table-responsive-wrapper_th]:border-white/25 [&_.table-responsive-wrapper_th]:text-xs [&_.table-responsive-wrapper_th]:whitespace-nowrap [&_.table-responsive-wrapper_td]:!px-3 [&_.table-responsive-wrapper_td]:!py-2 [&_.table-responsive-wrapper_td]:border [&_.table-responsive-wrapper_td]:border-white/25 [&_.table-responsive-wrapper_td]:text-xs [&_.table-responsive-wrapper_td]:whitespace-nowrap sm:[&_.table-responsive-wrapper_td]:whitespace-normal [&_.table-responsive-wrapper_tr:nth-child(even)]:bg-white/5 [&_table]:!w-full [&_table]:!min-w-full [&_table]:border-collapse [&_th]:!py-2 [&_th]:!px-3 [&_td]:!py-2 [&_td]:!px-3"
+                dangerouslySetInnerHTML={{ __html: formatDescriptionHtml(product.descriptionHtml) }} 
               />
             )}
 
@@ -566,10 +581,13 @@ export default function ProductDetailPage() {
                     target="_blank" 
                     rel="noopener noreferrer" 
                     title="Ring Size Guide"
-                    className="p-1 text-[#E0B094] hover:text-white hover:bg-white/10 rounded-full transition-all flex items-center justify-center"
+                    className="group flex flex-col items-center text-[#E0B094] hover:text-white transition-colors p-0.5 cursor-pointer"
                     aria-label="Ring Size Guide"
                   >
-                    <Info className="w-4 h-4" />
+                    <Info className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
+                    <span className="text-[9px] font-light tracking-wide mt-0.5 whitespace-nowrap group-hover:underline underline-offset-2">
+                      Know your size
+                    </span>
                   </Link>
                 </div>
 

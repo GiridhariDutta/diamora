@@ -21,13 +21,19 @@ export default function RotatingArcShowcase({ onOpenShop }) {
   const animRef = useRef(null);
   const sectionRef = useRef(null);
   const fetchedPages = useRef(new Set());
+  const rotationAngleRef = useRef(0);
   
   const interactionState = useRef({
     isDragging: false,
+    hasDragged: false,
     startX: 0,
     lastX: 0,
     pauseUntil: 0,
-    targetRotation: null
+    animating: false,
+    animStartAngle: 0,
+    animTargetAngle: 0,
+    animStartTime: 0,
+    animDuration: 450
   });
 
   // Listen to window resize for responsive arch radii without layout thrashing on frame updates
@@ -142,7 +148,33 @@ export default function RotatingArcShowcase({ onOpenShop }) {
     }
   }, [rotationAngle, isSectionInView, hasNextPage, loadingMore, products.length, page, angleStep, fetchNextPage]);
 
-  // Ultra-smooth 60FPS continuous clockwise rotation loop
+  // Helper to compute target rotation to place a specific product precisely in the center
+  const rotateToProductIndex = useCallback((targetIndex) => {
+    if (products.length === 0) return;
+    const totalLoopAngle = products.length * angleStep;
+    const centerSlot = arcSpanDeg / 2; // 75 deg
+    
+    // Ideal angle where product at targetIndex sits directly at centerSlot (relAngle = 0)
+    const idealTarget = centerSlot - (targetIndex * angleStep);
+    const current = rotationAngleRef.current;
+    
+    // Shortest angular difference on modular loop
+    let diff = (idealTarget - current) % totalLoopAngle;
+    if (diff > totalLoopAngle / 2) diff -= totalLoopAngle;
+    if (diff < -totalLoopAngle / 2) diff += totalLoopAngle;
+    
+    const targetAngle = current + diff;
+    
+    const state = interactionState.current;
+    state.animating = true;
+    state.animStartAngle = current;
+    state.animTargetAngle = targetAngle;
+    state.animStartTime = performance.now();
+    state.animDuration = 450; // Smooth 450ms physical glide
+    state.pauseUntil = performance.now() + 6000;
+  }, [products.length, angleStep, arcSpanDeg]);
+
+  // Ultra-smooth 60FPS continuous rotation & easeOutCubic transition loop
   useEffect(() => {
     let lastTime = performance.now();
 
@@ -152,25 +184,28 @@ export default function RotatingArcShowcase({ onOpenShop }) {
       
       const state = interactionState.current;
 
-      if (state.targetRotation !== null) {
-        setRotationAngle((prev) => {
-          const diff = state.targetRotation - prev;
-          // Snap perfectly when very close to fix 'crooked' issue and speed up the end
-          if (Math.abs(diff) < 0.5) {
-            const finalTarget = state.targetRotation;
-            state.targetRotation = null;
-            return finalTarget;
-          }
-          // Faster lerp (0.15 instead of 0.08) for snappier, less laggy feel
-          return prev + diff * 0.15 * (deltaTime / 16);
-        });
+      if (state.animating) {
+        const elapsed = currentTime - state.animStartTime;
+        const progress = Math.min(1, elapsed / state.animDuration);
+        // easeOutCubic: rapid initial response, decelerates smoothly with zero stutter or crawling tail
+        const ease = 1 - Math.pow(1 - progress, 3);
+        const nextAngle = state.animStartAngle + (state.animTargetAngle - state.animStartAngle) * ease;
+        
+        rotationAngleRef.current = nextAngle;
+        setRotationAngle(nextAngle);
+
+        if (progress >= 1) {
+          state.animating = false;
+        }
       } else if (
         isSectionInView && 
         !state.isDragging && 
         currentTime > state.pauseUntil && 
         products.length > 0
       ) {
-        setRotationAngle((prev) => prev + (deltaTime * 0.012));
+        const nextAngle = rotationAngleRef.current + (deltaTime * 0.012);
+        rotationAngleRef.current = nextAngle;
+        setRotationAngle(nextAngle);
       }
 
       animRef.current = requestAnimationFrame(updateRotation);
@@ -183,18 +218,34 @@ export default function RotatingArcShowcase({ onOpenShop }) {
   // Manual rotation controls
   const handlePrev = () => {
     if (products.length === 0) return;
-    const offset = rotationAngle - (arcSpanDeg / 2);
+    const current = rotationAngleRef.current;
+    const offset = current - (arcSpanDeg / 2);
     const targetOffset = Math.round(offset / angleStep) * angleStep;
-    interactionState.current.targetRotation = targetOffset + (arcSpanDeg / 2) - angleStep;
-    interactionState.current.pauseUntil = performance.now() + 5000;
+    const target = targetOffset + (arcSpanDeg / 2) - angleStep;
+    
+    const state = interactionState.current;
+    state.animating = true;
+    state.animStartAngle = current;
+    state.animTargetAngle = target;
+    state.animStartTime = performance.now();
+    state.animDuration = 400;
+    state.pauseUntil = performance.now() + 6000;
   };
 
   const handleNext = () => {
     if (products.length === 0) return;
-    const offset = rotationAngle - (arcSpanDeg / 2);
+    const current = rotationAngleRef.current;
+    const offset = current - (arcSpanDeg / 2);
     const targetOffset = Math.round(offset / angleStep) * angleStep;
-    interactionState.current.targetRotation = targetOffset + (arcSpanDeg / 2) + angleStep;
-    interactionState.current.pauseUntil = performance.now() + 5000;
+    const target = targetOffset + (arcSpanDeg / 2) + angleStep;
+    
+    const state = interactionState.current;
+    state.animating = true;
+    state.animStartAngle = current;
+    state.animTargetAngle = target;
+    state.animStartTime = performance.now();
+    state.animDuration = 400;
+    state.pauseUntil = performance.now() + 6000;
   };
 
   const skeletonAngles = [-60, -30, 0, 30, 60];
@@ -213,45 +264,69 @@ export default function RotatingArcShowcase({ onOpenShop }) {
         <div 
           className="relative w-full h-[195px] sm:h-[450px] flex items-center justify-center pt-1 sm:pt-10 touch-pan-y"
           onPointerDown={(e) => {
-            interactionState.current.isDragging = true;
-            interactionState.current.startX = e.clientX;
-            interactionState.current.lastX = e.clientX;
-            interactionState.current.targetRotation = null;
-            interactionState.current.pauseUntil = performance.now() + 5000;
-            e.currentTarget.setPointerCapture(e.pointerId);
+            if (e.button !== undefined && e.button !== 0) return;
+            const state = interactionState.current;
+            state.isDragging = true;
+            state.hasDragged = false;
+            state.startX = e.clientX;
+            state.lastX = e.clientX;
+            state.pauseUntil = performance.now() + 5000;
           }}
           onPointerMove={(e) => {
-            if (!interactionState.current.isDragging) return;
+            const state = interactionState.current;
+            if (!state.isDragging) return;
             const currentX = e.clientX;
-            const diff = currentX - interactionState.current.lastX;
-            interactionState.current.lastX = currentX;
-            setRotationAngle(prev => prev + diff * (isMobile ? 0.3 : 0.15));
-            interactionState.current.pauseUntil = performance.now() + 5000;
+            const diff = currentX - state.lastX;
+            
+            // Only flag as a drag if movement exceeds 6px threshold
+            if (!state.hasDragged && Math.abs(currentX - state.startX) > 6) {
+              state.hasDragged = true;
+              try {
+                e.currentTarget.setPointerCapture(e.pointerId);
+              } catch (err) {}
+            }
+
+            if (state.hasDragged) {
+              state.lastX = currentX;
+              const nextAngle = rotationAngleRef.current + diff * (isMobile ? 0.3 : 0.15);
+              rotationAngleRef.current = nextAngle;
+              setRotationAngle(nextAngle);
+              state.pauseUntil = performance.now() + 6000;
+            }
           }}
           onPointerUp={(e) => {
             const state = interactionState.current;
             state.isDragging = false;
-            e.currentTarget.releasePointerCapture(e.pointerId);
+            try {
+              if (e.currentTarget.hasPointerCapture && e.currentTarget.hasPointerCapture(e.pointerId)) {
+                e.currentTarget.releasePointerCapture(e.pointerId);
+              }
+            } catch (err) {}
             
-            // Auto-snap to nearest center when finger is released
-            setRotationAngle(prev => {
-              const offset = prev - (arcSpanDeg / 2);
+            // Auto-snap smoothly to nearest center slot only after user drags
+            if (state.hasDragged) {
+              const current = rotationAngleRef.current;
+              const offset = current - (arcSpanDeg / 2);
               const targetOffset = Math.round(offset / angleStep) * angleStep;
-              state.targetRotation = targetOffset + (arcSpanDeg / 2);
-              return prev; // Let the rAF loop handle the smooth snap
-            });
+              const snapTarget = targetOffset + (arcSpanDeg / 2);
+              
+              state.animating = true;
+              state.animStartAngle = current;
+              state.animTargetAngle = snapTarget;
+              state.animStartTime = performance.now();
+              state.animDuration = 350;
+              state.pauseUntil = performance.now() + 6000;
+            }
           }}
           onPointerCancel={(e) => {
             const state = interactionState.current;
             state.isDragging = false;
-            e.currentTarget.releasePointerCapture(e.pointerId);
-            
-            setRotationAngle(prev => {
-              const offset = prev - (arcSpanDeg / 2);
-              const targetOffset = Math.round(offset / angleStep) * angleStep;
-              state.targetRotation = targetOffset + (arcSpanDeg / 2);
-              return prev;
-            });
+            state.hasDragged = false;
+            try {
+              if (e.currentTarget.hasPointerCapture && e.currentTarget.hasPointerCapture(e.pointerId)) {
+                e.currentTarget.releasePointerCapture(e.pointerId);
+              }
+            } catch (err) {}
           }}
         >
 
@@ -348,15 +423,15 @@ export default function RotatingArcShowcase({ onOpenShop }) {
               <div
                 key={item.id}
                 onClick={(e) => {
-                  // If it was a drag, don't trigger click
-                  if (Math.abs(e.clientX - interactionState.current.startX) > 5) {
+                  // If user was dragging, don't trigger click
+                  if (interactionState.current.hasDragged) {
                     return;
                   }
                   if (isPeakCenter) {
                     navigate(`/product/${item.id}`);
                   } else {
-                    interactionState.current.targetRotation = rotationAngle - relAngle;
-                    interactionState.current.pauseUntil = performance.now() + 5000;
+                    // Precisely rotate the clicked product directly into the center
+                    rotateToProductIndex(index);
                   }
                 }}
                 onMouseEnter={() => { interactionState.current.pauseUntil = performance.now() + 5000; }}
@@ -380,13 +455,14 @@ export default function RotatingArcShowcase({ onOpenShop }) {
                 >
                   
                   {/* Product Image Frame (Expanded to 70%-75% height) */}
-                  <div className="relative w-full h-[70%] sm:h-[75%] rounded-lg sm:rounded-2xl overflow-hidden bg-black shrink-0">
+                  <div className="relative w-full h-[70%] sm:h-[75%] rounded-lg sm:rounded-2xl overflow-hidden bg-black shrink-0 pointer-events-none select-none">
                     <img
                       src={item.image}
                       alt={item.title}
-                      className="w-full h-full object-cover filter brightness-105 contrast-110 group-hover:scale-105 transition-transform duration-500"
+                      draggable={false}
+                      className="w-full h-full object-cover filter brightness-105 contrast-110 group-hover:scale-105 transition-transform duration-500 pointer-events-none select-none"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-50" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-50 pointer-events-none" />
                   </div>
 
                   {/* Sharp Clear Card Title, Price & Quick Cart Button */}
@@ -422,7 +498,7 @@ export default function RotatingArcShowcase({ onOpenShop }) {
         </div>
 
         {/* 2. CENTER TYPOGRAPHY OVERLAY (SEQUENTIALLY PLACED BELOW CARDS STAGE) */}
-        <div className="relative z-40 text-center max-w-2xl px-4 pointer-events-auto mt-1 sm:-mt-20">
+        <div className="relative z-40 text-center max-w-2xl px-4 pointer-events-none mt-1 sm:-mt-20">
           
           {/* Headline */}
           <h2 className="font-cinzel text-xl sm:text-3xl lg:text-4xl font-bold tracking-[0.14em] text-white leading-tight mb-1.5 sm:mb-2">
@@ -442,7 +518,7 @@ export default function RotatingArcShowcase({ onOpenShop }) {
               onClick={() => {
                 navigate('/shop');
               }}
-              className="group font-poppins px-5 sm:px-7 py-2.5 sm:py-3 border border-[#E0B094]/70 hover:border-[#E0B094] bg-black/80 hover:bg-[#E0B094]/15 text-[#E0B094] font-semibold text-[10px] sm:text-xs tracking-[0.18em] sm:tracking-[0.2em] uppercase transition-all duration-300 flex items-center gap-2 sm:gap-2.5 shadow-[0_4px_25px_rgba(0,0,0,0.7)] cursor-pointer"
+              className="group font-poppins px-5 sm:px-7 py-2.5 sm:py-3 border border-[#E0B094]/70 hover:border-[#E0B094] bg-black/80 hover:bg-[#E0B094]/15 text-[#E0B094] font-semibold text-[10px] sm:text-xs tracking-[0.18em] sm:tracking-[0.2em] uppercase transition-all duration-300 flex items-center gap-2 sm:gap-2.5 shadow-[0_4px_25px_rgba(0,0,0,0.7)] cursor-pointer pointer-events-auto"
             >
               <span>SHOP THE ESSENTIALS</span>
               <ArrowRight className="w-3 h-3 sm:w-3.5 sm:h-3.5 group-hover:translate-x-1 transition-transform" />

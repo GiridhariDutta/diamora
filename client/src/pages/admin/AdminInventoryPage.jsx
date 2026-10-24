@@ -1446,15 +1446,32 @@ export default function AdminInventoryPage() {
                         {currentCat.acceptSize && (
                           <div className="flex-1">
                             <label className="block text-[11px] font-semibold tracking-wider text-slate-700 uppercase mb-1">
-                              Available Sizes <span className="text-slate-400 font-normal normal-case">(Type size & press Enter)</span>
+                              Available Sizes <span className="text-slate-400 font-normal normal-case">(Type size & press Enter or click Add)</span>
                             </label>
-                            <input
-                              type="text"
-                              value={sizeInputText}
-                              onChange={(e) => setSizeInputText(e.target.value)}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                  e.preventDefault();
+                            <div className="flex gap-1.5">
+                              <input
+                                type="text"
+                                value={sizeInputText}
+                                onChange={(e) => setSizeInputText(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    const newSize = sizeInputText.trim();
+                                    if (newSize && !formData.sizes?.some(s => s.size === newSize)) {
+                                      setFormData({
+                                        ...formData,
+                                        sizes: [...(formData.sizes || []), { size: newSize, increaseAmount: '' }]
+                                      });
+                                    }
+                                    setSizeInputText('');
+                                  }
+                                }}
+                                placeholder="e.g. 10, 12, S, M..."
+                                className="flex-1 px-3 py-1.5 bg-white border border-slate-300 rounded-[4px] text-xs font-medium focus:border-amber-600 focus:outline-none shadow-2xs"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => {
                                   const newSize = sizeInputText.trim();
                                   if (newSize && !formData.sizes?.some(s => s.size === newSize)) {
                                     setFormData({
@@ -1463,11 +1480,14 @@ export default function AdminInventoryPage() {
                                     });
                                   }
                                   setSizeInputText('');
-                                }
-                              }}
-                              placeholder="e.g. 10, 12, S, M..."
-                              className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-[4px] text-xs font-medium focus:border-amber-600 focus:outline-none shadow-2xs"
-                            />
+                                }}
+                                className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-[4px] text-xs font-semibold tracking-wider uppercase transition-colors shadow-2xs flex items-center gap-1 cursor-pointer shrink-0"
+                                title="Add Size"
+                              >
+                                <Plus className="w-3.5 h-3.5" />
+                                <span>Add</span>
+                              </button>
+                            </div>
                           </div>
                         )}
 
