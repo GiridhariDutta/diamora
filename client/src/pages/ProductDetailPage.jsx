@@ -707,6 +707,55 @@ export default function ProductDetailPage() {
               </div>
               )}
 
+              {/* GEMSTONE DETAILS ACCORDION */}
+              {(product.hasGemstone && Array.isArray(product.stones) && product.stones.length > 0) && (
+              <div className="border-b border-white/10">
+                <button 
+                  onClick={() => toggleSection('gemstoneDetails')}
+                  className="w-full py-4 flex items-center justify-between text-left focus:outline-none cursor-pointer"
+                >
+                  <span className="text-[11px] uppercase tracking-widest text-[#E0B094] font-medium">Gemstone Details</span>
+                  <span className="text-[#C5C8D0] text-lg font-light leading-none transform transition-transform duration-300">
+                    {expandedSection === 'gemstoneDetails' ? '−' : '+'}
+                  </span>
+                </button>
+                
+                <div 
+                  className={`overflow-hidden transition-all duration-500 ease-in-out ${expandedSection === 'gemstoneDetails' ? 'max-h-[500px] opacity-100 pb-4' : 'max-h-0 opacity-0'}`}
+                >
+                  <div className="pt-1 text-xs font-light">
+                    {product.stones.map((stone, sIdx) => (
+                      <div key={`stone-${sIdx}`}>
+                        {product.stones.length > 1 && (
+                          <div className="px-3 py-1.5 text-[10px] uppercase tracking-wider text-[#E0B094] font-medium bg-[#16181F]/50">
+                            Stone {sIdx + 1}
+                          </div>
+                        )}
+                        <div className={`${sIdx % 2 === 0 ? 'bg-[#16181F]' : 'bg-transparent'} flex justify-between px-3 py-2.5 ${sIdx % 2 === 0 ? 'text-white' : 'text-[#C5C8D0]'}`}>
+                          <span>Gemstone Name</span>
+                          <span className="font-mono">{stone.stoneTitle || 'N/A'}</span>
+                        </div>
+                        <div className={`${sIdx % 2 === 0 ? 'bg-transparent' : 'bg-[#16181F]'} flex justify-between px-3 py-2.5 ${sIdx % 2 === 0 ? 'text-[#C5C8D0]' : 'text-white'}`}>
+                          <span>Weight (carats)</span>
+                          <span className="font-mono">{stone.stoneWeightCarats || 0}</span>
+                        </div>
+                        <div className={`${sIdx % 2 === 0 ? 'bg-[#16181F]' : 'bg-transparent'} flex justify-between px-3 py-2.5 ${sIdx % 2 === 0 ? 'text-white' : 'text-[#C5C8D0]'}`}>
+                          <span>Rate Per Carat</span>
+                          <span className="font-mono">₹{(stone.stoneRatePerCarat || 0).toLocaleString('en-IN')}/ct</span>
+                        </div>
+                        {Number(stone.numberOfStones) > 0 && (
+                          <div className={`${sIdx % 2 === 0 ? 'bg-transparent' : 'bg-[#16181F]'} flex justify-between px-3 py-2.5 ${sIdx % 2 === 0 ? 'text-[#C5C8D0]' : 'text-white'}`}>
+                            <span>Number of Stones</span>
+                            <span className="font-mono">{stone.numberOfStones}</span>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              )}
+
               {/* PRICE ACCORDION */}
               <div className="border-b border-white/10">
                 <button 
@@ -729,7 +778,7 @@ export default function ProductDetailPage() {
                           <tr className="bg-[#16181F] text-[#C5C8D0] text-[10px] uppercase tracking-wider">
                             <th className="py-2.5 px-3 font-normal">Component</th>
                             <th className="py-2.5 px-3 font-normal">Rate</th>
-                            <th className="py-2.5 px-3 font-normal">Weight</th>
+                            <th className="py-2.5 px-3 font-normal">Weight/Carats</th>
                             <th className="py-2.5 px-3 font-normal text-right">Value</th>
                           </tr>
                         </thead>
@@ -745,9 +794,23 @@ export default function ProductDetailPage() {
                             <td className="py-2.5 px-3">Diamond</td>
                             <td className="py-2.5 px-3 font-mono">₹{((product.diamondRatePerCarat || product.diamonds?.[0]?.diamondRatePerCarat || 0)).toLocaleString('en-IN')}/ct</td>
                             <td className="py-2.5 px-3 font-mono">{product.totalDiamondCarats || 0}</td>
-                            <td className="py-2.5 px-3 text-right font-mono text-[#E0B094]">₹{(((product.diamondRatePerCarat || product.diamonds?.[0]?.diamondRatePerCarat || 0) * (product.totalDiamondCarats || 0))).toLocaleString('en-IN')}</td>
+                            <td className="py-2.5 px-3 text-right font-mono text-[#E0B094]">₹{Math.round(product.computedDiamondPrice || ((product.diamondRatePerCarat || product.diamonds?.[0]?.diamondRatePerCarat || 0) * (product.totalDiamondCarats || 0))).toLocaleString('en-IN')}</td>
                           </tr>
                           )}
+                          {(product.hasGemstone && product.computedStonePrice > 0) && (
+                          <tr className="bg-transparent text-white">
+                            <td className="py-2.5 px-3">Gemstone</td>
+                            <td className="py-2.5 px-3 font-mono">{Array.isArray(product.stones) ? product.stones.map(s => s.stoneTitle).filter(Boolean).join(', ') : '—'}</td>
+                            <td className="py-2.5 px-3 font-mono">{Array.isArray(product.stones) ? product.stones.reduce((sum, s) => sum + (Number(s.stoneWeightCarats) || 0), 0) : 0}</td>
+                            <td className="py-2.5 px-3 text-right font-mono text-[#E0B094]">₹{Math.round(product.computedStonePrice || 0).toLocaleString('en-IN')}</td>
+                          </tr>
+                          )}
+                          <tr className="bg-[#16181F] text-[#C5C8D0]">
+                            <td className="py-2.5 px-3">Net Making Charge</td>
+                            <td className="py-2.5 px-3 font-mono"></td>
+                            <td className="py-2.5 px-3 font-mono"></td>
+                            <td className="py-2.5 px-3 text-right font-mono text-[#E0B094]">₹{Math.round(product.computedMakingCharges || 0).toLocaleString('en-IN')}</td>
+                          </tr>
                           <tr className="bg-transparent text-[#C5C8D0]">
                             <td className="py-2.5 px-3">GST</td>
                             <td className="py-2.5 px-3 font-mono">{product.gstPercent || 3}%</td>

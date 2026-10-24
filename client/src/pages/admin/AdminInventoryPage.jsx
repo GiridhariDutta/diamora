@@ -2486,7 +2486,7 @@ export default function AdminInventoryPage() {
                         <tbody className="divide-y divide-slate-200">
                           {viewingProduct.stones.map((st, idx) => (
                             <tr key={`vst-${idx}`} className="bg-white">
-                              <td className="py-1.5 px-2 font-semibold text-slate-900">{st.stoneTitle || 'Gemstone'}</td>
+                              <td className="py-1.5 px-2 font-semibold text-slate-900">{st.stoneTitle || 'N/A'}</td>
                               <td className="py-1.5 px-2 text-right font-mono">{st.stoneWeightCarats || 0} Ct</td>
                               <td className="py-1.5 px-2 text-center font-mono">{st.numberOfStones || 0} Pcs</td>
                               <td className="py-1.5 px-2 text-right font-mono text-amber-900 font-semibold">

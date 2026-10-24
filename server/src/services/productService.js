@@ -39,7 +39,10 @@ async function getLiveRates() {
   diamondSnap.forEach(doc => { diamondQualities[doc.id] = doc.data().ratePerCarat || 0; });
 
   const stones = {};
-  stonesSnap.forEach(doc => { stones[doc.id] = doc.data().ratePerCarat || 0; });
+  stonesSnap.forEach(doc => { 
+    const d = doc.data();
+    stones[doc.id] = { ratePerCarat: d.ratePerCarat || 0, title: d.title || '' }; 
+  });
 
   rateCache = { purities, diamondQualities, stones, lastFetched: now };
   return rateCache;
@@ -78,7 +81,9 @@ function calculateDynamicPrice(product, rates) {
   let processedStones = [];
   if (product.hasGemstone && Array.isArray(product.stones)) {
     product.stones.forEach(s => {
-      const sRate = rates.stones[s.stoneId] || 0;
+      const stoneData = rates.stones[s.stoneId] || {};
+      const sRate = stoneData.ratePerCarat || 0;
+      const stoneTitle = stoneData.title || s.stoneTitle || '';
       const carats = Number(s.stoneWeightCarats) || 0;
       let rowPrice = carats * sRate;
       if (Number(s.customStonePrice) > 0) {
@@ -87,6 +92,7 @@ function calculateDynamicPrice(product, rates) {
       computedStonePrice += rowPrice;
       processedStones.push({
         ...s,
+        stoneTitle,
         stoneRatePerCarat: sRate,
         rowPrice
       });
@@ -348,6 +354,7 @@ export class ProductService {
 
     const cleanStones = Array.isArray(data.stones) ? data.stones.map(s => ({
       stoneId: s.stoneId || '',
+      stoneTitle: s.stoneTitle || '',
       settingType: s.settingType || '',
       stoneWeightCarats: Number(s.stoneWeightCarats) || 0,
       numberOfStones: Number(s.numberOfStones) || 0,
@@ -477,6 +484,7 @@ export class ProductService {
     if (data.stones !== undefined) {
       updateData.stones = Array.isArray(data.stones) ? data.stones.map(s => ({
         stoneId: s.stoneId || '',
+        stoneTitle: s.stoneTitle || '',
         settingType: s.settingType || '',
         stoneWeightCarats: Number(s.stoneWeightCarats) || 0,
         numberOfStones: Number(s.numberOfStones) || 0,
