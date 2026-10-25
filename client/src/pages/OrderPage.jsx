@@ -377,7 +377,7 @@ export default function OrderPage() {
       let base64Logo = '';
       try {
         const img = new Image();
-        img.src = '/diamora_logo.png';
+        img.src = '/diamora_logo.webp';
         await new Promise((resolve, reject) => {
           img.onload = resolve;
           img.onerror = reject;
@@ -401,7 +401,7 @@ export default function OrderPage() {
         currency: currency,
         name: 'DIAMORAS Luxury Vault',
         description: cartItems[0]?.title || 'Certified Diamond Jewelry Purchase',
-        image: base64Logo || (window.location.origin + '/diamora_logo.png'),
+        image: base64Logo || (window.location.origin + '/diamora_logo.webp'),
         order_id: razorpayOrderId,
         prefill: {
           name: shippingDetails.customerName,

@@ -1446,15 +1446,32 @@ export default function AdminInventoryPage() {
                         {currentCat.acceptSize && (
                           <div className="flex-1">
                             <label className="block text-[11px] font-semibold tracking-wider text-slate-700 uppercase mb-1">
-                              Available Sizes <span className="text-slate-400 font-normal normal-case">(Type size & press Enter)</span>
+                              Available Sizes <span className="text-slate-400 font-normal normal-case">(Type size & press Enter or click Add)</span>
                             </label>
-                            <input
-                              type="text"
-                              value={sizeInputText}
-                              onChange={(e) => setSizeInputText(e.target.value)}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                  e.preventDefault();
+                            <div className="flex gap-1.5">
+                              <input
+                                type="text"
+                                value={sizeInputText}
+                                onChange={(e) => setSizeInputText(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    e.preventDefault();
+                                    const newSize = sizeInputText.trim();
+                                    if (newSize && !formData.sizes?.some(s => s.size === newSize)) {
+                                      setFormData({
+                                        ...formData,
+                                        sizes: [...(formData.sizes || []), { size: newSize, increaseAmount: '' }]
+                                      });
+                                    }
+                                    setSizeInputText('');
+                                  }
+                                }}
+                                placeholder="e.g. 10, 12, S, M..."
+                                className="flex-1 px-3 py-1.5 bg-white border border-slate-300 rounded-[4px] text-xs font-medium focus:border-amber-600 focus:outline-none shadow-2xs"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => {
                                   const newSize = sizeInputText.trim();
                                   if (newSize && !formData.sizes?.some(s => s.size === newSize)) {
                                     setFormData({
@@ -1463,11 +1480,14 @@ export default function AdminInventoryPage() {
                                     });
                                   }
                                   setSizeInputText('');
-                                }
-                              }}
-                              placeholder="e.g. 10, 12, S, M..."
-                              className="w-full px-3 py-1.5 bg-white border border-slate-300 rounded-[4px] text-xs font-medium focus:border-amber-600 focus:outline-none shadow-2xs"
-                            />
+                                }}
+                                className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-[4px] text-xs font-semibold tracking-wider uppercase transition-colors shadow-2xs flex items-center gap-1 cursor-pointer shrink-0"
+                                title="Add Size"
+                              >
+                                <Plus className="w-3.5 h-3.5" />
+                                <span>Add</span>
+                              </button>
+                            </div>
                           </div>
                         )}
 
@@ -1513,6 +1533,8 @@ export default function AdminInventoryPage() {
                                   <span className="text-[10px] text-slate-500 font-medium mr-1">+₹</span>
                                   <input
                                     type="number"
+                                    step="any"
+                                    min="0"
                                     value={sz.increaseAmount || ''}
                                     onChange={(e) => {
                                       const newSizes = [...formData.sizes];
@@ -1794,6 +1816,7 @@ export default function AdminInventoryPage() {
                           </label>
                           <input
                             type="number"
+                            step="any"
                             min="0"
                             placeholder="e.g. 31"
                             value={dRow.numberOfDiamonds}
@@ -1922,6 +1945,7 @@ export default function AdminInventoryPage() {
                             </label>
                             <input
                               type="number"
+                              step="any"
                               min="0"
                               placeholder="e.g. 2"
                               value={sRow.numberOfStones || ''}
@@ -1973,6 +1997,7 @@ export default function AdminInventoryPage() {
                     </label>
                     <input
                       type="number"
+                      step="any"
                       min="0"
                       max="100"
                       placeholder="e.g. 20"
@@ -2486,7 +2511,7 @@ export default function AdminInventoryPage() {
                         <tbody className="divide-y divide-slate-200">
                           {viewingProduct.stones.map((st, idx) => (
                             <tr key={`vst-${idx}`} className="bg-white">
-                              <td className="py-1.5 px-2 font-semibold text-slate-900">{st.stoneTitle || 'Gemstone'}</td>
+                              <td className="py-1.5 px-2 font-semibold text-slate-900">{st.stoneTitle || 'N/A'}</td>
                               <td className="py-1.5 px-2 text-right font-mono">{st.stoneWeightCarats || 0} Ct</td>
                               <td className="py-1.5 px-2 text-center font-mono">{st.numberOfStones || 0} Pcs</td>
                               <td className="py-1.5 px-2 text-right font-mono text-amber-900 font-semibold">

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, useNavigate, Link, useOutletContext } from 'react-router-dom';
 import { 
   Sparkles, 
@@ -17,6 +17,21 @@ import {
 } from 'lucide-react';
 import api from '../api/axios';
 import { addToCart, showCartAlert } from '../utils/cartManager';
+
+// Process description HTML: wrap tables in responsive scroll wrapper & sanitize fixed editor inline widths
+const formatDescriptionHtml = (rawHtml) => {
+  if (!rawHtml) return '';
+  let html = rawHtml;
+  if (html.includes('<table') && !html.includes('table-responsive-wrapper')) {
+    // Clean rigid inline widths like width="800" so table fits container cleanly
+    html = html.replace(/(<table[^>]*?)\s+width=["']\d+["']/gi, '$1');
+    html = html.replace(
+      /<table([\s\S]*?)<\/table>/gi,
+      '<div class="table-responsive-wrapper w-full max-w-full overflow-x-auto my-3 rounded border border-white/25 scrollbar-thin"><table$1</table></div>'
+    );
+  }
+  return html;
+};
 
 export default function ProductDetailPage() {
   const { id } = useParams();
@@ -438,8 +453,8 @@ export default function ProductDetailPage() {
             {/* PRODUCT DESCRIPTION (WITHOUT CARD/BOX, DIRECTLY ABOVE PRICE CARD) */}
             {Boolean(product.descriptionHtml && product.descriptionHtml.replace(/<[^>]*>/g, '').trim()) && (
               <div 
-                className="text-xs sm:text-sm leading-relaxed text-[#C5C8D0] font-light space-y-1.5 [&_h1]:text-base [&_h1]:font-normal [&_h1]:text-white [&_h2]:text-sm [&_h2]:font-normal [&_h2]:text-white [&_p]:mb-1.5 [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4"
-                dangerouslySetInnerHTML={{ __html: product.descriptionHtml }} 
+                className="text-xs sm:text-sm leading-relaxed text-[#C5C8D0] font-light space-y-1.5 [&_h1]:text-base [&_h1]:font-normal [&_h1]:text-white [&_h2]:text-sm [&_h2]:font-normal [&_h2]:text-white [&_p]:mb-1.5 [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4 [&_.table-responsive-wrapper_table]:!w-full [&_.table-responsive-wrapper_table]:!min-w-full [&_.table-responsive-wrapper_table]:border-collapse [&_.table-responsive-wrapper_table]:my-0 [&_.table-responsive-wrapper_th]:bg-white/10 [&_.table-responsive-wrapper_th]:text-white [&_.table-responsive-wrapper_th]:font-medium [&_.table-responsive-wrapper_th]:text-left [&_.table-responsive-wrapper_th]:!px-3 [&_.table-responsive-wrapper_th]:!py-2 [&_.table-responsive-wrapper_th]:border [&_.table-responsive-wrapper_th]:border-white/25 [&_.table-responsive-wrapper_th]:text-xs [&_.table-responsive-wrapper_th]:whitespace-nowrap [&_.table-responsive-wrapper_td]:!px-3 [&_.table-responsive-wrapper_td]:!py-2 [&_.table-responsive-wrapper_td]:border [&_.table-responsive-wrapper_td]:border-white/25 [&_.table-responsive-wrapper_td]:text-xs [&_.table-responsive-wrapper_td]:whitespace-nowrap sm:[&_.table-responsive-wrapper_td]:whitespace-normal [&_.table-responsive-wrapper_tr:nth-child(even)]:bg-white/5 [&_table]:!w-full [&_table]:!min-w-full [&_table]:border-collapse [&_th]:!py-2 [&_th]:!px-3 [&_td]:!py-2 [&_td]:!px-3"
+                dangerouslySetInnerHTML={{ __html: formatDescriptionHtml(product.descriptionHtml) }} 
               />
             )}
 
@@ -566,10 +581,13 @@ export default function ProductDetailPage() {
                     target="_blank" 
                     rel="noopener noreferrer" 
                     title="Ring Size Guide"
-                    className="p-1 text-[#E0B094] hover:text-white hover:bg-white/10 rounded-full transition-all flex items-center justify-center"
+                    className="group flex flex-col items-center text-[#E0B094] hover:text-white transition-colors p-0.5 cursor-pointer"
                     aria-label="Ring Size Guide"
                   >
-                    <Info className="w-4 h-4" />
+                    <Info className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
+                    <span className="text-[9px] font-light tracking-wide mt-0.5 whitespace-nowrap group-hover:underline underline-offset-2">
+                      Know your size
+                    </span>
                   </Link>
                 </div>
 
@@ -707,6 +725,55 @@ export default function ProductDetailPage() {
               </div>
               )}
 
+              {/* GEMSTONE DETAILS ACCORDION */}
+              {(product.hasGemstone && Array.isArray(product.stones) && product.stones.length > 0) && (
+              <div className="border-b border-white/10">
+                <button 
+                  onClick={() => toggleSection('gemstoneDetails')}
+                  className="w-full py-4 flex items-center justify-between text-left focus:outline-none cursor-pointer"
+                >
+                  <span className="text-[11px] uppercase tracking-widest text-[#E0B094] font-medium">Gemstone Details</span>
+                  <span className="text-[#C5C8D0] text-lg font-light leading-none transform transition-transform duration-300">
+                    {expandedSection === 'gemstoneDetails' ? '−' : '+'}
+                  </span>
+                </button>
+                
+                <div 
+                  className={`overflow-hidden transition-all duration-500 ease-in-out ${expandedSection === 'gemstoneDetails' ? 'max-h-[500px] opacity-100 pb-4' : 'max-h-0 opacity-0'}`}
+                >
+                  <div className="pt-1 text-xs font-light">
+                    {product.stones.map((stone, sIdx) => (
+                      <div key={`stone-${sIdx}`}>
+                        {product.stones.length > 1 && (
+                          <div className="px-3 py-1.5 text-[10px] uppercase tracking-wider text-[#E0B094] font-medium bg-[#16181F]/50">
+                            Stone {sIdx + 1}
+                          </div>
+                        )}
+                        <div className={`${sIdx % 2 === 0 ? 'bg-[#16181F]' : 'bg-transparent'} flex justify-between px-3 py-2.5 ${sIdx % 2 === 0 ? 'text-white' : 'text-[#C5C8D0]'}`}>
+                          <span>Gemstone Name</span>
+                          <span className="font-mono">{stone.stoneTitle || 'N/A'}</span>
+                        </div>
+                        <div className={`${sIdx % 2 === 0 ? 'bg-transparent' : 'bg-[#16181F]'} flex justify-between px-3 py-2.5 ${sIdx % 2 === 0 ? 'text-[#C5C8D0]' : 'text-white'}`}>
+                          <span>Weight (carats)</span>
+                          <span className="font-mono">{stone.stoneWeightCarats || 0}</span>
+                        </div>
+                        <div className={`${sIdx % 2 === 0 ? 'bg-[#16181F]' : 'bg-transparent'} flex justify-between px-3 py-2.5 ${sIdx % 2 === 0 ? 'text-white' : 'text-[#C5C8D0]'}`}>
+                          <span>Rate Per Carat</span>
+                          <span className="font-mono">₹{(stone.stoneRatePerCarat || 0).toLocaleString('en-IN')}/ct</span>
+                        </div>
+                        {Number(stone.numberOfStones) > 0 && (
+                          <div className={`${sIdx % 2 === 0 ? 'bg-transparent' : 'bg-[#16181F]'} flex justify-between px-3 py-2.5 ${sIdx % 2 === 0 ? 'text-[#C5C8D0]' : 'text-white'}`}>
+                            <span>Number of Stones</span>
+                            <span className="font-mono">{stone.numberOfStones}</span>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              )}
+
               {/* PRICE ACCORDION */}
               <div className="border-b border-white/10">
                 <button 
@@ -729,7 +796,7 @@ export default function ProductDetailPage() {
                           <tr className="bg-[#16181F] text-[#C5C8D0] text-[10px] uppercase tracking-wider">
                             <th className="py-2.5 px-3 font-normal">Component</th>
                             <th className="py-2.5 px-3 font-normal">Rate</th>
-                            <th className="py-2.5 px-3 font-normal">Weight</th>
+                            <th className="py-2.5 px-3 font-normal">Weight/Carats</th>
                             <th className="py-2.5 px-3 font-normal text-right">Value</th>
                           </tr>
                         </thead>
@@ -745,9 +812,23 @@ export default function ProductDetailPage() {
                             <td className="py-2.5 px-3">Diamond</td>
                             <td className="py-2.5 px-3 font-mono">₹{((product.diamondRatePerCarat || product.diamonds?.[0]?.diamondRatePerCarat || 0)).toLocaleString('en-IN')}/ct</td>
                             <td className="py-2.5 px-3 font-mono">{product.totalDiamondCarats || 0}</td>
-                            <td className="py-2.5 px-3 text-right font-mono text-[#E0B094]">₹{(((product.diamondRatePerCarat || product.diamonds?.[0]?.diamondRatePerCarat || 0) * (product.totalDiamondCarats || 0))).toLocaleString('en-IN')}</td>
+                            <td className="py-2.5 px-3 text-right font-mono text-[#E0B094]">₹{Math.round(product.computedDiamondPrice || ((product.diamondRatePerCarat || product.diamonds?.[0]?.diamondRatePerCarat || 0) * (product.totalDiamondCarats || 0))).toLocaleString('en-IN')}</td>
                           </tr>
                           )}
+                          {(product.hasGemstone && product.computedStonePrice > 0) && (
+                          <tr className="bg-transparent text-white">
+                            <td className="py-2.5 px-3">Gemstone</td>
+                            <td className="py-2.5 px-3 font-mono">{Array.isArray(product.stones) ? product.stones.map(s => s.stoneTitle).filter(Boolean).join(', ') : '—'}</td>
+                            <td className="py-2.5 px-3 font-mono">{Array.isArray(product.stones) ? product.stones.reduce((sum, s) => sum + (Number(s.stoneWeightCarats) || 0), 0) : 0}</td>
+                            <td className="py-2.5 px-3 text-right font-mono text-[#E0B094]">₹{Math.round(product.computedStonePrice || 0).toLocaleString('en-IN')}</td>
+                          </tr>
+                          )}
+                          <tr className="bg-[#16181F] text-[#C5C8D0]">
+                            <td className="py-2.5 px-3">Net Making Charge</td>
+                            <td className="py-2.5 px-3 font-mono"></td>
+                            <td className="py-2.5 px-3 font-mono"></td>
+                            <td className="py-2.5 px-3 text-right font-mono text-[#E0B094]">₹{Math.round(product.computedMakingCharges || 0).toLocaleString('en-IN')}</td>
+                          </tr>
                           <tr className="bg-transparent text-[#C5C8D0]">
                             <td className="py-2.5 px-3">GST</td>
                             <td className="py-2.5 px-3 font-mono">{product.gstPercent || 3}%</td>
