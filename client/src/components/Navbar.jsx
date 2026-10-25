@@ -269,7 +269,7 @@ export default function Navbar({
             className="flex items-center justify-center group"
           >
             <img
-              src="/diamora_logo.png"
+              src="/diamora_logo.webp"
               alt="Diamora Logo"
               className="w-auto object-contain transition-all duration-300 ease-in-out filter drop-shadow-[0_4px_12px_rgba(0,0,0,0.5)] h-10 sm:h-12 md:h-14 max-w-[160px]"
               onError={(e) => {
@@ -433,7 +433,7 @@ export default function Navbar({
             className="flex items-center"
           >
             <img
-              src="/diamora_logo.png"
+              src="/diamora_logo.webp"
               alt="Diamora Logo"
               className={`w-auto object-contain transition-all duration-300 ease-in-out filter drop-shadow-[0_4px_12px_rgba(0,0,0,0.5)] ${
                 isCompact ? 'h-9 max-w-[130px]' : 'h-11 max-w-[150px]'

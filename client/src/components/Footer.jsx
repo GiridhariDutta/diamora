@@ -30,7 +30,7 @@ export default function Footer({ onOpenTickets }) {
             {/* Logo */}
             <div className="flex items-center gap-3">
               <img 
-                src="/diamora_logo.png" 
+                src="/diamora_logo.webp" 
                 alt="Diamoras Logo" 
                 className="w-14 sm:w-16 h-14 sm:h-16 object-contain drop-shadow-[0_0_15px_rgba(212,175,55,0.4)]"
               />
