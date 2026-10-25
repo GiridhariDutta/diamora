@@ -1533,6 +1533,8 @@ export default function AdminInventoryPage() {
                                   <span className="text-[10px] text-slate-500 font-medium mr-1">+₹</span>
                                   <input
                                     type="number"
+                                    step="any"
+                                    min="0"
                                     value={sz.increaseAmount || ''}
                                     onChange={(e) => {
                                       const newSizes = [...formData.sizes];
@@ -1814,6 +1816,7 @@ export default function AdminInventoryPage() {
                           </label>
                           <input
                             type="number"
+                            step="any"
                             min="0"
                             placeholder="e.g. 31"
                             value={dRow.numberOfDiamonds}
@@ -1942,6 +1945,7 @@ export default function AdminInventoryPage() {
                             </label>
                             <input
                               type="number"
+                              step="any"
                               min="0"
                               placeholder="e.g. 2"
                               value={sRow.numberOfStones || ''}
@@ -1993,6 +1997,7 @@ export default function AdminInventoryPage() {
                     </label>
                     <input
                       type="number"
+                      step="any"
                       min="0"
                       max="100"
                       placeholder="e.g. 20"

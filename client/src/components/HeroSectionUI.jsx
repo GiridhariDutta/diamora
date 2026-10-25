@@ -1,16 +1,16 @@
 import React, { useState, useEffect, useRef } from 'react';
 
 export default function HeroSectionUI() {
-  // Static image paths from the public folder
+  // Static image paths from the public folder (WebP format for fast loading)
   const desktopImages = [
-    '/images/desktop_hero_section_1.png',
-    '/images/hero2.png',
-    '/images/hero3.png'
+    '/images/desktop_hero_section_1.webp',
+    '/images/hero2.webp',
+    '/images/hero3.webp'
   ];
   const mobileImages = [
-    '/images/mobile_hero_3.png',
-    '/images/mobile_hero_2.png',
-    '/images/mobile_hero_section_1.png'
+    '/images/mobile_hero_3.webp',
+    '/images/mobile_hero_2.webp',
+    '/images/mobile_hero_section_1.webp'
   ];
 
   const [desktopIndex, setDesktopIndex] = useState(0);
