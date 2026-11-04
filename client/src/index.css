@@ -95,6 +95,20 @@
   background: #D4AF37;
 }
 
+/* Luxury Corner-Angled Shimmer Animation (1.2s tuned speed) */
+@keyframes shimmerCorner {
+  0% {
+    transform: translateX(-150%) skewX(-25deg);
+  }
+  100% {
+    transform: translateX(250%) skewX(-25deg);
+  }
+}
+
+.animate-shimmer {
+  animation: shimmerCorner 1.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
 /* Smooth Pop Zoom In Animation */
 @keyframes popZoomIn {
   0% {
@@ -112,4 +126,11 @@
 
 .animate-pop-zoom {
   animation: popZoomIn 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Hide floating WhatsApp when image modal is active */
+body.image-modal-open #floating-whatsapp-btn {
+  display: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
 }

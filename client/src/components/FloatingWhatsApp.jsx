@@ -6,7 +6,7 @@ export default function FloatingWhatsApp() {
   const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
 
   return (
-    <div className="fixed bottom-6 right-6 z-[999] flex items-center gap-4 group">
+    <div id="floating-whatsapp-btn" className="fixed bottom-6 right-6 z-[999] flex items-center gap-4 group">
       
       {/* Tooltip text bubble */}
       <div className="hidden sm:block px-4 py-2.5 bg-white text-[#0C0D10] text-xs font-semibold rounded-full shadow-[0_4px_12px_rgba(0,0,0,0.15)] relative opacity-0 translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 pointer-events-none">
