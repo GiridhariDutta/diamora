@@ -17,6 +17,57 @@ import {
 } from 'lucide-react';
 import api from '../api/axios';
 import { addToCart, showCartAlert } from '../utils/cartManager';
+import ProductImageGalleryZoom from '../components/ProductImageGalleryZoom';
+import ImageSkeleton from '../components/ImageSkeleton';
+
+function CarouselProductImage({ primaryImg, secondaryImg, title, categoryTitle, colorTitle, discountPercent }) {
+  const [loaded, setLoaded] = useState(false);
+
+  return (
+    <div className="h-48 sm:h-52 w-full rounded-xl overflow-hidden relative bg-[#0C0D10] mb-3">
+      {!loaded && <ImageSkeleton />}
+      <img
+        ref={(el) => {
+          if (el && el.complete && el.naturalWidth > 0) setLoaded(true);
+        }}
+        src={primaryImg}
+        alt={title}
+        onLoad={() => setLoaded(true)}
+        onError={() => setLoaded(true)}
+        className={`w-full h-full object-cover transition-all duration-500 group-hover:scale-105 ${
+          loaded ? 'opacity-100' : 'opacity-0'
+        }`}
+      />
+
+      {secondaryImg && (
+        <img
+          src={secondaryImg}
+          alt={`${title} Cover`}
+          className="w-full h-full object-cover absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+        />
+      )}
+
+      {/* Top Badges */}
+      <div className="absolute top-2 left-2 right-2 flex items-center justify-between pointer-events-none z-10">
+        {categoryTitle && (
+          <span className="px-2 py-0.5 rounded-full bg-[#0C0D10]/80 backdrop-blur-md border border-white/15 text-[9px] font-mono text-[#E0B094] uppercase truncate max-w-[120px]">
+            {categoryTitle}
+          </span>
+        )}
+
+        {discountPercent > 0 ? (
+          <span className="px-1.5 py-0.5 rounded-full bg-red-950/80 backdrop-blur-md border border-red-500/30 text-[9px] font-mono text-red-400">
+            -{discountPercent}%
+          </span>
+        ) : colorTitle ? (
+          <span className="px-1.5 py-0.5 rounded-full bg-black/60 backdrop-blur-md text-[9px] text-[#C5C8D0] truncate max-w-[80px]">
+            {colorTitle}
+          </span>
+        ) : null}
+      </div>
+    </div>
+  );
+}
 
 // Process description HTML: wrap tables in responsive scroll wrapper & sanitize fixed editor inline widths
 const formatDescriptionHtml = (rawHtml) => {
@@ -57,35 +108,6 @@ export default function ProductDetailPage() {
 
   const scrollRef = useRef(null);
   const recentlyScrollRef = useRef(null);
-  const mainTouchStartX = useRef(null);
-  const mainTouchStartY = useRef(null);
-
-  const handleMainTouchStart = (e) => {
-    mainTouchStartX.current = e.touches[0].clientX;
-    mainTouchStartY.current = e.touches[0].clientY;
-  };
-
-  const handleMainTouchEnd = (mediaCount) => (e) => {
-    if (mainTouchStartX.current === null || mainTouchStartY.current === null) return;
-    const currentX = e.changedTouches[0]?.clientX || mainTouchStartX.current;
-    const currentY = e.changedTouches[0]?.clientY || mainTouchStartY.current;
-    const deltaX = currentX - mainTouchStartX.current;
-    const deltaY = currentY - mainTouchStartY.current;
-
-    // Minimum swipe threshold 40px and predominantly horizontal
-    if (Math.abs(deltaX) > 40 && Math.abs(deltaX) > Math.abs(deltaY)) {
-      if (deltaX < 0) {
-        // Swiped Left -> Next media
-        setActiveMediaIndex((prev) => (prev + 1) % mediaCount);
-      } else {
-        // Swiped Right -> Previous media
-        setActiveMediaIndex((prev) => (prev - 1 + mediaCount) % mediaCount);
-      }
-    }
-
-    mainTouchStartX.current = null;
-    mainTouchStartY.current = null;
-  };
 
   const handleInquireClick = (targetProduct = null) => {
     const baseProd = targetProduct || product;
@@ -359,68 +381,14 @@ export default function ProductDetailPage() {
         {/* MAIN PRODUCT GRID */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           
-          {/* LEFT COLUMN: MEDIA GALLERY (STICKY ON DESKTOP ONLY, SCROLLS ON MOBILE) */}
-          <div className="lg:col-span-6 lg:sticky lg:top-28 lg:self-start flex flex-col-reverse sm:flex-row gap-3 items-start z-20">
-            
-            {/* Vertical Thumbnail Navigation Column (Left Side) */}
-            {mediaList.length > 1 && (
-              <div className="flex sm:flex-col items-center gap-2 overflow-x-auto sm:overflow-y-auto max-h-[480px] w-full sm:w-20 shrink-0 scrollbar-none">
-                {mediaList.map((item, idx) => (
-                  <button
-                    key={`thumb-${idx}`}
-                    onClick={() => setActiveMediaIndex(idx)}
-                    className={`relative w-16 h-16 sm:w-20 sm:h-20 shrink-0 bg-[#16181F] rounded-md overflow-hidden border transition-all cursor-pointer ${
-                      activeMediaIndex === idx
-                        ? 'border-[#E0B094] ring-1 ring-[#E0B094]/50 shadow-md'
-                        : 'border-white/15 hover:border-white/40 opacity-60 hover:opacity-100'
-                    }`}
-                  >
-                    {item.type === 'video' ? (
-                      <div className="w-full h-full flex flex-col items-center justify-center bg-slate-900 text-[#E0B094]">
-                        <Video className="w-4 h-4 mb-0.5" />
-                        <span className="text-[8px] uppercase font-normal text-slate-300">Video</span>
-                      </div>
-                    ) : (
-                      <img src={item.url} alt={`Thumbnail ${idx + 1}`} className="w-full h-full object-cover" />
-                    )}
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {/* Main Stage Preview */}
-            <div 
-              className="flex-1 w-full bg-[#16181F] border border-white/15 rounded-xl overflow-hidden relative shadow-xl aspect-square sm:aspect-[4/3] flex items-center justify-center select-none touch-pan-y"
-              onTouchStart={handleMainTouchStart}
-              onTouchEnd={handleMainTouchEnd(mediaList.length)}
-            >
-              {activeMedia.type === 'video' ? (
-                <video
-                  key={activeMedia.url}
-                  src={activeMedia.url}
-                  controls
-                  autoPlay
-                  loop
-                  muted
-                  className="w-full h-full object-contain"
-                />
-              ) : (
-                <img
-                  key={activeMedia.url}
-                  src={activeMedia.url}
-                  alt={product.title}
-                  className="w-full h-full object-contain p-2 transition-all duration-300"
-                />
-              )}
-
-              {/* Image Counter Badge for Mobile */}
-              {mediaList.length > 1 && (
-                <div className="absolute bottom-2.5 right-3 bg-black/75 backdrop-blur-md border border-white/15 text-[#E0B094] text-[10px] font-mono px-2.5 py-0.5 rounded-full z-10 pointer-events-none shadow-md">
-                  {activeMediaIndex + 1} / {mediaList.length}
-                </div>
-              )}
-            </div>
-
+          {/* LEFT COLUMN: MEDIA GALLERY WITH FLIPKART/AMAZON HOVER ZOOM & MOBILE PINCH ZOOM */}
+          <div className="lg:col-span-6 lg:sticky lg:top-28 lg:self-start z-20">
+            <ProductImageGalleryZoom
+              mediaList={mediaList}
+              activeMediaIndex={activeMediaIndex}
+              setActiveMediaIndex={setActiveMediaIndex}
+              productTitle={product.title}
+            />
           </div>
 
           {/* RIGHT COLUMN: SCROLLABLE PRODUCT DETAILS & SPECS */}
@@ -952,37 +920,15 @@ export default function ProductDetailPage() {
                     className="w-[230px] sm:w-[270px] shrink-0 snap-start bg-[#16181F]/90 border border-white/10 hover:border-[#E0B094]/60 rounded-2xl p-3.5 transition-all duration-300 group shadow-lg cursor-pointer flex flex-col justify-between"
                   >
                     <div>
-                      {/* Image Container with Hover Crossfade */}
-                      <div className="h-48 sm:h-52 w-full rounded-xl overflow-hidden relative bg-[#0C0D10] mb-3">
-                        <img
-                          src={itemPrimaryImg}
-                          alt={item.title}
-                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                        />
-
-                        {itemSecondaryImg && (
-                          <img
-                            src={itemSecondaryImg}
-                            alt={`${item.title} Cover`}
-                            className="w-full h-full object-cover absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-                          />
-                        )}
-
-                        {/* Top Badges */}
-                        <div className="absolute top-2 left-2 right-2 flex items-center justify-between pointer-events-none">
-                          {item.categoryTitle && (
-                            <span className="px-2 py-0.5 rounded-full bg-[#0C0D10]/80 backdrop-blur-md border border-white/15 text-[9px] font-mono text-[#E0B094] uppercase truncate max-w-[120px]">
-                              {item.categoryTitle}
-                            </span>
-                          )}
-
-                          {item.colorTitle && (
-                            <span className="px-2 py-0.5 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-[9px] font-mono text-gray-200 uppercase shrink-0">
-                              {item.colorTitle}
-                            </span>
-                          )}
-                        </div>
-                      </div>
+                      {/* Image Container with Skeleton Loader & Hover Crossfade */}
+                      <CarouselProductImage
+                        primaryImg={itemPrimaryImg}
+                        secondaryImg={itemSecondaryImg}
+                        title={item.title}
+                        categoryTitle={item.categoryTitle}
+                        colorTitle={item.colorTitle}
+                        discountPercent={item.discountPercent}
+                      />
 
                       {/* Product Title */}
                       <h4 className="font-serif text-sm font-semibold text-white group-hover:text-[#E0B094] transition-colors line-clamp-2 leading-snug mb-1" title={item.title}>
@@ -1085,37 +1031,15 @@ export default function ProductDetailPage() {
                     className="w-[230px] sm:w-[270px] shrink-0 snap-start bg-[#16181F]/90 border border-white/10 hover:border-[#E0B094]/60 rounded-2xl p-3.5 transition-all duration-300 group shadow-lg cursor-pointer flex flex-col justify-between"
                   >
                     <div>
-                      {/* Image Container with Hover Crossfade */}
-                      <div className="h-48 sm:h-52 w-full rounded-xl overflow-hidden relative bg-[#0C0D10] mb-3">
-                        <img
-                          src={itemPrimaryImg}
-                          alt={item.title}
-                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                        />
-
-                        {itemSecondaryImg && (
-                          <img
-                            src={itemSecondaryImg}
-                            alt={`${item.title} Cover`}
-                            className="w-full h-full object-cover absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-                          />
-                        )}
-
-                        {/* Top Badges */}
-                        <div className="absolute top-2 left-2 right-2 flex items-center justify-between pointer-events-none">
-                          {item.categoryTitle && (
-                            <span className="px-2 py-0.5 rounded-full bg-[#0C0D10]/80 backdrop-blur-md border border-white/15 text-[9px] font-mono text-[#E0B094] uppercase truncate max-w-[120px]">
-                              {item.categoryTitle}
-                            </span>
-                          )}
-
-                          {item.colorTitle && (
-                            <span className="px-2 py-0.5 rounded-full bg-white/10 backdrop-blur-md border border-white/15 text-[9px] font-mono text-gray-200 uppercase shrink-0">
-                              {item.colorTitle}
-                            </span>
-                          )}
-                        </div>
-                      </div>
+                      {/* Image Container with Skeleton Loader & Hover Crossfade */}
+                      <CarouselProductImage
+                        primaryImg={itemPrimaryImg}
+                        secondaryImg={itemSecondaryImg}
+                        title={item.title}
+                        categoryTitle={item.categoryTitle}
+                        colorTitle={item.colorTitle}
+                        discountPercent={item.discountPercent}
+                      />
 
                       {/* Product Title */}
                       <h4 className="font-serif text-sm font-semibold text-white group-hover:text-[#E0B094] transition-colors line-clamp-2 leading-snug mb-1" title={item.title}>

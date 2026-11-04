@@ -4,6 +4,31 @@ import { ArrowRight, Sparkles, ChevronLeft, ChevronRight, Eye, Diamond, Shopping
 import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 import { addToCart, showCartAlert } from '../utils/cartManager';
+import ImageSkeleton from './ImageSkeleton';
+
+function ArcProductImage({ src, alt }) {
+  const [loaded, setLoaded] = useState(false);
+
+  return (
+    <div className="relative w-full h-[70%] sm:h-[75%] rounded-lg sm:rounded-2xl overflow-hidden bg-black shrink-0 pointer-events-none select-none">
+      {!loaded && <ImageSkeleton />}
+      <img
+        ref={(el) => {
+          if (el && el.complete && el.naturalWidth > 0) setLoaded(true);
+        }}
+        src={src}
+        alt={alt}
+        draggable={false}
+        onLoad={() => setLoaded(true)}
+        onError={() => setLoaded(true)}
+        className={`w-full h-full object-cover filter brightness-105 contrast-110 group-hover:scale-105 transition-all duration-500 pointer-events-none select-none ${
+          loaded ? 'opacity-100' : 'opacity-0'
+        }`}
+      />
+      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-50 pointer-events-none" />
+    </div>
+  );
+}
 
 export default function RotatingArcShowcase({ onOpenShop }) {
   const navigate = useNavigate();
@@ -454,16 +479,8 @@ export default function RotatingArcShowcase({ onOpenShop }) {
                   }`}
                 >
                   
-                  {/* Product Image Frame (Expanded to 70%-75% height) */}
-                  <div className="relative w-full h-[70%] sm:h-[75%] rounded-lg sm:rounded-2xl overflow-hidden bg-black shrink-0 pointer-events-none select-none">
-                    <img
-                      src={item.image}
-                      alt={item.title}
-                      draggable={false}
-                      className="w-full h-full object-cover filter brightness-105 contrast-110 group-hover:scale-105 transition-transform duration-500 pointer-events-none select-none"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-50 pointer-events-none" />
-                  </div>
+                  {/* Product Image Frame (Expanded to 70%-75% height) with Skeleton */}
+                  <ArcProductImage src={item.image} alt={item.title} />
 
                   {/* Sharp Clear Card Title, Price & Quick Cart Button */}
                   <div className="py-1 sm:py-2 px-0.5 sm:px-1 flex items-center justify-between gap-1 grow border-t border-white/10 mt-1">

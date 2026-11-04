@@ -3,6 +3,44 @@ import { useSearchParams, useOutletContext, useNavigate } from 'react-router-dom
 import { Sparkles, ShoppingBag, SlidersHorizontal, Loader2, ChevronDown, X } from 'lucide-react';
 import api from '../api/axios';
 import { addToCart, showCartAlert } from '../utils/cartManager';
+import ImageSkeleton from '../components/ImageSkeleton';
+
+function ShopCardImage({ primaryImage, secondaryImage, title }) {
+  const [loaded, setLoaded] = useState(false);
+
+  return (
+    <div className="aspect-square bg-slate-950/60 backdrop-blur-md overflow-hidden relative flex items-center justify-center p-1 sm:p-4">
+      {!loaded && <ImageSkeleton />}
+
+      {/* Primary Image */}
+      <img 
+        ref={(el) => {
+          if (el && el.complete && el.naturalWidth > 0) setLoaded(true);
+        }}
+        src={primaryImage} 
+        alt={title} 
+        onLoad={() => setLoaded(true)}
+        onError={() => setLoaded(true)}
+        className={`w-full h-full object-contain filter drop-shadow-[0_4px_10px_rgba(0,0,0,0.6)] transition-all duration-500 ease-out ${
+          loaded ? 'opacity-100' : 'opacity-0'
+        } ${
+          secondaryImage ? 'group-hover:opacity-0 group-hover:scale-105' : 'group-hover:scale-105'
+        }`}
+        loading="lazy"
+      />
+
+      {/* Secondary Cover Hover Image */}
+      {secondaryImage && (
+        <img 
+          src={secondaryImage} 
+          alt={`${title} Cover`} 
+          className="absolute inset-0 w-full h-full object-contain p-1 sm:p-4 filter drop-shadow-[0_4px_10px_rgba(0,0,0,0.6)] opacity-0 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500 ease-out"
+          loading="lazy"
+        />
+      )}
+    </div>
+  );
+}
 
 export default function ShopPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -550,28 +588,12 @@ export default function ShopPage() {
                       onClick={() => navigate(`/product/${product.id}`)}
                       className="group bg-[#16181F]/80 backdrop-blur-2xl border border-white/15 hover:border-[#E0B094]/60 rounded-lg overflow-hidden flex flex-col justify-between transition-all duration-500 ease-out hover:shadow-[0_0_30px_rgba(224,176,148,0.2)] animate-fadeInUp cursor-pointer"
                     >
-                      {/* PRODUCT IMAGE CONTAINER WITH DUAL-IMAGE CROSS-FADE */}
-                      <div className="aspect-square bg-slate-950/60 backdrop-blur-md overflow-hidden relative flex items-center justify-center p-1 sm:p-4">
-                        {/* Primary Image */}
-                        <img 
-                          src={primaryImage} 
-                          alt={product.title} 
-                          className={`w-full h-full object-contain filter drop-shadow-[0_4px_10px_rgba(0,0,0,0.6)] transition-all duration-500 ease-out ${
-                            secondaryImage ? 'group-hover:opacity-0 group-hover:scale-105' : 'group-hover:scale-105'
-                          }`}
-                          loading="lazy"
-                        />
-
-                        {/* Secondary Cover Hover Image */}
-                        {secondaryImage && (
-                          <img 
-                            src={secondaryImage} 
-                            alt={`${product.title} Cover`} 
-                            className="absolute inset-0 w-full h-full object-contain p-1 sm:p-4 filter drop-shadow-[0_4px_10px_rgba(0,0,0,0.6)] opacity-0 group-hover:opacity-100 group-hover:scale-105 transition-all duration-500 ease-out"
-                            loading="lazy"
-                          />
-                        )}
-                      </div>
+                      {/* PRODUCT IMAGE CONTAINER WITH DUAL-IMAGE CROSS-FADE AND SKELETON LOADER */}
+                      <ShopCardImage
+                        primaryImage={primaryImage}
+                        secondaryImage={secondaryImage}
+                        title={product.title}
+                      />
 
                       {/* PRODUCT CARD DETAILS */}
                       <div className="p-2.5 sm:p-3.5 flex items-center justify-between gap-1.5 border-t border-white/10">

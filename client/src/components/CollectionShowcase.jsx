@@ -3,6 +3,60 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, Sparkles, Diamond, Eye, X, Award, ShieldCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
+import ImageSkeleton from './ImageSkeleton';
+
+function CollectionCardImage({ image, hoverImage, title }) {
+  const [loaded, setLoaded] = useState(false);
+
+  return (
+    <div className="w-full h-full rounded-lg sm:rounded-xl overflow-hidden bg-black relative">
+      {!loaded && <ImageSkeleton />}
+      <img
+        ref={(el) => {
+          if (el && el.complete && el.naturalWidth > 0) setLoaded(true);
+        }}
+        src={image}
+        alt={title}
+        onLoad={() => setLoaded(true)}
+        onError={() => setLoaded(true)}
+        className={`w-full h-full object-cover filter brightness-105 contrast-110 group-hover:scale-110 transition-all duration-500 ${
+          loaded ? 'opacity-100' : 'opacity-0'
+        }`}
+      />
+      {hoverImage && (
+        <img
+          src={hoverImage}
+          alt={`${title} alternate view`}
+          className="absolute inset-0 w-full h-full object-cover filter brightness-105 contrast-110 opacity-0 group-hover:opacity-100 transition-opacity duration-300 scale-105 group-hover:scale-110 transition-transform duration-500"
+        />
+      )}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-40 group-hover:opacity-20 transition-opacity z-10" />
+      <div className="absolute bottom-2 right-2 sm:bottom-3 sm:right-3 p-1.5 sm:p-2 rounded-full bg-black/75 border border-white/20 text-[#E0B094] opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20">
+        <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+      </div>
+    </div>
+  );
+}
+
+function CollectionModalImage({ src, alt }) {
+  const [loaded, setLoaded] = useState(false);
+
+  return (
+    <div className="aspect-square rounded-2xl overflow-hidden bg-black border border-white/10 relative">
+      {!loaded && <ImageSkeleton />}
+      <img
+        ref={(el) => {
+          if (el && el.complete && el.naturalWidth > 0) setLoaded(true);
+        }}
+        src={src}
+        alt={alt}
+        onLoad={() => setLoaded(true)}
+        onError={() => setLoaded(true)}
+        className={`w-full h-full object-cover ${loaded ? 'opacity-100' : 'opacity-0'}`}
+      />
+    </div>
+  );
+}
 
 export default function CollectionShowcase({ onOpenShop }) {
   const navigate = useNavigate();
@@ -112,31 +166,11 @@ export default function CollectionShowcase({ onOpenShop }) {
               >
                 {/* Square Product Image Frame with Sleek Thin Border */}
                 <div className="relative w-full aspect-square rounded-xl sm:rounded-2xl overflow-hidden bg-[#12131A] border border-white/15 p-1 sm:p-2 transition-all duration-300 group-hover:border-[#E0B094]/70 group-hover:shadow-[0_12px_35px_rgba(0,0,0,0.85)]">
-                  <div className="w-full h-full rounded-lg sm:rounded-xl overflow-hidden bg-black relative">
-                    
-                    {/* Primary Thumbnail Image with Zoom */}
-                    <img
-                      src={item.image}
-                      alt={item.title}
-                      className="w-full h-full object-cover filter brightness-105 contrast-110 group-hover:scale-110 transition-transform duration-500"
-                    />
-                    
-                    {/* Secondary Hover Image (Instant Crossfade on Hover if present) */}
-                    {item.hoverImage && (
-                      <img
-                        src={item.hoverImage}
-                        alt={`${item.title} alternate view`}
-                        className="absolute inset-0 w-full h-full object-cover filter brightness-105 contrast-110 opacity-0 group-hover:opacity-100 transition-opacity duration-300 scale-105 group-hover:scale-110 transition-transform duration-500"
-                      />
-                    )}
-
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-40 group-hover:opacity-20 transition-opacity z-10" />
-                    
-                    {/* Quick Preview Badge */}
-                    <div className="absolute bottom-2 right-2 sm:bottom-3 sm:right-3 p-1.5 sm:p-2 rounded-full bg-black/75 border border-white/20 text-[#E0B094] opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20">
-                      <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                    </div>
-                  </div>
+                  <CollectionCardImage
+                    image={item.image}
+                    hoverImage={item.hoverImage}
+                    title={item.title}
+                  />
                 </div>
 
                 {/* Product Title & Price */}
@@ -186,13 +220,10 @@ export default function CollectionShowcase({ onOpenShop }) {
               </button>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-center">
-                <div className="aspect-square rounded-2xl overflow-hidden bg-black border border-white/10">
-                  <img
-                    src={selectedProduct.image}
-                    alt={selectedProduct.title}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
+                <CollectionModalImage
+                  src={selectedProduct.image}
+                  alt={selectedProduct.title}
+                />
 
                 <div className="flex flex-col justify-between h-full">
                   <div>
